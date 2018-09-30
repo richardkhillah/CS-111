@@ -1,3 +1,7 @@
+NAME: Richard Khillah
+EMAIL: RKhillah@ucla.edu
+ID: 604853262
+
 Sources:
 https://github.com/coreutils/gnulib/blob/master/lib/progname.c
 	Used an abbridged version of set_program_name to get the name

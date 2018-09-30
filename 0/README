@@ -2,7 +2,65 @@ NAME: Richard Khillah
 EMAIL: RKhillah@ucla.edu
 ID: 604853262
 
-Sources:
+This project uses basic POSIX file operations (like open(2), creat(2), etc...),
+processes command line arguments, catchs (and handles) run-time exceptions,
+returns informative exit statuses.
+
+included files:
+  lab0.c:
+    Source file to build executable lab0 that copies STDIN to STDOUT. lab0, once
+    built (using `make`, see Makefile), performs user specified I/O redirection,
+    catches (and can cause) segmentation faults. It supports 4 commandline
+    options:
+    --input=filname	use the specified file as standard input (making it the
+    			new fd0). If lab0 is unable to open the specified input
+			file, the failure is reported to stderr and lab0
+			exit(2)s with a return code of 2.
+
+    --output=filename	create the specified file as standard output (making it the
+    			new fd1). If the specified file is unable to be created,
+			the failure is reported to stderr and lab0 exit(2)s with 
+			a return code of 3.
+
+    --segfault		force a segmentation fault. If this argument is specified,
+    			any file redirection specified (using '--input' '--output'
+			options) are performed immediately followed by a segfault.
+			
+    --catch		registers a SIGSEGV handler that catches a segmentation
+    			segmentation fault. If '--catch' is used without 
+			'--segfault', manual temination of the program is necessary
+			as lab0.c does not incorpate trap(1).
+
+  Makefile:
+    Build the program 'lab0' and the distribution tarball. Makefil supports 
+    the following `make` commands:
+++++++++    
+    all	      build the executable 'lab0'. To build 
+
+    check     runs a quick smoke-test on whether or not the program seems to work,
+    	      supports the required arguments, and reports success or failure.
+	      The smoke-tests run are:
+    	1
+	2
+	3
+	
+    dist      generate the distrubution tarball using `tar`.
+
+    clean     delete all files created by the Makefile, and return the directory
+    	      to its freshly untared state.
+
+backtrace.png:
+  shows a segfault and associated stack-trace.
+
+breakpoint.png:
+  shows a breakpoint and variable inspection
+
+
+Limitations:
+
+
+
+Research:
 https://github.com/coreutils/gnulib/blob/master/lib/progname.c
 	Used an abbridged version of set_program_name to get the name
 	of the executable being used.

@@ -1,0 +1,70 @@
+... using test directory /u/cs/ugrad/richardk/Labs/0/CS111_test.richardk
+... extracting /u/cs/ugrad/richardk/Labs/0/lab0-604853262.tar.gz
+lab0.c
+Makefile
+backtrace.png
+breakpoint.png
+README
+... checking for README file
+... checking for submitter ID in README
+... checking for submitter email in README
+... checking for submitter name in README
+... checking slip-day use in README
+    no SLIPDAYS: entry
+... checking for other expected files
+... checking for required Make targets
+... checking for required compillation options
+... building default target(s)
+gcc -g -Wall -Wextra -o lab0 lab0.c
+... checking make check
+mkdir: created directory ‘test_dir’
+Testing `--input` on readable file...	 passed
+Testing `--input` on non-readable file...	 passed
+Testing `--output` to non-writable file...	 passed
+Testing `--input --output` options with readable files...	 passed
+Testing `--catch --segfault` options...	 passed
+Testing `--segfault` option...	 passed
+... checking make dist
+lab0.c
+Makefile
+backtrace.png
+breakpoint.png
+README
+ ... checking make clean
+    restored to freshly untar-ed state ... OK
+... redo default make
+gcc -g -Wall -Wextra -o lab0 lab0.c
+... checking for expected products
+... lab0 detects/reports bogus arguments
+        ./lab0: unrecognized option '--bogus'
+... exercise bad --input from a nonexistent file
+        lab0 [--input]: NON_EXISTENT_FILE: No such file or directory
+... exercise bad --output to an unwritable file
+        lab0 [--output]: CANT_TOUCH_THIS: Permission denied
+... exercise --segfault option
+... exercise --catch --segfault option
+        lab0 [--catch]: Resource temporarily unavailable
+... copy stdin -> stdout
+        data comparison ... OK
+... copy --input -> stdout
+        data comparison ... OK
+... copy stdin -> --output
+        data comparison ... OK
+... copy --input -> --output
+        data comparison ... OK
+... use of expected routines
+        getopt_long ... OK
+        signal ... OK
+        strerror ... OK
+        close ... OK
+        dup2\|dup ... OK
+
+THIS SUBMISSION WILL USE NO SLIP-DAYS
+
+THE ONLY STUDENTS WHO WILL RECEIVE CREDIT FOR THIS SUBMISSION ARE:
+    604853262    RKhillah@ucla.edu
+
+... cleaning up temporary files
+... removing test directory /u/cs/ugrad/richardk/Labs/0/CS111_test.richardk
+
+SUBMISSION lab0-604853262.tar.gz ... passes sanity check

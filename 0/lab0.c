@@ -72,7 +72,7 @@ main(int argc, char* argv[]) {
   //TODO: Modularize this and put into library function. Note: use structs
   switch(argc){
   case 1:
-    fprintf(stderr, "%s: Missing argument\n.", program_name);
+    fprintf(stderr, "%s: Missing argument\n", program_name);
       //usage();
     exit(5);
   case 2:
@@ -130,9 +130,9 @@ main(int argc, char* argv[]) {
   }
 
   if(output_file) {
-    if(! (fd = open(output_file, O_CREAT, S_IRUSR | S_IWUSR | \
-		    S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH))) {
-      fprintf(stderr,"%s [--output]: %s: %s\n", \
+    fd = creat(output_file, 0666);
+    if(fd < 0) {
+      fprintf(stderr,"%s [--output]: %s: %s\n",	\
 	      program_name, output_file, strerror(errno));
       exit(3);
     }
@@ -151,7 +151,7 @@ main(int argc, char* argv[]) {
   }
     
   char *buf[1];
-  while(read(0, buf, sizeof(char)))
+  while(read(0, buf, sizeof(char)) > 0)
     write(1, buf, sizeof(char));
     
   exit(0); // successful 

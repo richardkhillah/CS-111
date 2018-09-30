@@ -70,20 +70,20 @@ main(int argc, char* argv[]) {
   set_program_name(argv[0]);
   
   //TODO: Modularize this and put into library function. Note: use structs
-  switch(argc){
-  case 1:
-    fprintf(stderr, "%s: Missing argument\n", program_name);
-      //usage();
-    exit(5);
-  case 2:
-    if(argv[1][0] != '-'){
-      fprintf(stderr, "%s: %s: Unrecognized argument\n", program_name, argv[1]);
-      //usage();
-      exit(1);
-    }
-  default:
-    break;
-  }
+  /* if(argc){ */
+  /* case 1: */
+  /*   fprintf(stderr, "%s: Missing argument\n", program_name); */
+  /*     //usage(); */
+  /*   exit(0); */
+  /* case 2: */
+  /*   if(argv[1][0] != '-'){ */
+  /*     fprintf(stderr, "%s: %s: Unrecognized argument\n", program_name, argv[1]); */
+  /*     //usage(); */
+  /*     exit(1); */
+  /*   } */
+  /* default: */
+  /*   break; */
+  /* } */
   
   char* input_file = NULL;
   char* output_file = NULL;

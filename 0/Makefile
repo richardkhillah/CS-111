@@ -20,7 +20,9 @@ EXIT3=3
 EXIT4=4
 EXIT5=5
 
-all: lab0 d_lab0
+SEGFAULT=139
+
+all: lab0
 
 lab0: lab0.c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -30,19 +32,17 @@ d_lab0: lab0.c
 	$(CC) $(DEBUG) $(CFLAGS) -o $@ $<
 
 dist:
-	tar -cvzf lab0-604853262.tar.gz Makefile lab0.c README \
-backtrace.png breakpoint.png
+	tar -cvzf lab0-604853262.tar.gz Makefile lab0.c README backtrace.png breakpoint.png
 
 check: check_input \
 	check_input_permissions_denied \
 	check_output_permissions_denied \
 	check_input_output \
 	check_catch_segfault \
-	check_no_args \
-	check_invalid_arg \
+	check_segfault
 
 clean: clean_test_dir
-	rm -f lab0 d_lab0
+	rm -f lab0 
 
 clean_test_dir:
 	rm -rf $(test_dir)
@@ -113,6 +113,16 @@ check_input_output: check_input
 		@else
 			@echo -e "\t failed"
 		@fi
+	@else
+		@echo -e "\t failed"
+	@fi
+
+check_segfault:
+	@$(ECHO) -n Testing \`--segfault\` option...
+	@./lab0 --segfault 2>&1>/dev/null 
+	@if [[ $$? -eq $(SEGFAULT) ]]
+	@then
+		@echo -e "\t passed"
 	@else
 		@echo -e "\t failed"
 	@fi

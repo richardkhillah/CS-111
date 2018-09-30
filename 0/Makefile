@@ -12,10 +12,14 @@ DEBUG= -g
 MKDIR := mkdir -vp
 ECHO := echo
 
-all: lab0
+all: lab0 d_lab0
 
 lab0: lab0.c
 	$(CC) $(CFLAGS) -o $@ $<
+
+#TODO make this part of lab0 rule.
+d_lab0: lab0.c
+	$(CC) $(DEBUG) $(CFLAGS) -o $@ $<
 
 dist:
 	tar -cvzf lab0-604853262.tar.gz Makefile lab0.c README \
@@ -23,9 +27,11 @@ backtrace.png breakpoint.png
 
 check: check_input check_input_permissions_denied check_input_output check_catch_segfault
 
-#TODO make this part of lab0 rule.
-d_lab0: lab0.c
-	$(CC) $(DEBUG) $(CFLAGS) -o $@ $<
+clean: clean_test_dir
+	rm -f lab0 d_lab0
+
+clean_test_dir:
+	rm -rf $(test_dir)
 
 test_dir=test_dir
 check_input:
@@ -90,8 +96,6 @@ check_catch_segfault:
 		echo "\t ok"; \
 	fi;
 
-clean: clean_test_dir
-	rm -f lab0
+check_no_args:
 
-clean_test_dir:
-	rm -rf $(test_dir)
+check_invalid_arg:

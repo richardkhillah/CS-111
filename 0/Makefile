@@ -25,14 +25,14 @@ SEGFAULT=139
 all: lab0
 
 lab0: lab0.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(DEBUG) $(CFLAGS) -o $@ $<
 
 #TODO make this part of lab0 rule.
 d_lab0: lab0.c
 	$(CC) $(DEBUG) $(CFLAGS) -o $@ $<
 
 dist:
-	tar -cvzf lab0-604853262.tar.gz Makefile lab0.c README backtrace.png breakpoint.png
+	@tar -cvzf lab0-604853262.tar.gz lab0.c Makefile backtrace.png breakpoint.png README
 
 check: check_input \
 	check_input_permissions_denied \
@@ -41,11 +41,12 @@ check: check_input \
 	check_catch_segfault \
 	check_segfault
 
-clean: clean_test_dir
-	rm -f lab0 
+# clean: clean_test_dir
+clean: 
+	@rm -rf $(test_dir) lab0 *tar.gz
 
 clean_test_dir:
-	rm -rf $(test_dir)
+	@rm -rf $(test_dir)
 
 
 test_dir=test_dir

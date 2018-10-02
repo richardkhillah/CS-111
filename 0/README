@@ -34,15 +34,47 @@ included files:
   Makefile:
     Build the program 'lab0' and the distribution tarball. Makefil supports 
     the following `make` commands:
-++++++++    
     all	      build the executable 'lab0'. To build 
 
     check     runs a quick smoke-test on whether or not the program seems to work,
     	      supports the required arguments, and reports success or failure.
+	      check generates two input files used throughout the smoke testing:
+	      goodinput.txt - a file readable to all.
+	      badinput.txt - a file readable to none.
+	      Several check_*.txt files are created via commandline redirection and
+	      used to check anticipated outputs and several output_*.txt files are
+	      created via the '--output' argument, used to check anticipated
+	      outputs given a controlled input. A few commanline options,
+	      both indivual and combinatorially, are tested "indirectly", namely:
+	      --output, --catch, --segfault --input, --segfault --output. The idea
+	      here is to avoid using system wait commands to cause Makefile
+	      generated program terminations.
 	      The smoke-tests run are:
-    	1
-	2
-	3
+	      
+      check_i:     Ensures that lab0 writes the contents of a readable input
+      		   file to STDOUT and terminates upon attemptint to access a
+		   restricted input file.
+
+      check_o:	   Ensures that lab0 cannot write to a file with out write
+      		   permissions.
+
+      check_io:	   Ensures that lab0 writes the contents of a readable input
+      		   file to file specified by --output option and terminates
+		   upon attempting to access a restricted input file
+		   specified by --input
+
+      check_s:	   Ensures that an uncaught segmentation fault occurs
+
+      check_sc:	   Ensures that a segmentation fault occurs and is caught by lab0
+
+      check_sci:   Ensures that the program causes and catches a segmentation
+      		   fault before attempting to write the contents of a "good"
+		   input file. Also ensures that the program exits before
+		   generating a (caught) segmentation fault when a "bad" input
+		   file is provided.
+
+      check_scio:  same as check_sci except that make uses output_goodscio.txt
+      		   and output_badscio.txt
 	
     dist      generate the distrubution tarball using `tar`.
 
@@ -50,14 +82,23 @@ included files:
     	      to its freshly untared state.
 
 backtrace.png:
-  shows a segfault and associated stack-trace.
+  shows a segfault and associated stack-trace generated in gdb by executing
+  lab0 (compiled with -g flag).
 
 breakpoint.png:
-  shows a breakpoint and variable inspection
+  shows a breakpoint and variable inspection. The variable of inspection
+  causes a segmentation fault by assigning a value to a NULL pointer.
 
 
 Limitations:
+  lab0 is confimred to work with regular files. Non-regular file was not tested.
+  Further, lab0 is not implemenented in a way that attempts to account for the
+  case when non-regular files (example a symlink or directory) is used
+  as --input.
 
+  lab0 is implemented to create file supplied to --output. It is not
+  implemented to handled the case where a pre-existing regular file
+  without write permissions is passed.
 
 
 Research:

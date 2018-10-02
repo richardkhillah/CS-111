@@ -41,7 +41,8 @@ check: create_tst \
 	check_sc \
 	check_sci \
 	check_sco \
-	check_scio
+	check_scio \
+	check_badarg
 
 clean: 
 	@rm -rf lab0 $(TST) *tar.gz
@@ -85,6 +86,16 @@ check_i: create_tst
 # --input=badinput
 	@$(ECHO) -n Testing --input=unreadable_file ...
 	@./lab0 --input=$(badinput) 2>&1> /dev/null 2>&1>/dev/null
+	@if [[ $$? -eq $(EXIT2) ]]
+	@then
+		@echo -e "\t passed"
+	@else
+		@echo -e "\t failed"
+	@fi
+
+# --input=doesnotexit
+	@$(ECHO) -n Testing --input=does_not_exist ...
+	@./lab0 --input=does_not_exit.txt 2>&1> /dev/null 2>&1>/dev/null
 	@if [[ $$? -eq $(EXIT2) ]]
 	@then
 		@echo -e "\t passed"
@@ -284,3 +295,14 @@ check_scio :create_tst
 	@else
 		@echo -e "\t failed"
 	@fi
+
+check_badarg:
+	@$(ECHO) -n Testing --invalid_argument ...
+	@./lab0 --invalid_argument 2>&1>/dev/null 2>&1>/dev/null
+	@if [[  $$? -eq $(EXIT1) ]]
+	@then
+		@echo -e "\t passed"
+	@else
+		@echo -e "\t failed"
+	@fi
+

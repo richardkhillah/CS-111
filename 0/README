@@ -53,7 +53,8 @@ included files:
 	      
       check_i:     Ensures that lab0 writes the contents of a readable input
       		   file to STDOUT and terminates upon attemptint to access a
-		   restricted input file.
+		   restricted input file. Also ensures program exits when
+		   --input file does not exist
 
       check_o:	   Ensures that lab0 cannot write to a file with out write
       		   permissions.
@@ -85,6 +86,9 @@ included files:
 		   prior to any segmentation fault when either (or both)
 		   --input, --output options do not have read/write
 		   permissions
+
+      check_badarg:Ensures the program exits if it is passed an invalid
+                   argument.
 	
     dist      generate the distrubution tarball using `tar`.
 

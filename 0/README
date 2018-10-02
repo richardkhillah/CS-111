@@ -73,8 +73,18 @@ included files:
 		   generating a (caught) segmentation fault when a "bad" input
 		   file is provided.
 
-      check_scio:  same as check_sci except that make uses output_goodscio.txt
-      		   and output_badscio.txt
+      check_sco:   Ensures that the program catches a segmentation fault
+      		   when the --output options has read/write permissions
+		   and terminates prior to a segmentation fault caused after
+		   an --output file without read/write permissions.
+
+
+      check_scio:  Performs check_sci and check_sco as combined options.
+      		   A segmentation fault is caused when both --input and
+		   --output have read/write permissions and terminates
+		   prior to any segmentation fault when either (or both)
+		   --input, --output options do not have read/write
+		   permissions
 	
     dist      generate the distrubution tarball using `tar`.
 

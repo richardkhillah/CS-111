@@ -18,10 +18,33 @@ const char* program_name = NULL;
 const unsigned short RBUF_SIZE = 256;
 const unsigned short WBUF_SIZE = 512;
 
-int s_flag = 0;
+int rc_flag = 0;
+pid_t rc;            /* child process */
+int rcpipe_in[2];    /**/
+int rcpipe_out[2];   /**/
+
+void Error(void);
+void Errorm(char* func);
+void reset_input_mode(void);
+void set_input_mode(void);
+void set_program_name(const char*);
+void Getopts(int argv, char* args[]);
+void rw_input(void);
+
+
+void Fork() {
+  pid_t pid_rc = fork();
+  if( pid_rc < 0 )
+    Error();
+}
 
 void Error(void) {
   fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
+  exit(1);
+}
+
+void Errorm(char* func) {
+  fprintf(stderr, "%s: %s: %s\n", program_name, func, strerror(errno));
   exit(1);
 }
 
@@ -79,7 +102,7 @@ void Getopts(int argc, char* argv[]){
     switch (opt) {
     case 's':
       //TODO: setup sighandler
-      s_flag = 1;
+      rc_flag = 1;
       break;
     default:
       Error();
@@ -93,10 +116,8 @@ void rw_input(void) {
   
   while(1) {
     int rb_size = read(STDIN_FILENO, rbuf, RBUF_SIZE);
-    if (rb_size < 0) {
-      fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
-      exit(1);
-    }
+    if (rb_size < 0)
+      Error();
 
     /* process only the amount of bytes that were read into rbuf */
     int rb_i;
@@ -136,8 +157,15 @@ void rw_input(void) {
 int main(int argc, char* argv[]) {
   set_input_mode();
   set_program_name(argv[0]);
-  
   Getopts(argc, argv);
+
+  if(rc_flag == 1) {
+    Fork(); /* Make child process */
+    /*   */
+
+  } else {
+
+  }
   
   while(1) {
     rw_input();

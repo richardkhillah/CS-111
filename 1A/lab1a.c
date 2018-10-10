@@ -10,9 +10,25 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 struct termios saved_attributes;
 const char* program_name = NULL;
+
+const unsigned short RBUF_SIZE = 256;
+const unsigned short WBUF_SIZE = 512;
+
+int s_flag = 0;
+
+void Error(void) {
+  fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
+  exit(1);
+}
+
+static struct option const long_opts[] = {
+  {"shell", no_argument, NULL, 's'},
+  {NULL, 0, NULL, 0}
+};
 
 void reset_input_mode(void) {
   tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
@@ -56,9 +72,20 @@ void set_program_name(const char* argv0) {
   program_name = argv0;
 }
 
-//TODO: Move all constants and globals to top of page
-const unsigned short RBUF_SIZE = 256;
-const unsigned short WBUF_SIZE = 512; /* Assume all reads are <cr> or <lf>*/
+void Getopts(int argc, char* argv[]){
+  int opt;
+  int optind;
+  while((opt = getopt_long(argc, (char* const*)argv, "s", long_opts, &optind)) != -1) {
+    switch (opt) {
+    case 's':
+      //TODO: setup sighandler
+      s_flag = 1;
+      break;
+    default:
+      Error();
+    }
+  }
+}
 
 void rw_input(void) {
   char* rbuf[RBUF_SIZE];
@@ -78,9 +105,7 @@ void rw_input(void) {
       char c = rbuf[rb_i];
       switch (c) {
       case 0x04: // ^D
-	//fprintf(stderr, "Exiting\n");
 	exit(0);
-	break;     // this is unnecessary but we'll put it in anyway.
       case '\r':
       case '\n':
 	wbuf[wb_size++] = '\r';
@@ -111,6 +136,8 @@ void rw_input(void) {
 int main(int argc, char* argv[]) {
   set_input_mode();
   set_program_name(argv[0]);
+  
+  Getopts(argc, argv);
   
   while(1) {
     rw_input();

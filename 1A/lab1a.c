@@ -169,7 +169,7 @@ void rw_input(void) {
 
     /* process only the amount of bytes that were read into rbuf */
     int rb_i;
-    int wb_size = 0;   /* wbuf might be larger than rbuf after mapping */
+    //    int wb_size = 0;   /* wbuf might be larger than rbuf after mapping */
     for(rb_i = 0; rb_i < rb_size; rb_i++){
       char c = rbuf[rb_i];
       switch (c) {
@@ -177,27 +177,31 @@ void rw_input(void) {
 	exit(0);
       case '\r':
       case '\n':
-	
-	wbuf[wb_size++] = '\r';
-	wbuf[wb_size++] = '\n';
+	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
+	  Error();
+
+	/* wbuf[wb_size++] = '\r'; */
+	/* wbuf[wb_size++] = '\n'; */
 	break;
       default:
-	wbuf[wb_size++] = c; // fixthis
+	if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
+	  Error();
+	//	wbuf[wb_size++] = c; // fixthis
 	break;
       }
     }
     
     /* write buffer to screen */
     /* int bytes_written = write(STDOUT_FILENO, wbuf, wb_size+1); */
-    int bytes_written;
-    for(bytes_written = 0; bytes_written < wb_size; bytes_written++) {
-      write(STDOUT_FILENO, &wbuf[bytes_written], sizeof(char));
-    }
+    /* int bytes_written; */
+    /* for(bytes_written = 0; bytes_written < wb_size; bytes_written++) { */
+    /*   write(STDOUT_FILENO, &wbuf[bytes_written], sizeof(char)); */
+    /* } */
     
-    if (bytes_written < 0) {
-      fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
-      exit(1);
-    }
+    /* if (bytes_written < 0) { */
+    /*   fprintf(stderr, "%s: %s\n", program_name, strerror(errno)); */
+    /*   exit(1); */
+    /* } */
   }
 }
 

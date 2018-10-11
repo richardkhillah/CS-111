@@ -79,7 +79,6 @@ void process_keyboard_input(int write_fd) {
 	    Error();
 	if( write(write_fd, &CR, sizeof(char)) < 0)
 	  Error();
-	break;
 	/* wbuf[wb_size++] = '\r'; */
 	/* wbuf[wb_size++] = '\n'; */
 	break;
@@ -160,7 +159,7 @@ void set_options(int argc, char* argv[]){
 
 void rw_input(void) {
   char rbuf[RBUF_SIZE];
-  char wbuf[WBUF_SIZE];
+  //  char wbuf[WBUF_SIZE];
 
   //TODO: eliminate wbuf
   while(1) {
@@ -178,6 +177,7 @@ void rw_input(void) {
 	exit(0);
       case '\r':
       case '\n':
+	
 	wbuf[wb_size++] = '\r';
 	wbuf[wb_size++] = '\n';
 	break;

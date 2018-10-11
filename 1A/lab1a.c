@@ -61,9 +61,9 @@ int process_shell_output(int read_fd) {
       case 0x04: // ^D == EOF
 	return 0x04;
 	exit(0);
-      case '\r':
+	//      case '\r':
       case '\n':
-	if(write(STDOUT_FILENO, &LF, sizeof(char)) < 0)
+	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	  Error();
 	break;
       default:
@@ -98,9 +98,9 @@ int process_keyboard_input(int pipe2shell) {
 	return 0x04;
       case '\r':
       case '\n':
-	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
+	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	    Error();
-	if(write(pipe2shell, &CR, sizeof(char)) < 0)
+	if(write(pipe2shell, "\n", sizeof(char)) < 0)
 	  Error();
 	break;
       default:
@@ -236,7 +236,8 @@ void rw_input(void) {
 	exit(0);
       case '\r':
       case '\n':
-	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
+	//	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
+	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	  Error();
 	break;
       default:
@@ -303,8 +304,9 @@ void run_shell(int pipe2shell[2], int pipe2term[2]) {
     close(pipe2term[1]);
 
     const char* file = "/bin/bash";
-    char* const args[] = {NULL};
-    if(execvp(file, args) < 0)
+    //    char* const args[] = {NULL};
+    //    if(execvp(file, args) < 0)
+    if(execl(file, "sh", (char*)NULL) < 0)
       Error();
   }
 }

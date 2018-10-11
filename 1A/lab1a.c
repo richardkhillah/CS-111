@@ -11,14 +11,22 @@
 #include <string.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <signal.h>
 #include <poll.h>
 
 struct termios saved_attributes;
 const char* program_name = NULL;
+
+static struct option const long_opts[] = {
+  {"shell", no_argument, NULL, 's'},
+  {NULL, 0, NULL, 0}
+};
+
 const int TIMEOUT = 0;
 const unsigned short RBUF_SIZE = 256;
 const unsigned short WBUF_SIZE = 512;
 const char CR = '\r';
+const char LF = '\n';
 const char CRLF[] = {'\r', '\n'};
 
 // global for now...
@@ -26,11 +34,10 @@ const char CRLF[] = {'\r', '\n'};
 int rc_flag = 0;
 pid_t rc;            /* child process */
 
-//void Fork();
 void Error(void);
-void Errorm(char* func);
-
-void process_keyboard_input(int write_fd);
+void run_shell(int pipe2shell[2], int pipe2term[2]);
+void process_shell_output(int read_fd);
+int process_keyboard_input(int pipe2shell, int pipe2term);
 void init_pipe(int pipe[]);
 void reset_input_mode(void);
 void set_input_mode(void);
@@ -38,24 +45,32 @@ void set_program_name(const char*);
 void set_options(int argv, char* args[]);
 void rw_input(void);
 
+void process_shell_output(int read_fd) {
+  char rbuf[RBUF_SIZE];
+  int rb_size = read(read_fd, rbuf, RBUF_SIZE);
+  if(rb_size < 0)
+    Error();
 
-/* void Fork() { */
-/*   pid_t rc = fork(); */
-/*   if( rc < 0 ) */
-/*     Error(); */
-/* } */
-
-void Error(void) {
-  fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
-  exit(1);
+  int rb_i;
+  for(rb_i = 0; rb_i < rb_size; rb_i++) {
+    char c = rbuf[rb_i];
+      switch (c) {
+      case 0x04: // ^D == EOF	
+	exit(0);
+      case '\r':
+      case '\n':
+	if(write(STDOUT_FILENO, &LF, sizeof(char)*2) < 0)
+	  Error();
+	break;
+      default:
+	if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
+	  Error();
+	break;
+      }
+  }
 }
 
-void Errorm(char* func) {
-  fprintf(stderr, "%s: %s: %s\n", program_name, func, strerror(errno));
-  exit(1);
-}
-
-void process_keyboard_input(int write_fd) {
+int process_keyboard_input(int pipe2shell, int pipe2term) {
   /* read from stdin, write to stdout and forward (write) to shell */
   char rbuf[RBUF_SIZE];
 
@@ -69,62 +84,102 @@ void process_keyboard_input(int write_fd) {
     for(rb_i = 0; rb_i < rb_size; rb_i++) {
       char c = rbuf[rb_i];
       switch(c) {
-      case 0x04: // ^D
-	/* close write_fd */
-	// close(write_fd);
-	exit(0);
+      case 0x03:// ^C : interrupt character
+	kill(rc, SIGINT);
+	//	exit(1);
+      case 0x04: // ^D : EOF
+	close(pipe2shell);
+	return 0x04; // no more keyboard input
       case '\r':
       case '\n':
 	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
 	    Error();
-	if( write(write_fd, &CR, sizeof(char)) < 0)
+	if(write(pipe2shell, &CR, sizeof(char)) < 0)
 	  Error();
-	/* wbuf[wb_size++] = '\r'; */
-	/* wbuf[wb_size++] = '\n'; */
 	break;
       default:
-       	/* wbuf[wb_size++] = c; // fixthis */
+	if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
+	  Error();
+	if(write(pipe2shell, &c, sizeof(char)) < 0)
+	  Error();
 	break;
       }
     }
   }
 }
 
-void init_pipe(int pipe[]){
-
-}
 
 
-static struct option const long_opts[] = {
-  {"shell", no_argument, NULL, 's'},
-  {NULL, 0, NULL, 0}
-};
 
-void reset_input_mode(void) {
-  tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
-}
+int main(int argc, char* argv[]) {
+  set_input_mode();
+  set_program_name(argv[0]);
+  set_options(argc, argv);
 
-void set_input_mode(void) {
-  struct termios tattr;
-  //  char* name;
-  
-  //TODO: Change error message
-  if(!isatty(STDIN_FILENO)) {
-    fprintf(stderr, "Not a terminal.\n");
-    exit(1);
+  if(rc_flag == 1) {
+    int pipe2shell[2];
+    int pipe2term[2];
+    init_pipe(pipe2shell);
+    init_pipe(pipe2term);
+
+    /* fork rc the run shell */
+    run_shell(pipe2shell, pipe2term);
+    
+    /* Widow unused ends of pipes */
+    close(pipe2shell[0]);
+    close(pipe2term[1]);
+
+    /* Setup terminal polling service */
+    struct pollfd pollfds[2];
+    pollfds[0].fd = 0;
+    pollfds[0].events = POLLIN;
+    pollfds[0].revents = 0;
+    pollfds[1].fd = pipe2term[0];
+    pollfds[1].events = POLLIN | POLLHUP | POLLERR;
+    pollfds[1].revents = 0;
+        
+    /* run main loop */
+    while (1) {
+      /* Poll terminal inputs */
+      if(poll(pollfds, 2, TIMEOUT) == -1)
+    	Error();
+
+      /* block shell input and read input from keyboard */
+      if(pollfds[0].revents & POLLIN) {
+    	/* handle input from keyboard */
+	int ret = process_keyboard_input(pipe2shell[1]);
+	switch(ret) {
+	case 0x03:// ^C : interrupt character
+	  continue;
+	case 0x04: // ^D : EOF
+	  // close(pipe2shell);
+	default:
+	  break;
+	
+	}
+      }
+
+      if(pollfds[1].revents & POLLIN) {
+    	/* handle input from shell */
+	process_shell_output(pipe2term[0]);
+      }
+
+      if(pollfds[1].revents & (POLLHUP + POLLERR)) {
+    	/* kill shell */
+      }
+    } // end while
+  } else {
+    while(1) {
+      rw_input();
+    }
   }
   
-  /* Save original attributes so they can be restored later */
-  tcgetattr(STDIN_FILENO, &saved_attributes);
-  atexit(reset_input_mode);
+  return 0;
+} // end main
 
-  /* Set new terminal mode */
-  tcgetattr(STDIN_FILENO, &tattr);
-  tattr.c_iflag = ISTRIP;   /* use only lower 7 bits */
-  tattr.c_oflag = 0;        /* no processing */
-  tattr.c_lflag = 0;        /* no processing */
-  
-  tcsetattr(STDIN_FILENO, TCSANOW, &tattr);
+void Error(void) {
+  fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
+  exit(1);
 }
 
 void set_program_name(const char* argv0) {
@@ -186,65 +241,63 @@ void rw_input(void) {
   }
 }
 
-int main(int argc, char* argv[]) {
-  set_input_mode();
-  set_program_name(argv[0]);
-  set_options(argc, argv);
+void reset_input_mode(void) {
+  tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+}
 
-  if(rc_flag == 1) {
-    /* init pipes */
-    int rcin_pipe[2];
-    int rcout_pipe[2];
-    init_pipe(rcin_pipe);
-    init_pipe(rcout_pipe);
-
-    /* fork rc the run shell */
-    // run_shell();
-
-    /* Widow unused ends of pipes */
-    // rcin_pipe[0]
-    // rcout_pipe[1]
-
-    /* Setup terminal polling service */
-    struct pollfd pollfds[2];
-    pollfds[0].fd = 0;
-    pollfds[0].events = POLLIN;
-    pollfds[0].revents = 0;
-    pollfds[1].fd = rcout_pipe[0];
-    pollfds[1].events = POLLIN | POLLHUP | POLLERR;
-    pollfds[1].revents = 0;
-     
-    /*TODO: Use set_pollfds
-     * set_pollfds(&pollfds);
-     */
-    
-    /* run main loop */
-    while (1) {
-      /* Poll terminal inputs */
-      if(poll(pollfds, 2, TIMEOUT) == -1)
-	Error();
-
-      /* block shell input and read input from keyboard */
-      if(pollfds[0].revents & POLLIN) {
-	/* handle input from keyboard */
-      }
-
-      if(pollfds[1].revents & POLLIN) {
-	/* handle input from shell */
-      }
-
-      if(pollfds[1].revents & (POLLHUP + POLLERR)) {
-	/* kill shell */
-      }
-    }
-
-    
-  } else {
-
+void set_input_mode(void) {
+  struct termios tattr;
+  //  char* name;
+  
+  //TODO: Change error message
+  if(!isatty(STDIN_FILENO)) {
+    fprintf(stderr, "Not a terminal.\n");
+    exit(1);
   }
   
-  while(1) {
-    rw_input();
+  /* Save original attributes so they can be restored later */
+  tcgetattr(STDIN_FILENO, &saved_attributes);
+  atexit(reset_input_mode);
+
+  /* Set new terminal mode */
+  tcgetattr(STDIN_FILENO, &tattr);
+  tattr.c_iflag = ISTRIP;   /* use only lower 7 bits */
+  tattr.c_oflag = 0;        /* no processing */
+  tattr.c_lflag = 0;        /* no processing */
+  
+  tcsetattr(STDIN_FILENO, TCSANOW, &tattr);
+}
+
+void init_pipe(int pipefd[2]){
+  if(pipe(pipefd) < 0)
+    Error();
+}
+
+void run_shell(int pipe2shell[2], int pipe2term[2]) {
+  rc = fork();
+  if(rc < 0)
+    Error();
+
+  if(rc == 0) {
+    fprintf(stderr, "Hello from shell\n");
+    
+    /* setup shell i/o envrionment before calling execvp */
+    /* widow unused pipe ends */
+    close(pipe2shell[1]);  /* inputs write end */
+    close(pipe2term[0]); /* outputs read end */
+
+    /* redirect rc's stdin, stdout, stderr */
+    dup2(pipe2shell[0], 0);
+    dup2(pipe2term[1], 1);
+    dup2(pipe2term[1], 2);
+
+    /* widow redundant streams */
+    close(pipe2shell[0]);
+    close(pipe2term[1]);
+
+    const char* file = "/bin/bash";
+    char* const args[] = {NULL};
+    if(execvp(file, args) < 0)
+      Error();
   }
-  return 0;
 }

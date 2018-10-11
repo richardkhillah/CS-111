@@ -11,32 +11,39 @@
 #include <string.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <poll.h>
 
 struct termios saved_attributes;
 const char* program_name = NULL;
-
+const int TIMEOUT = 0;
 const unsigned short RBUF_SIZE = 256;
 const unsigned short WBUF_SIZE = 512;
+const char CR = '\r';
+const char CRLF[] = {'\r', '\n'};
 
+// global for now...
+//TODO: localize these guys.
 int rc_flag = 0;
 pid_t rc;            /* child process */
-int rcpipe_in[2];    /**/
-int rcpipe_out[2];   /**/
 
+//void Fork();
 void Error(void);
 void Errorm(char* func);
+
+void process_keyboard_input(int write_fd);
+void init_pipe(int pipe[]);
 void reset_input_mode(void);
 void set_input_mode(void);
 void set_program_name(const char*);
-void Getopts(int argv, char* args[]);
+void set_options(int argv, char* args[]);
 void rw_input(void);
 
 
-void Fork() {
-  pid_t pid_rc = fork();
-  if( pid_rc < 0 )
-    Error();
-}
+/* void Fork() { */
+/*   pid_t rc = fork(); */
+/*   if( rc < 0 ) */
+/*     Error(); */
+/* } */
 
 void Error(void) {
   fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
@@ -47,6 +54,47 @@ void Errorm(char* func) {
   fprintf(stderr, "%s: %s: %s\n", program_name, func, strerror(errno));
   exit(1);
 }
+
+void process_keyboard_input(int write_fd) {
+  /* read from stdin, write to stdout and forward (write) to shell */
+  char rbuf[RBUF_SIZE];
+
+  int rb_size;
+  while(1) {
+    rb_size = read(STDIN_FILENO, rbuf, sizeof(char)*RBUF_SIZE);
+    if(rb_size < 0)
+      Error();
+
+    int rb_i;
+    for(rb_i = 0; rb_i < rb_size; rb_i++) {
+      char c = rbuf[rb_i];
+      switch(c) {
+      case 0x04: // ^D
+	/* close write_fd */
+	// close(write_fd);
+	exit(0);
+      case '\r':
+      case '\n':
+	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
+	    Error();
+	if( write(write_fd, &CR, sizeof(char)) < 0)
+	  Error();
+	break;
+	/* wbuf[wb_size++] = '\r'; */
+	/* wbuf[wb_size++] = '\n'; */
+	break;
+      default:
+       	/* wbuf[wb_size++] = c; // fixthis */
+	break;
+      }
+    }
+  }
+}
+
+void init_pipe(int pipe[]){
+
+}
+
 
 static struct option const long_opts[] = {
   {"shell", no_argument, NULL, 's'},
@@ -95,7 +143,7 @@ void set_program_name(const char* argv0) {
   program_name = argv0;
 }
 
-void Getopts(int argc, char* argv[]){
+void set_options(int argc, char* argv[]){
   int opt;
   int optind;
   while((opt = getopt_long(argc, (char* const*)argv, "s", long_opts, &optind)) != -1) {
@@ -111,9 +159,10 @@ void Getopts(int argc, char* argv[]){
 }
 
 void rw_input(void) {
-  char* rbuf[RBUF_SIZE];
-  char* wbuf[WBUF_SIZE];
-  
+  char rbuf[RBUF_SIZE];
+  char wbuf[WBUF_SIZE];
+
+  //TODO: eliminate wbuf
   while(1) {
     int rb_size = read(STDIN_FILENO, rbuf, RBUF_SIZE);
     if (rb_size < 0)
@@ -131,8 +180,6 @@ void rw_input(void) {
       case '\n':
 	wbuf[wb_size++] = '\r';
 	wbuf[wb_size++] = '\n';
-	//case 0x0a:
-	//case 0x0d:
 	break;
       default:
 	wbuf[wb_size++] = c; // fixthis
@@ -157,12 +204,56 @@ void rw_input(void) {
 int main(int argc, char* argv[]) {
   set_input_mode();
   set_program_name(argv[0]);
-  Getopts(argc, argv);
+  set_options(argc, argv);
 
   if(rc_flag == 1) {
-    Fork(); /* Make child process */
-    /*   */
+    /* init pipes */
+    int rcin_pipe[2];
+    int rcout_pipe[2];
+    init_pipe(rcin_pipe);
+    init_pipe(rcout_pipe);
 
+    /* fork rc the run shell */
+    // run_shell();
+
+    /* Widow unused ends of pipes */
+    // rcin_pipe[0]
+    // rcout_pipe[1]
+
+    /* Setup terminal polling service */
+    struct pollfd pollfds[2];
+    pollfds[0].fd = 0;
+    pollfds[0].events = POLLIN;
+    pollfds[0].revents = 0;
+    pollfds[1].fd = rcout_pipe[0];
+    pollfds[1].events = POLLIN | POLLHUP | POLLERR;
+    pollfds[1].revents = 0;
+     
+    /*TODO: Use set_pollfds
+     * set_pollfds(&pollfds);
+     */
+    
+    /* run main loop */
+    while (1) {
+      /* Poll terminal inputs */
+      if(poll(pollfds, 2, TIMEOUT) == -1)
+	Error();
+
+      /* block shell input and read input from keyboard */
+      if(pollfds[0].revents & POLLIN) {
+	/* handle input from keyboard */
+      }
+
+      if(pollfds[1].revents & POLLIN) {
+	/* handle input from shell */
+      }
+
+      if(pollfds[1].revents & (POLLHUP + POLLERR)) {
+	/* kill shell */
+      }
+    }
+
+    
   } else {
 
   }

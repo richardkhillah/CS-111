@@ -174,13 +174,13 @@ int main(int argc, char* argv[]) {
 	}
       }  
     } // end while
+    print_shell_exit_status();
   } else {
     while(1) {
       rw_input();
     }
   }
 
-  print_shell_exit_status();
   return 0;
 } // end main
 

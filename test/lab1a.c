@@ -1,5 +1,7 @@
 /*
  * NAME: Anirudh Veeraragavan
+ * EMAIL: 1234@google.xom
+ * UID: 0000
  */
 
 #include <termios.h>

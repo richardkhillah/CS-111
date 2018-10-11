@@ -95,9 +95,11 @@ void read_shell(void) {
     for(i = 0; i < bytes_read; i++) {
       char c= buf[i];
       switch(c) {
-	//      case '\r':
+      case 0x04: /* ^D aka EOF */
+	return;
+      case '\r':
       case '\n':
-	write(STDOUT_FILENO, "\r\n", sizeof(char)*2);
+	write(STDOUT_FILENO, &"\r\n", sizeof(char)*2);
 	break;
       default:
 	write(STDOUT_FILENO, &c, sizeof(char));
@@ -110,7 +112,7 @@ void read_shell(void) {
 void read_keyboard(void) {
   char buf[BUF_SIZE];
   while(1) {
-    int bytes_read = read(STDIN_FILENO, buf, BUF_SIZE*sizeof(char));
+    int bytes_read = read(STDIN_FILENO, buf, BUF_SIZE);
     if(bytes_read < 0) Error();
 
     int w_status;
@@ -120,13 +122,15 @@ void read_keyboard(void) {
       switch (c){
       case 0x04: /* ^D */
 	close(pipe2shell[1]);
+	continue;
       case 0x03: /* ^C */
 	kill(shell_pid, SIGINT);
+	//continue;
 	break;
       case '\r':
       case '\n':
-	write(STDOUT_FILENO, "\r\n", sizeof(char)*2);
-	w_status = write(pipe2shell[1], "\n", sizeof(char));
+	write(STDOUT_FILENO, &"\r\n", sizeof(char)*2);
+	w_status = write(pipe2shell[1], &"\n", sizeof(char));
 	break;
       default:
 	write(STDOUT_FILENO, &c, sizeof(char));
@@ -165,11 +169,11 @@ void run_parent(void) {
 
       if(pfds[0].revents & POLLIN) {
 	read_keyboard(); // only, all i/o blocked
-	pfds[0].revents = 0;
+	//	pfds[0].revents = 0;
       }
       if(pfds[1].revents & POLLIN) {
 	read_shell(); // ditto read_keyboard()
-	pfds[1].revents = 0;
+	//	pfds[1].revents = 0;
       }
       if(pfds[1].revents & (POLLERR | POLLHUP)) { // poll error from shell => SIGINT
 	fprintf(stderr, "pfds[1].revents = POLLERR\n");
@@ -191,15 +195,15 @@ void run_shell(void) {
   close(pipe2shell[0]);
   close(pipe2term[1]);
 
-  //  char *path;
+  //char *path;
   /* if(shell_program) */
   /*   path = shell_program; */
   /* else */
   /*   path = "/bin/shell"; */
-  //  path = "/bin/shell";
-  char* args[] = {NULL};
-  //if(execl(path, path, (char*) NULL) == -1)
-  if(execvp("/bin/bash", args) < 0)
+    //path = "/bin/shell";
+    char* args[] = {NULL};
+    //  if(execl(path, path, (char*) NULL) == -1)
+    if(execvp("/bin/bash", args) < 0)
     Error();    
 }
 

@@ -1,6 +1,6 @@
-// NAME: Arpit Jasapara
-// EMAIL: ajasapara@ucla.edu
-// ID: XXXXXXXXX
+// NAME: Richard Khillah
+// EMAIL: rkhillah@test.net
+// ID: 1
 
 #include <stdio.h>
 #include <stdlib.h>

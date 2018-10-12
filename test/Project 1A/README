@@ -1,6 +1,7 @@
-NAME: Arpit Jasapara
-EMAIL: ajasapara@ucla.edu
-ID: XXXXXXXXX
+NAME: Richard Khillah
+EMAIL: rkhillah@test.net
+ID: 1
+
 
 Included Files:
 	1. lab1a.c - Contains the source code for setting up a character-at-a-time, full duplex terminal I/O,

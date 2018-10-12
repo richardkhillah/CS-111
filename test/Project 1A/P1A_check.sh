@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-# usage: P1A_check.sh id [existing directory]
-#
 # sanity check script for Project 1A
 #	
 #	existance of tarball
@@ -28,9 +26,6 @@ LIBRARY_URL="www.cs.ucla.edu/classes/cs111/Software"
 EXIT_OK=0
 EXIT_ARG=1
 
-SHELL="/bin/bash"
-
-let PRESERVE=0
 let errors=0
 
 if [ -z "$1" ]
@@ -64,19 +59,9 @@ else
 fi
 
 # read the tarball into a test directory
-if [ -n "$2" -a -d "$2" ]
-then
-	TEMP=$2
-else
-	TEMP=`pwd`/"CS111_test.$LOGNAME"
-	if [ -d $TEMP ]
-	then
-		echo Deleting old $TEMP
-		rm -rf $TEMP
-	fi
-	mkdir $TEMP
-	unTar $LAB $student $TEMP
-fi
+TEMP="/tmp/TestTemp.$$"
+mkdir $TEMP
+unTar $LAB $student $TEMP
 cd $TEMP
 
 # note the initial contents
@@ -98,30 +83,6 @@ echo "... checking for submitter name in $README"
 NAME=`getName $README`
 let errors+=$?
 
-echo "... checking slip-day use in $README"
-SLIPDAYS=0
-slips=`grep "SLIPDAYS:" $README`
-if [ $? -eq 0 ]
-then
-	slips=`echo $slips | cut -d: -f2 | tr -d \[:space:\]`
-	if [ -n "$slips" ]
-	then
-		if [[ $slips == ?([0-9]) ]]
-		then
-			SLIPDAYS=$slips
-			echo "    $SLIPDAYS days"
-		else
-			echo "    INVALID SLIPDAYS: $slips"
-			let errors+=1
-		fi
-	else
-		echo "    EMPTY SLIPDAYS ENTRY"
-		let errors+=1
-	fi
-else
-	echo "    no SLIPDAYS: entry"
-fi
-
 echo "... checking for other expected files"
 checkFiles $MAKEFILE $EXPECTED
 let errors+=$?
@@ -137,12 +98,6 @@ echo "... checking for required Make targets"
 checkTarget clean
 let errors+=$?
 checkTarget dist
-let errors+=$?
-
-echo "... checking for required compillation options"
-checkMakefile Wall
-let errors+=$?
-checkMakefile Wextra
 let errors+=$?
 
 # make sure we can build the expected program
@@ -300,9 +255,9 @@ if [ $RC -ne 0 ]; then
 fi
 
 echo "... confirming basic shell input/output"
-./$PTY_TEST ./$PGM --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST ./$PGM --shell > STDOUT 2> STDERR <<-EOF
 	PAUSE 1
-	EXPECT "$SHELL"
+	EXPECT "/bin/bash"
 	SEND "echo \$SHELL is running test script\r"
 	WAIT 1
 	SEND "exit\r"
@@ -318,7 +273,7 @@ if [ ! -s STDOUT ]; then
 fi
 
 echo "... confirming input was processed by shell"
-grep $SHELL STDOUT > /dev/null
+grep '/bin/bash' STDOUT > /dev/null
 if [ $? -ne 0 ]; then
 	let errors+=1
 	echo "... FAIL echo \$SHELL"
@@ -329,9 +284,9 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "... confirming correct large-burst input processing"
-./$PTY_TEST --rate=0 ./$PGM --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST --rate=0 ./$PGM --shell > STDOUT 2> STDERR <<-EOF
 	PAUSE 1
-	EXPECT "$SHELL"
+	EXPECT "/bin/bash"
 	SEND "echo \$SHELL is running test script\r"
 	WAIT 1
 	SEND "exit\r"
@@ -339,7 +294,7 @@ echo "... confirming correct large-burst input processing"
 	CLOSE
 EOF
 RC=$?
-grep $SHELL STDOUT > /dev/null
+grep '/bin/bash' STDOUT > /dev/null
 if [ $? -ne 0 ]; then
 	let errors+=1
 	echo "... FAIL echo \$SHELL"
@@ -351,10 +306,10 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "... confirming cr->nl mapping on shell input"
-./$PTY_TEST ./$PGM --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST ./$PGM --shell > STDOUT 2> STDERR <<-EOF
 	# we do this to confirm that the shell is running
 	PAUSE 1
-	EXPECT "$SHELL\r\n"
+	EXPECT "/bin/bash\r\n"
 	SEND "echo \$SHELL\r"
 	WAIT 1
 
@@ -369,10 +324,10 @@ if [ $RC -ne 0 ]; then
 fi
 
 echo ... confirming shell exit status reporting
-./$PTY_TEST ./$PGM --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST ./$PGM --shell > STDOUT 2> STDERR <<-EOF
 	# we do this to confirm that the shell is running
 	PAUSE 1
-	EXPECT "$SHELL"
+	EXPECT "/bin/bash"
 	SEND "echo \$SHELL\r"
 	WAIT 1
 
@@ -389,36 +344,33 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ... confirming interrupt generation to shell
-./$PTY_TEST ./$PGM --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST ./$PGM --shell > STDOUT 2> STDERR <<-EOF
 	SEND "trap 'echo got sigint' sigint\r"
 
 	# we do this to confirm that the shell is running
 	PAUSE 1
-	EXPECT "$SHELL"
+	EXPECT "/bin/bash"
 	SEND "echo \$SHELL\r"
 	WAIT 1
 
 	EXPECT "sigint"
-	SEND "^C\r"
+	SEND "^C"
 	WAIT 1
 
 	SEND "^D"
 	CLOSE
 EOF
-#
-# NOTE: we send \r beacuse of a "feature" in recent bash
-#
-count=`grep -c 'got sigint' STDOUT`
-if [ $count -ne 2 ]; then
+grep 'got sigint' STDOUT > /dev/null
+if [ $? -ne 0 ]; then
 	let errors+=1
 	echo "FAIL ... shell did nnot report receiving SIGINT"
 fi
 
 echo ... confirming EOF generation to shell
-./$PTY_TEST ./$PGM  --shell=$SHELL > STDOUT 2> STDERR <<-EOF
+./$PTY_TEST ./$PGM  --shell > STDOUT 2> STDERR <<-EOF
 	# we do this to confirm that the shell is running
 	PAUSE 1
-	EXPECT "$SHELL"
+	EXPECT "/bin/bash"
 	SEND "echo \$SHELL\r"
 	WAIT 1
 
@@ -437,7 +389,7 @@ fi
 # check for orphans
 #
 echo "... checking for orphaned processes"
-ps -u > STDOUT
+ps -ae > STDOUT
 grep lab1a STDOUT > /dev/null
 if [ $? -eq 0 ]
 then
@@ -445,14 +397,6 @@ then
 	grep lab1a STDOUT
 	let errors+=1
 	killall lab1a
-fi
-
-echo
-if [ $SLIPDAYS -eq 0 ]
-then
-	echo "THIS SUBMISSION WILL USE NO SLIP-DAYS"
-else
-	echo "THIS SUBMISSION WILL USE $SLIPDAYS SLIP-DAYS"
 fi
 
 echo

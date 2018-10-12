@@ -2,6 +2,10 @@
 // EMAIL: RKhillah@ucla.edu
 // UID: 604853262
 
+/* msg(""); */
+/* db("", ""); */
+/* err(""); */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +27,7 @@ const int BUF_SIZE = 256;
 const int TIMEOUT = 0;
 const int FAIL = 1;
 const int SUCCESS = 0;
+int DEV_EXIT = 5;
 
 /* getopt flags */
 int shell = 0;
@@ -43,6 +48,11 @@ void err(char* msg) {
     fprintf(stderr, "[%s %s]: ", program_name, msg);
     fprintf(stderr, "%s (errno %d).\n", strerror(errno), errno);
     exit(FAIL);
+}
+
+void dev_exit(char* m) {
+    msg(m);
+    exit(DEV_EXIT);
 }
 
 
@@ -76,33 +86,116 @@ void init_pipes() {
 
 
 /*-------- read_write functions ---------*/
-void read_write(int src, int dest) {
+/* Reading:
+ * normal    : stdin -> buf
+ * 
+ * keyboard  : stdin -> buf
+ *
+ * shell     : pipe2term -> buf
+ *
+ * 
+ * Writing read bytes:                                    Common to all
+ * normal    : <cr> || <lf> -> <cr><lf> --> stdout            Y
+ *           : no special char          --> stdout        X
+ *
+ * keybord   : <cr> || <lf> -> <cr><lf> --> stdout            Y
+ *           : <cr> || <lf> -> <lf>     --> pipe2shell            -
+ *           : no special char          --> stdout        x
+ *           : no special char          --> pipe2shell            -
+ *
+ * shell     : <lf>         -> <cr><lf> --> stdout            Y*
+ *           : no special char          --> stdout        x
+ * 
+ */
+
+void read_write(int sh) {
+    /* sh indicates whether read_write is reading shell output or not. If
+     * read_write is reading shell output, sh=1, otherwise, sh=0.
+     */
+
+    const char crlf[2] = {'\r', '\n'};
+    const char lf[1] = {'\n'};
+    
     char buf[BUF_SIZE];
     int bytes_read = 0;
+    int bytes_written = 0;
     
-    while(1) {
-	int bytes_read = read(src, buf, BUF_SIZE);
-	if (bytes_read < 0)
-	    err("Error reading src");
 
-	int i;
-	for(i = 0; i < bytes_read; i++){
-	    char c = buf[i];
-	    switch (c) {
-	    case 0x04:
-		exit(SUCCESS);
-	    case '\r':
-	    case '\n':
-		if(write(dest, "\r\n", sizeof(char)*2) < 0)
-		    err("Error writing case \\n");
-		break;
-	    default:
-		if(write(dest, &c, sizeof(char)) < 0)
-		    err("Error writing case default");
-		break;
+
+    while(1) {
+	/* READ */
+	/* Read keyboard */
+	if(!shell || (shell && sh == 0)) {
+	    bytes_read = read(STDIN_FILENO, &buf, BUF_SIZE);
+	    if(bytes_read < 0) {
+		err("Error reading keyboard stdin");
 	    }
 	}
+	/* Read Shell input */
+	else {
+	    bytes_read = read(pipe2term[0], &buf, BUF_SIZE);
+	    if(bytes_read < 0) {
+		err("Error reading shell input");
+	    }
+	}
+
+
+	/* WRITE */
+	
+	// process each element in the buf array
+	while( bytes_written < bytes_read ) {
+	    char c = buf[bytes_written];
+	    
+	    // special chars not ^D
+	    if(c == crlf[0] || c == crlf[1]) {
+		write(STDOUT_FILENO, crlf, 2);
+		if (shell && !sh) {
+		    write(pipe2shell[1], lf, 1);
+		}
+	    }
+	    
+	    // ^D
+	    else if (c == 0x04) {
+		dev_exit("dev_exit from read_write");
+	    }
+
+	    // no special chars
+	    else {
+		write(STDOUT_FILENO, &c, 1);
+		if (shell && !sh) {
+		    write(pipe2shell[1], &c, 1);
+		}
+	    }
+	    bytes_written++;
+	}
+	
     }
+
+
+    //XXXXXXXXXXXXXXXXXXXXXXXXXXX    
+    /* while(1) { */
+    /* 	int bytes_read = read(src, buf, BUF_SIZE); */
+    /* 	if (bytes_read < 0) */
+    /* 	    err("Error reading src"); */
+
+    /* 	int i; */
+    /* 	for(i = 0; i < bytes_read; i++){ */
+    /* 	    char c = buf[i]; */
+    /* 	    switch (c) { */
+    /* 	    case 0x04: */
+    /* 		exit(SUCCESS); */
+    /* 	    case '\r': */
+    /* 	    case '\n': */
+    /* 		if(write(dest, "\r\n", sizeof(char)*2) < 0) */
+    /* 		    err("Error writing case \\n"); */
+    /* 		break; */
+    /* 	    default: */
+    /* 		if(write(dest, &c, sizeof(char)) < 0) */
+    /* 		    err("Error writing case default"); */
+    /* 		break; */
+    /* 	    } */
+    /* 	} */
+    /* } */
 }
 
 void sig_handler(int signum) {
@@ -187,7 +280,7 @@ int main(int argc, char* argv[]) {
     get_options(argc, argv);
 
     if(!shell)
-	read_write(STDIN_FILENO, STDOUT_FILENO);
+	read_write(0);
     
 
     /* if we made it this far, we are running the shell */
@@ -195,19 +288,16 @@ int main(int argc, char* argv[]) {
     
     pid = fork();
 
-    if(pid < 0)
-    {
+    if(pid < 0) {
 	err("error forking");
     }
 
-    if(pid == 0)
-    {
+    if(pid == 0) {
 	exec_child();
     }    
-    else
-    {
+    else {
 	/*close undeeded file descriptors*/
-	close();
+	//	    close();
     }
     return 0;
 }

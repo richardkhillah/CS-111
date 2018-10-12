@@ -18,12 +18,6 @@
 
 struct termios saved_attributes;
 const char* program_name = NULL;
-
-static struct option const long_opts[] = {
-  {"shell", optional_argument, NULL, 's'},
-  {NULL, 0, NULL, 0}
-};
-
 const int TIMEOUT = 0;
 const unsigned short BUF_SIZE = 256;
 //const unsigned short WBUF_SIZE = 512;
@@ -33,7 +27,7 @@ const char CRLF[] = {'\r', '\n'};
 
 int shell_flag = 0;
 //char* shell_program;
-pid_t shell_pid;            /* child process */
+pid_t shellpid;            /* child process */
 
 int pipe2shell[2];
 int pipe2term[2];
@@ -51,7 +45,7 @@ void init_pipes();
 void run_shell();
 void print_shell_exit_status(int status);
 
-void run_parent(void);
+void run_terminal(void);
 void read_keyboard(void);
 void read_shell(void);
 
@@ -65,26 +59,28 @@ int main(int argc, char* argv[]) {
 
   if(shell_flag) {
     init_pipes();
+    shellpid = fork();
+    if(shellpid < 0) Error();
 
-    if(shell_pid == 0) 
+    if(shellpid == 0) 
       run_shell();
     else
-      run_parent();
+      run_terminal();
   } else {
     rw_input();
   }
   
   int status;
-  if(waitpid(shell_pid, &status, WNOHANG | WUNTRACED | WCONTINUED) < 0)
+  if(waitpid(shellpid, &status, WNOHANG | WUNTRACED | WCONTINUED) < 0)
     Error();
   print_shell_exit_status(status);
   return 0;
 }
 
-void sig_handler(int sig_num){
-  if(sh_flag && signum ==L SIGINT)
-    kill(proc_id, SIGINT);
-  if(sig_num == SIGPIPE)
+void sig_handler(int signum){
+  if(shell_flag && signum == SIGINT)
+    kill(shellpid, SIGINT);
+  if(signum == SIGPIPE)
     exit(1);
 }
 
@@ -133,7 +129,7 @@ void read_keyboard(void) {
 	close(pipe2shell[1]);
 	continue;
       case 0x03: /* ^C */
-	kill(shell_pid, SIGINT);
+	kill(shellpid, SIGINT);
 	//continue;
 	break;
       case '\r':
@@ -157,7 +153,7 @@ void read_keyboard(void) {
   } // end while
 }
 
-void run_parent(void) {
+void run_terminal(void) {
     close(pipe2shell[0]); // because parent writes to shell
     close(pipe2term[1]); // beacuse parent reads from shell
 
@@ -242,6 +238,11 @@ void set_program_name(const char* argv0) {
 }
 
 void set_options(int argc, char* argv[]){
+  static struct option const long_opts[] = {
+    {"shell", optional_argument, NULL, 's'},
+    {NULL, 0, NULL, 0}
+  };
+  
   int opt;
   int optind;
   while((opt = getopt_long(argc, (char* const*)argv, "s::", long_opts, &optind)) != -1) {

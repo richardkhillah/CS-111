@@ -130,6 +130,8 @@ void read_write(int sh) {
 	    if(bytes_read < 0) {
 		err("Error reading keyboard stdin");
 	    }
+
+	    
 	}
 	/* Read Shell input */
 	else {
@@ -143,30 +145,31 @@ void read_write(int sh) {
 	/* WRITE */
 	
 	// process each element in the buf array
-	while( bytes_written < bytes_read ) {
+	for(bytes_written = 0; bytes_written < bytes_read; bytes_written++) {
 	    char c = buf[bytes_written];
 	    
 	    // special chars not ^D
 	    if(c == crlf[0] || c == crlf[1]) {
 		write(STDOUT_FILENO, crlf, 2);
 		if (shell && !sh) {
-		    write(pipe2shell[1], lf, 1);
+		    //write(pipe2shell[1], lf, 1);
+		    msg("would be writing(pipe2shell lf");
 		}
 	    }
 	    
 	    // ^D
 	    else if (c == 0x04) {
-		dev_exit("dev_exit from read_write");
+		dev_exit("dev_exit from read_write 0x04");
 	    }
 
 	    // no special chars
 	    else {
 		write(STDOUT_FILENO, &c, 1);
 		if (shell && !sh) {
-		    write(pipe2shell[1], &c, 1);
+		    //write(pipe2shell[1], &c, 1);
+		    msg("Would be writing(pipe2shell &c");
 		}
 	    }
-	    bytes_written++;
 	}
 	
     }
@@ -281,7 +284,6 @@ int main(int argc, char* argv[]) {
 
     if(!shell)
 	read_write(0);
-    
 
     /* if we made it this far, we are running the shell */
     init_pipes();
@@ -293,6 +295,7 @@ int main(int argc, char* argv[]) {
     }
 
     if(pid == 0) {
+	if(debug) db("About to exec_child", "main");
 	exec_child();
     }    
     else {

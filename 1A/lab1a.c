@@ -21,6 +21,9 @@ const char* program_name = NULL;
 const int TIMEOUT = 0;
 const unsigned short BUF_SIZE = 256;
 //const unsigned short WBUF_SIZE = 512;
+char crlf[2] = {'\r', '\n'};
+char lf[1] = {'\n'};
+
 const char CR = '\r';
 const char LF = '\n';
 const char CRLF[] = {'\r', '\n'};
@@ -98,7 +101,7 @@ void read_shell(void) {
     char buf[BUF_SIZE];
     while(1) {
 	//    int bytes_read = read(pipe2term[0], buf, BUF_SIZE);
-	int bytes_read = read(STDIN_FILENO, buf, BUF_SIZE);
+	int bytes_read = read(pipe2term[0], buf, BUF_SIZE);
 	if (bytes_read < 0) Error();
 
 	int i;
@@ -107,21 +110,19 @@ void read_shell(void) {
 	    switch(c) {
 	    case 0x04: // ^D
 		if(dflag) debug("^D","read_shell");
-		if(dflag) debug("closing pipe2term[1]", "read_shell");
 		close(pipe2term[1]); // close shell's write pipe ie shell output
+		//exit(0);
 		return;
-	    case 0x03: // ^C
-		if(dflag) debug("^C", "read_shell");
-		break;
 	    case '\r':
-		if(dflag) debug("case: \'\\r\'", "read_shell");
 	    case '\n':
-		if(dflag) debug("case: \'\\n\'", "read_shell");
-		write(STDOUT_FILENO, &"\r\n", sizeof(char)*2);
+		//if(dflag) debug("case: \'\\n\'", "read_shell");
+		//write(STDOUT_FILENO, crlf, 2);
+		write(STDOUT_FILENO, &"\r", 1);
+		write(STDOUT_FILENO, &"\n", 1);
 		break;
 	    default:
-		if(dflag) debug(&c, "read_shell case default");
-		write(STDOUT_FILENO, &c, sizeof(char));
+		//if(dflag) debug(&c, "read_shell case default");
+		write(STDOUT_FILENO, &c, 1);
 		break;
 	    } // end switch 
 	}//end for
@@ -136,7 +137,6 @@ void read_keyboard(void) {
 	int bytes_read = read(STDIN_FILENO, buf, BUF_SIZE);
 	if(bytes_read < 0) Error();
 
-	int w_status;
 	int i;
 	for(i = 0; i < bytes_read; i++) {
 	    char c = buf[i];
@@ -158,25 +158,15 @@ void read_keyboard(void) {
 		//	exit(0);
 		break;
 	    case '\r':
-		if(dflag && enable_keyboard) debug("case \'\\r\'", "read_keyboard");
 	    case '\n':
-		if(dflag && enable_keyboard) debug("case \'\\n\'", "read_keyboard");	
-		write(STDOUT_FILENO, &"\r\n", sizeof(char)*2);
-		w_status = write(pipe2shell[1], &"\n", sizeof(char));
+		write(STDOUT_FILENO, crlf, 2);
+		write(pipe2shell[1], lf, 1);
 		break;
 	    default:
-		write(STDOUT_FILENO, &c, sizeof(char));	
-		w_status = write(pipe2shell[1], &c, sizeof(char));
+		write(STDOUT_FILENO, &c, 1);	
+		write(pipe2shell[1], &c, 1);
 		break;
 	    }// end switch
-
-	    if(w_status == -1) {
-		if(dflag && enable_keyboard) debug("w_status==-1", "read_keyboard");
-		if(errno & EPIPE) {
-		    // handle shutdown gracefully
-		}
-		Error();
-	    }// endif
 	} // end for
     } // end while
 }
@@ -229,7 +219,9 @@ void run_shell(void) {
 
     close(pipe2shell[0]);
     close(pipe2term[1]);
-    char* args[] = {"/bin/bash", NULL};
+
+    char* args[] = {NULL};
+    //char** args = NULL;
     //  if(execl(path, path, (char*) NULL) == -1)
     //  if(dflag) debug("execvp()", "run_shell");
     if(execvp("/bin/bash", args) < 0)

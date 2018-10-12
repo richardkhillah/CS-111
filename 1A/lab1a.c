@@ -26,6 +26,7 @@ const char LF = '\n';
 const char CRLF[] = {'\r', '\n'};
 
 int shell_flag = 0;
+int debug_flag = 0;
 //char* shell_program;
 pid_t shellpid;            /* child process */
 
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
   }
   
   int status;
-  if(waitpid(shellpid, &status, WNOHANG | WUNTRACED | WCONTINUED) < 0)
+  if(waitpid(shellpid, &status, 0) < 0)
     Error();
   print_shell_exit_status(status);
   return 0;
@@ -100,7 +101,8 @@ void read_shell(void) {
     for(i = 0; i < bytes_read; i++) {
       char c= buf[i];
       switch(c) {
-      case 0x04: /* ^D aka EOF */
+      case 0x04:
+	close(pipe2term[1]); // close shell's write pipe ie shell output
 	return;
       case '\r':
       case '\n':
@@ -116,6 +118,7 @@ void read_shell(void) {
 
 void read_keyboard(void) {
   char buf[BUF_SIZE];
+  int status = 0;
   while(1) {
     int bytes_read = read(STDIN_FILENO, buf, BUF_SIZE);
     if(bytes_read < 0) Error();
@@ -126,7 +129,9 @@ void read_keyboard(void) {
       char c = buf[i];
       switch (c){
       case 0x04: /* ^D */
-	close(pipe2shell[1]);
+	close(pipe2shell[1]);  // close term write pipe ie shell input
+	waitpid(shellpid,&status,0);	// continue to process shell output
+	print_shell_exit_status(status);
 	continue;
       case 0x03: /* ^C */
 	kill(shellpid, SIGINT);
@@ -199,16 +204,9 @@ void run_shell(void) {
 
   close(pipe2shell[0]);
   close(pipe2term[1]);
-
-  //char *path;
-  /* if(shell_program) */
-  /*   path = shell_program; */
-  /* else */
-  /*   path = "/bin/shell"; */
-    //path = "/bin/shell";
-    char* args[] = {NULL};
-    //  if(execl(path, path, (char*) NULL) == -1)
-    if(execvp("/bin/bash", args) < 0)
+  char* args[] = {NULL};
+  //  if(execl(path, path, (char*) NULL) == -1)
+  if(execvp("/bin/bash", args) < 0)
     Error();    
 }
 
@@ -240,6 +238,7 @@ void set_program_name(const char* argv0) {
 void set_options(int argc, char* argv[]){
   static struct option const long_opts[] = {
     {"shell", optional_argument, NULL, 's'},
+    {"debug", no_argument, NULL, 'd'},
     {NULL, 0, NULL, 0}
   };
   
@@ -251,8 +250,9 @@ void set_options(int argc, char* argv[]){
       signal(SIGINT, sig_handler);
       signal(SIGPIPE, sig_handler);
       shell_flag = 1;
-      /* if(optarg) */
-      /* 	shell_program = optarg; */
+      break;
+    case 'd':
+      debug_flag = 1;
       break;
     default:
       Error();

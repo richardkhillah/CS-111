@@ -44,6 +44,7 @@ void msg(char* m) {
 void db(char* msg, char* func) {
     fprintf(stderr, "[debug]: %s in %s\n", msg, func);
 }
+
 void err(char* msg) {
     fprintf(stderr, "[%s %s]: ", program_name, msg);
     fprintf(stderr, "%s (errno %d).\n", strerror(errno), errno);
@@ -64,6 +65,8 @@ void exec_child() {
      * Child writes to pipe2term[1] so close pipe2term[0]
      * then redirect child process stdin, stdout, and stderr
      */
+
+    if(debug) db("about to execl", "exec_child()");
     close(pipe2shell[1]);
     close(pipe2term[0]);
 
@@ -73,6 +76,7 @@ void exec_child() {
 
     close(pipe2shell[0]);
     close(pipe2term[1]);
+
 
     if(execl("/bin/bash", "bash", (char*)NULL) == -1)
 	err("execl error");
@@ -124,15 +128,15 @@ void read_write(int sh) {
 
     while(1) {
 	/* READ */
+
 	/* Read keyboard */
 	if(!shell || (shell && sh == 0)) {
 	    bytes_read = read(STDIN_FILENO, &buf, BUF_SIZE);
 	    if(bytes_read < 0) {
 		err("Error reading keyboard stdin");
 	    }
-
-	    
 	}
+	
 	/* Read Shell input */
 	else {
 	    bytes_read = read(pipe2term[0], &buf, BUF_SIZE);
@@ -141,37 +145,49 @@ void read_write(int sh) {
 	    }
 	}
 
-
-	/* WRITE */
-	
+	/* WRITE */	
 	// process each element in the buf array
-	for(bytes_written = 0; bytes_written < bytes_read; bytes_written++) {
+	bytes_written = 0;
+	while(bytes_written < bytes_read) {
 	    char c = buf[bytes_written];
 	    
 	    // special chars not ^D
 	    if(c == crlf[0] || c == crlf[1]) {
-		write(STDOUT_FILENO, crlf, 2);
-		if (shell && !sh) {
-		    //write(pipe2shell[1], lf, 1);
-		    msg("would be writing(pipe2shell lf");
-		}
+	    	write(STDOUT_FILENO, crlf, 2);
+	    	if (shell && sh == 0) { // write keyboard to shell
+	    	    write(pipe2shell[1], lf, 1);
+		    //	    	    msg("would be writing(pipe2shell lf");
+	    	}
+	    }
+
+	    // ^C
+	    else if (c == 0x03) {
+		if(debug) db("^C", "");
+		kill(pid, SIGINT);
+		close(pipe2shell[1]);
+		//continue;
+		 break;
+		
+		//break?? closing pipe and attempting to write to
+		// it causes poll(2) to set revents field to POLLHUP
 	    }
 	    
 	    // ^D
 	    else if (c == 0x04) {
+		if(debug) db("^D", "");
 		dev_exit("dev_exit from read_write 0x04");
 	    }
 
 	    // no special chars
 	    else {
 		write(STDOUT_FILENO, &c, 1);
-		if (shell && !sh) {
-		    //write(pipe2shell[1], &c, 1);
+		if (shell && sh == 0) { // write keyboard to shell
+		    write(pipe2shell[1], &c, 1);
 		    msg("Would be writing(pipe2shell &c");
 		}
 	    }
+	    bytes_written++;
 	}
-	
     }
 
 
@@ -202,6 +218,17 @@ void read_write(int sh) {
 }
 
 void sig_handler(int signum) {
+
+    if (signum == SIGINT) {
+	if(debug) db("SIGINT", "sig_handler");
+	dev_exit("exiting SIGINT");
+	//exit(FAIL);
+    }
+
+    if (signum == SIGPIPE) {
+	if(debug) db("SIGPIPE", "sig_handler");
+	exit(SUCCESS);
+    }
     // setup handler information.
 }
 
@@ -294,16 +321,65 @@ int main(int argc, char* argv[]) {
 	err("error forking");
     }
 
-    if(pid == 0) {
+    if (pid == 0) {
+	// exec_child closes all its pipes
 	if(debug) db("About to exec_child", "main");
 	exec_child();
-    }    
+    }
+    
     else {
 	/*close undeeded file descriptors*/
-	//	    close();
+	close(pipe2shell[0]);
+	close(pipe2term[1]);
+
+	/* Create polling apparatus */
+	struct pollfd pfds[2];
+
+	pfds[0].fd = STDIN_FILENO;
+	pfds[0].revents = POLLIN | POLLHUP | POLLERR;
+	//	pfds[0].revents = 0;
+
+	pfds[1].fd = pipe2term[0];
+	pfds[1].revents = POLLIN | POLLHUP | POLLERR;
+	//	pfds[0].revents = 0;
+
+	int count = 0;
+	//if(debug) db("before polling loop", "main");
+	while(1) {
+	    int ready = poll(pfds, 2, 0);
+
+	    if (ready < 0) {
+	    //if (poll(pfds, 2, TIMEOUT) < 0) {
+		err("Error polling");
+	    }
+
+	    if (!ready) {
+		continue;
+	    }
+
+	    // read keyboard input
+	    else if (pfds[0].revents & POLLIN) {
+		if(debug) db("[0].revents & POLLIN", "main");
+		read_write(0);
+	    }
+
+	    // read shell input (or output, depending how you look at things
+	    else if (pfds[1].revents & POLLIN) {
+		if(debug) db("[1].revents & POLLIN", "main");
+		read_write(1);
+	    }
+
+	    // 
+	    else if (pfds[1].revents & (POLLIN | POLLHUP)) {
+		dev_exit("closed pipe2term[0]");
+		read_write(1);
+
+		close(pipe2term[0]);
+		
+		// print_status();
+		//exit()
+	    }	    
+	}
     }
     return 0;
 }
-
-
-

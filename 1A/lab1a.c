@@ -40,6 +40,7 @@ int pipe2term[2];
 
 
 void Error(void);
+void sig_handler(int signum);
 void reset_input_mode(void);
 void set_input_mode(void);
 void set_program_name(const char*);
@@ -72,11 +73,19 @@ int main(int argc, char* argv[]) {
   } else {
     rw_input();
   }
+  
   int status;
   if(waitpid(shell_pid, &status, WNOHANG | WUNTRACED | WCONTINUED) < 0)
     Error();
   print_shell_exit_status(status);
   return 0;
+}
+
+void sig_handler(int sig_num){
+  if(sh_flag && signum ==L SIGINT)
+    kill(proc_id, SIGINT);
+  if(sig_num == SIGPIPE)
+    exit(1);
 }
 
 void print_shell_exit_status(int status) {
@@ -238,6 +247,8 @@ void set_options(int argc, char* argv[]){
   while((opt = getopt_long(argc, (char* const*)argv, "s::", long_opts, &optind)) != -1) {
     switch (opt) {
     case 's':
+      signal(SIGINT, sig_handler);
+      signal(SIGPIPE, sig_handler);
       shell_flag = 1;
       /* if(optarg) */
       /* 	shell_program = optarg; */

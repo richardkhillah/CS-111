@@ -169,6 +169,7 @@ int main(int argc, char* argv[]) {
 	  continue;
       }
 
+      /* from shell */
       if(pollfds[1].revents == POLLIN) {
 	int ret = process_shell_output(pipe2term[0]);
 	if (ret == 0x04) {

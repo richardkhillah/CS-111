@@ -95,11 +95,9 @@ int process_keyboard_input(int pipe2shell) {
       char c = rbuf[rb_i];
       switch(c) {
       case 0x03:          /* ^C : interrupt character */
-	kill(rc, SIGTERM);
 	return 0x03;
 	// what do i do from here??
       case 0x04:          /* ^D : EOF */
-	close(pipe2shell);
 	return 0x04;
       case '\r':
       case '\n':
@@ -163,9 +161,10 @@ int main(int argc, char* argv[]) {
       if(pollfds[0].revents & POLLIN) {
 	int ret = process_keyboard_input(pipe2shell[1]);
 	if (ret == 0x03)  /* ^C : interrupt character */
+	    kill(rc, SIGTERM);
 	  break;
 	if (ret == 0x04)  /* ^D : EOF */
-	  /* process_keyboard_input already closed pipe2shell */
+	    close(pipe2shell);
 	  continue;
       }
 

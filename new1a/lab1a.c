@@ -117,132 +117,81 @@ void read_write(int sh) {
      * read_write is reading shell output, sh=1, otherwise, sh=0.
      */
 
-    const char crlf[2] = {'\r', '\n'};
-    const char lf[1] = {'\n'};
+    const char crlf[2] = {'\r', '\n'}; // put NULL???}
+    const char lf[1] = {'\n'}; // put ,NULL}
     
     char buf[BUF_SIZE];
     int bytes_read = 0;
     int bytes_written = 0;
-    
+
+    int normal_mode   = !shell && !sh;
+    int keyboard_mode =  shell && !sh;
+    int shell_mode    =  shell &&  sh;
+
     while(1) {
-	/* READ */
-
-	/* Read keyboard */
-	if(!shell || (shell && sh == 0)) {
-	    bytes_read = read(STDIN_FILENO, &buf, BUF_SIZE);
-	    if(bytes_read < 0) {
-		err("Error reading keyboard stdin");
+	// Read stuff
+	if(normal_mode || keyboard_mode) {
+	    if((bytes_read = read(STDIN_FILENO, buf, sizeof(char)*BUF_SIZE)) < 0) {
+		err("Error reading STDIN_FILENO in normal/keyboard mode");
 	    }
+	}
+	if(shell_mode) {
+	    if((bytes_read = read(STDIN_FILENO, buf, sizeof(char)*BUF_SIZE)) < 0) {
+		err("Error reading STDIN_FILENO in normal/keyboard mode");
+	    }
+	}
 
-	    /* Write buf to screen, if sh==1 forward to shell */
-	    for(bytes_written = 0; bytes_written < bytes_read; bytes_written++) {
-		char c = buf[bytes_written];
-		
-		switch (c) {
-		case 0x04: // ^D
-		    if (debug) db("^D", "read_write");
-		    dev_exit("exiting ^D");
-		    break;
-		case 0x03:
-		    if (debug) db("^C", "read_write");
-		    if(!shell)
-			exit(SUCCESS);
+	// Write stuff
+	for(bytes_written = 0; bytes_written < bytes_read; bytes_written++){
+	    char c = buf[bytes_written];
+	    switch (c) {
+	    case '\r':
+	    case '\n':
+		// c is special char <cr> || <lf> (all modes to stdout)
+		if(write(STDOUT_FILENO, crlf, sizeof(char)*2) < 2) {
+		    err("Error mapping <cr> || <lf> -> <cr><lf> to STDOUT_FILENO");
+		}
+		if(keyboard_mode) {
+		    // write <lf> to pipe2shell[1]
+		    if(write(pipe2shell[1], lf, 1) < 0) {
+			err("Error mapping <cr> || <lf> -> <cr><lf> to pipe2shell");
+		    }
+		}
+		break;
+
+	    case 0x03:
+		// c is special char ^C
+		if(keyboard_mode){
+		    kill(pid, SIGINT); // sig_handler will trap
+		}
+		break;
+
+	    case 0x04:
+		// c is special char ^D
+		if(keyboard_mode) {
 		    close(pipe2shell[1]);
-		    break;
-		case '\r':
-		    write(STDOUT_FILENO, crlf, 2);
-		    if(sh)
-			write(pipe2shell[1], lf, 1);
-		    break;
-		case '\n':
-		    write(STDOUT_FILENO, crlf, 2);
-		    if(sh)
-			write(pipe2shell[1], lf, 1);
-		    break;
-		default:
-		    write(STDOUT_FILENO, &c, 1);
-		    if(sh)
-			write(pipe2shell[1], &c, 1);
-		    break;
-
-
-		} // end switch		
-	    } // end for
-	}
-	
-	/* Read Shell input and echo to screen */
-	else {
-	    bytes_read = read(pipe2term[0], &buf, BUF_SIZE);
-	    if(bytes_read < 0) {
-		err("Error reading shell input");
-	    }
-
-	    for(bytes_written = 0; bytes_written < bytes_read; bytes_written++) {
-		char c = buf[bytes_read];
-		switch (c) {
-		case '\n':
-		    write(STDOUT_FILENO, crlf, 2);
-		    break; 
-		default:
-		    write(STDOUT_FILENO, &c, 1);
-		    break;
-		} // end swtch
-		// continues
-	    }
-	}
-    }
-
-
-
-    /*READ*/
-	
-
-    /* 	/\* WRITE *\/	 */
-    /* 	// process each element in the buf array */
-    /* 	bytes_written = 0; */
-    /* 	while(bytes_written < bytes_read) { */
-    /* 	    char c = buf[bytes_written]; */
-	    
-    /* 	    // special chars not ^D */
-    /* 	    if(c == crlf[0] || c == crlf[1]) { */
-    /* 	    	write(STDOUT_FILENO, crlf, 2); */
-    /* 	    	if (shell && sh == 0) { // write keyboard to shell */
-    /* 	    	    write(pipe2shell[1], lf, 1); */
-    /* 		    //	    	    msg("would be writing(pipe2shell lf"); */
-    /* 	    	} */
-    /* 	    } */
-
-    /* 	    // ^C */
-    /* 	    else if (c == 0x03) { */
-    /* 		if(debug) db("^C", ""); */
-    /* 		kill(pid, SIGINT); */
-    /* 		close(pipe2shell[1]); */
-    /* 		//continue; */
-    /* 		 break; */
+		}
+		if(shell_mode) {
+		    close(pipe2term[0]);
+		}
+		break;
 		
-    /* 		//break?? closing pipe and attempting to write to */
-    /* 		// it causes poll(2) to set revents field to POLLHUP */
-    /* 	    } */
-	    
-    /* 	    // ^D */
-    /* 	    else if (c == 0x04) { */
-    /* 		if(debug) db("^D", ""); */
-    /* 		dev_exit("dev_exit from read_write 0x04"); */
-    /* 	    } */
+	    default:
+		// c is not special char
+		if(write(STDOUT_FILENO, &c, sizeof(char)) < 0) {
+		    err("Error writing non-special char");
+		}
+		if(keyboard_mode) { /* forward c to shell */
+		    if(write(pipe2shell[1], &c, sizeof(char)) < 0) {
+			err("Error writing non-special char to shell");
+		    }
+		}
+		break;
 
-    /* 	    // no special chars */
-    /* 	    else { */
-    /* 		write(STDOUT_FILENO, &c, 1); */
-    /* 		if (shell && sh == 0) { // write keyboard to shell */
-    /* 		    write(pipe2shell[1], &c, 1); */
-    /* 		    msg("Would be writing(pipe2shell &c"); */
-    /* 		} */
-    /* 	    } */
-    /* 	    bytes_written++; */
-    /* 	} */
-    /* } */
-
-
+	    }// end switch
+	}// end for
+    } // end while
+	
     //XXXXXXXXXXXXXXXXXXXXXXXXXXX    
     /* while(1) { */
     /* 	int bytes_read = read(src, buf, BUF_SIZE); */
@@ -393,9 +342,6 @@ int main(int argc, char* argv[]) {
 	pfds[1].fd = pipe2term[0];
 	pfds[1].events = POLLIN | POLLHUP | POLLERR;
 
-	int count = 0;
-	//if(debug) db("before polling loop", "main");
-	
 	while(1) {
 	    int ready = poll(pfds, 2, 0);
 
@@ -404,9 +350,9 @@ int main(int argc, char* argv[]) {
 		err("Error polling");
 	    }
 
-	    if (!ready) {
-		continue;
-	    }
+	    /* if (!ready) { */
+	    /* 	continue; */
+	    /* } */
 
 	    // read keyboard input
 	    else if (pfds[0].revents & POLLIN) {

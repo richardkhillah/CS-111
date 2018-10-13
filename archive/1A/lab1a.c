@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
 	  continue;
       }
 
-      /* from shell */
+      /* block keyboard input and read output from shell */
       if(pollfds[1].revents == POLLIN) {
 	int ret = process_shell_output(pipe2term[0]);
 	if (ret == 0x04) {
@@ -176,6 +176,8 @@ int main(int argc, char* argv[]) {
 	  break;
 	}
       }
+
+      /* Something happend, so process remaining work then exit */
       if(pollfds[1].revents == (POLLHUP | POLLERR)) {
 	  /* kill shell */
 	  kill(rc, SIGINT);

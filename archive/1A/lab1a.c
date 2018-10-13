@@ -175,13 +175,13 @@ int main(int argc, char* argv[]) {
 	  close(pipe2term[0]);
 	  break;
 	}
-
-	if(pollfds[1].revents == (POLLHUP | POLLERR)) {
+      }
+      if(pollfds[1].revents == (POLLHUP | POLLERR)) {
 	  /* kill shell */
 	  kill(rc, SIGINT);
 	  break;
-	}
-      }  
+      }
+
     } // end while
     print_shell_exit_status();
   } else {

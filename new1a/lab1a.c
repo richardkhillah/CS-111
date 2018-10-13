@@ -67,7 +67,6 @@ void exec_child() {
      * then redirect child process stdin, stdout, and stderr
      */
 
-    if(debug) db("about to execl", "exec_child()");
     close(pipe2shell[1]);
     close(pipe2term[0]);
 
@@ -154,7 +153,7 @@ void read_write(int sh) {
 		if(keyboard_mode) {
 		    // write <lf> to pipe2shell[1]
 		    if(write(pipe2shell[1], lf, 1) < 0) {
-			err("Error mapping <cr> || <lf> -> <cr><lf> to pipe2shell");
+			err("Error mapping <cr> || <lf> -> <lf> to pipe2shell");
 		    }
 		}
 		break;
@@ -324,7 +323,6 @@ int main(int argc, char* argv[]) {
 
     if (pid == 0) {
 	// exec_child closes all its pipes
-	if(debug) db("About to exec_child", "main");
 	exec_child();
     }
     
@@ -353,18 +351,8 @@ int main(int argc, char* argv[]) {
 	    /* if (!ready) { */
 	    /* 	continue; */
 	    /* } */
-
-	    // read keyboard input
-	    else if (pfds[0].revents & POLLIN) {
-		read_write(0);
-	    }
-
-	    // read shell input (or output, depending how you look at things
-	    else if (pfds[1].revents & POLLIN) {
-		read_write(1);
-	    }
-
-	    else if (pfds[1].revents & (POLLIN | POLLHUP)) {
+	    
+	    if (pfds[1].revents & (POLLIN | POLLHUP)) {
 		dev_exit("closed pipe2term[0]");
 		read_write(1);
 
@@ -373,6 +361,16 @@ int main(int argc, char* argv[]) {
 		// print_status();
 		//exit()
 	    }	    
+
+	    // read keyboard input
+	    if (pfds[0].revents & POLLIN) {
+		read_write(0);
+	    }
+
+	    // read shell input (or output, depending how you look at things
+	    if (pfds[1].revents & POLLIN) {
+		read_write(1);
+	    }
 	}
     }
     return 0;

@@ -128,7 +128,6 @@ void read_write(int sh) {
 	/* READ */
 
 	/* Read keyboard */
-	fprintf(stderr, "shell = %d", shell);
 	if(!shell || (shell && sh == 0)) {
 	    bytes_read = read(STDIN_FILENO, &buf, BUF_SIZE);
 	    if(bytes_read < 0) {
@@ -148,6 +147,7 @@ void read_write(int sh) {
 		    if (debug) db("^C", "read_write");
 		    if(!shell)
 			exit(SUCCESS);
+		    close(pipe2shell[1]);
 		    break;
 		case '\r':
 		    write(STDOUT_FILENO, crlf, 2);
@@ -194,6 +194,7 @@ void read_write(int sh) {
 
 
 
+    /*READ*/
 	
 
     /* 	/\* WRITE *\/	 */
@@ -388,11 +389,9 @@ int main(int argc, char* argv[]) {
 
 	pfds[0].fd = STDIN_FILENO;
 	pfds[0].events = POLLIN ;
-	//	pfds[0].revents = 0;
 
 	pfds[1].fd = pipe2term[0];
 	pfds[1].events = POLLIN | POLLHUP | POLLERR;
-	//	pfds[0].revents = 0;
 
 	int count = 0;
 	//if(debug) db("before polling loop", "main");
@@ -411,22 +410,19 @@ int main(int argc, char* argv[]) {
 
 	    // read keyboard input
 	    else if (pfds[0].revents & POLLIN) {
-		if(debug) db("[0].revents & POLLIN", "main");
 		read_write(0);
 	    }
 
 	    // read shell input (or output, depending how you look at things
 	    else if (pfds[1].revents & POLLIN) {
-		if(debug) db("[1].revents & POLLIN", "main");
 		read_write(1);
 	    }
 
-	    // 
 	    else if (pfds[1].revents & (POLLIN | POLLHUP)) {
 		dev_exit("closed pipe2term[0]");
 		read_write(1);
 
-		close(pipe2term[0]);
+		close(pipe2term[0]); // pipe2shell[1] closed where???
 		
 		// print_status();
 		//exit()

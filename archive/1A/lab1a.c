@@ -40,6 +40,7 @@ pid_t rc;            /* child process */
 /* int pipe2shell[2]; */
 /* int pipe2term[2]; */
 
+void sighanler(int signum);
 
 void Error(void);
 void print_shell_exit_status();
@@ -96,13 +97,10 @@ int process_keyboard_input(int pipe2shell) {
       switch(c) {
       case 0x03:          /* ^C : interrupt character */
 	return 0x03;
-	// what do i do from here??
       case 0x04:          /* ^D : EOF */
 	return 0x04;
       case '\r':
       case '\n':
-	/* write(1, "\r\n", sizeof(char)*2); */
-	/* write(pipe2shell, "\n", sizeof(char)); */
 	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	    Error();
 	if(write(pipe2shell, "\n", sizeof(char)) < 0)
@@ -121,8 +119,19 @@ int process_keyboard_input(int pipe2shell) {
   }
 }
 
+void sighandler(int signum) {
+    if(signum == SIGPIPE) {
+	// trying to write to closed pipe.
+	// wait for shell
+	// collect shell exit status
+	// exit??
+    }
 
-
+    if(signum == SIGINT) {
+	// close pipe to shell
+	// wait for child process
+    }
+}
 
 int main(int argc, char* argv[]) {
   set_input_mode();
@@ -163,9 +172,9 @@ int main(int argc, char* argv[]) {
 	if (ret == 0x03)  /* ^C : interrupt character */
 	    kill(rc, SIGTERM);
 	  break;
-	if (ret == 0x04)  /* ^D : EOF */
-	    close(pipe2shell);
-	  continue;
+	  if (ret == 0x04) { /* ^D : EOF */
+	    close(pipe2shell[1]);
+	  }
       }
 
       /* block keyboard input and read output from shell */
@@ -183,6 +192,8 @@ int main(int argc, char* argv[]) {
 	  kill(rc, SIGINT);
 	  break;
       }
+
+      
 
     } // end while
     print_shell_exit_status();

@@ -169,20 +169,28 @@ int main(int argc, char* argv[]) {
       /* block shell input and read input from keyboard */
       if(pollfds[0].revents & POLLIN) {
 	int ret = process_keyboard_input(pipe2shell[1]);
-	if (ret == 0x03)  /* ^C : interrupt character */
-	    kill(rc, SIGTERM);
-	  break;
-	  if (ret == 0x04) { /* ^D : EOF */
-	    close(pipe2shell[1]);
-	  }
-      }
 
+	/* ^C : interrupt character */
+	if (ret == 0x03) {
+	    kill(rc, SIGTERM);
+	    break;
+	}
+	
+	/* ^D : EOF */
+	if (ret == 0x04) { 
+	    close(pipe2shell[1]);
+	}
+	  
+      }
+      
       /* block keyboard input and read output from shell */
       if(pollfds[1].revents == POLLIN) {
 	int ret = process_shell_output(pipe2term[0]);
+
+	/* received EOF from shell */
 	if (ret == 0x04) {
-	  close(pipe2term[0]);
-	  break;
+	    close(pipe2term[0]);
+	    break;
 	}
       }
 

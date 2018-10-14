@@ -21,6 +21,7 @@ const char* program_name = NULL;
 
 static struct option const long_opts[] = {
   {"shell", no_argument, NULL, 's'},
+  {"debug", no_argument, NULL, 'd'},
   {NULL, 0, NULL, 0}
 };
 
@@ -33,7 +34,9 @@ const char CRLF[] = {'\r', '\n'};
 
 // global for now...
 //TODO: localize these guys.
-int rc_flag = 0;
+int rc_flag = 0; // shell flag
+int d_flag = 0;  // debug flag
+
 pid_t rc;            /* child process */
 
 // global pipes for now
@@ -41,6 +44,7 @@ pid_t rc;            /* child process */
 /* int pipe2term[2]; */
 
 void sighanler(int signum);
+void debug(char* msg);
 
 void Error(void);
 void print_shell_exit_status();
@@ -200,7 +204,7 @@ int main(int argc, char* argv[]) {
 	  kill(rc, SIGINT);
 	  break;
       }
-
+      
       
 
     } // end while
@@ -213,6 +217,11 @@ int main(int argc, char* argv[]) {
 
   return 0;
 } // end main
+
+void db(char* msg){
+    fprintf(stderr, "[debug]: %s", msg);
+    
+}
 
 void Error(void) {
   fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
@@ -237,12 +246,15 @@ void set_program_name(const char* argv0) {
 void set_options(int argc, char* argv[]){
   int opt;
   int optind;
-  while((opt = getopt_long(argc, (char* const*)argv, "s", long_opts, &optind)) != -1) {
+  while((opt = getopt_long(argc, (char* const*)argv, "sd", long_opts, &optind)) != -1) {
     switch (opt) {
     case 's':
-      //TODO: setup sighandler
-      rc_flag = 1;
-      break;
+	//TODO: setup sighandler
+	rc_flag = 1;
+	break;
+    case 'd':
+	d_flag = 1;
+	break;
     default:
       Error();
     }

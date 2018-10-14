@@ -169,14 +169,14 @@ int main(int argc, char* argv[]) {
       /* Poll terminal inputs */
       if(poll(pollfds, 2, TIMEOUT) == -1)
     	Error();
-
+      
       /* block shell input and read input from keyboard */
       if(pollfds[0].revents & POLLIN) {
 	int ret = process_keyboard_input(pipe2shell[1]);
 
 	/* ^C : interrupt character */
 	if (ret == 0x03) {
-	    kill(rc, SIGTERM);
+	    kill(rc, SIGINT);
 	    break;
 	}
 	
@@ -201,6 +201,7 @@ int main(int argc, char* argv[]) {
       /* Something happend, so process remaining work then exit */
       if(pollfds[1].revents == (POLLHUP | POLLERR)) {
 	  /* kill shell */
+	  if(d_flag) debug("POLLHUP | POLLERR received");
 	  kill(rc, SIGINT);
 	  break;
       }
@@ -218,7 +219,7 @@ int main(int argc, char* argv[]) {
   return 0;
 } // end main
 
-void db(char* msg){
+void debug(char* msg){
     fprintf(stderr, "[debug]: %s", msg);
     
 }

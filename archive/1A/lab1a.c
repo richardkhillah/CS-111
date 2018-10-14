@@ -126,6 +126,7 @@ int process_keyboard_input(int pipe2shell) {
 void sighandler(int signum) {
     if(signum == SIGPIPE) {
 	// trying to write to closed pipe.
+	
 	// wait for shell
 	// collect shell exit status
 	// exit??
@@ -188,7 +189,7 @@ int main(int argc, char* argv[]) {
       }
       
       /* block keyboard input and read output from shell */
-      if(pollfds[1].revents == POLLIN) {
+      if(pollfds[1].revents & POLLIN) {
 	int ret = process_shell_output(pipe2term[0]);
 
 	/* received EOF from shell */
@@ -199,7 +200,7 @@ int main(int argc, char* argv[]) {
       }
 
       /* Something happend, so process remaining work then exit */
-      if(pollfds[1].revents == (POLLHUP | POLLERR)) {
+      if(pollfds[1].revents & (POLLHUP | POLLERR)) {
 	  /* kill shell */
 	  if(d_flag) debug("POLLHUP | POLLERR received");
 	  kill(rc, SIGINT);

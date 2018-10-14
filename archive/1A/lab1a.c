@@ -100,13 +100,15 @@ int process_keyboard_input(int pipe2shell) {
       char c = rbuf[rb_i];
       switch(c) {
       case 0x03:          /* ^C : interrupt character */
+	  if(d_flag) debug("^C");
 	return 0x03;
       case 0x04:          /* ^D : EOF */
+	  if(d_flag) debug("^D");
 	return 0x04;
       case '\r':
-	  if(d_flag) debug("0x0D");
+	  if(d_flag) debug("\\r");
       case '\n':
-	  if(d_flag) debug("0x0A");
+	  if(d_flag) debug("\\n");
 	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	    Error();
 	if(write(pipe2shell, "\n", sizeof(char)) < 0)

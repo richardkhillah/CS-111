@@ -172,13 +172,16 @@ int main(int argc, char* argv[]) {
 	/* run main loop */
 	while (1) {
 	    /* Poll terminal inputs */
-	    if(poll(pollfds, 2, TIMEOUT) == -1)
+	    int poll_result = poll(pollfds, 2, TIMEOUT)
+	    if( poll_result  == -1)
 		Error();
+	    if( poll_result == 0)
+		continue;
       
 	    /* block shell input and read input from keyboard */
 	    if(pollfds[0].revents & POLLIN) {
 		int ret = process_keyboard_input(pipe2shell[1]);
-
+		
 		/* ^C : interrupt character */
 		if (ret == 0x03) {
 		    kill(rc, SIGINT);
@@ -186,25 +189,24 @@ int main(int argc, char* argv[]) {
 		}
 	
 		/* ^D : EOF */
-		if (ret == 0x04) { 
+		if (ret == 0x04) {
 		    close(pipe2shell[1]);
 		}
-	  
 	    } // end keyboard read
       
 	    /* block keyboard input and read output from shell */
-	    else if(pollfds[1].revents & POLLIN) {
+	    if(pollfds[1].revents & POLLIN) {
 		int ret = process_shell_output(pipe2term[0]);
 
 		/* received EOF from shell */
 		if (ret == 0x04) {
-		    //close(pipe2term[0]);
+		    close(pipe2term[0]);
 		    break;
 		}
 	    } // end shell read
 
 	    /* Something happend, so process remaining work then exit */
-	    else if(pollfds[1].revents & (POLLHUP | POLLERR)) {
+	    if(pollfds[1].revents & (POLLHUP | POLLERR)) {
 		/* kill shell */
 		if(d_flag) debug("POLLHUP | POLLERR received");
 		kill(rc, SIGINT);
@@ -350,7 +352,7 @@ void run_shell(int pipe2shell[2], int pipe2term[2]) {
 	close(pipe2term[1]);
 
 	const char* file = "/bin/bash";
-	if(execl(file, "sh", (char*)NULL) < 0)
+	if(execl(file, "bash", (char*)NULL) < 0)
 	    Error();
     }
 }

@@ -104,7 +104,9 @@ int process_keyboard_input(int pipe2shell) {
       case 0x04:          /* ^D : EOF */
 	return 0x04;
       case '\r':
+	  if(d_flag) debug("0x0D");
       case '\n':
+	  if(d_flag) debug("0x0A");
 	if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 	    Error();
 	if(write(pipe2shell, "\n", sizeof(char)) < 0)
@@ -194,7 +196,7 @@ int main(int argc, char* argv[]) {
 
 	/* received EOF from shell */
 	if (ret == 0x04) {
-	    close(pipe2term[0]);
+	    //close(pipe2term[0]);
 	    break;
 	}
       }
@@ -221,7 +223,7 @@ int main(int argc, char* argv[]) {
 } // end main
 
 void debug(char* msg){
-    fprintf(stderr, "[debug]: %s", msg);
+    fprintf(stderr, "\n[debug]: %s", msg);
     
 }
 

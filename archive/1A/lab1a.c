@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
 } // end main
 
 void debug(char* msg){
-    fprintf(stderr, "\n[debug]: %s", msg);
+    fprintf(stderr, "[debug]: %s\n", msg);
     
 }
 

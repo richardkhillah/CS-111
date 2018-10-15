@@ -118,8 +118,9 @@ int process_keyboard_input(int pipe2shell) {
 		if(write(pipe2shell, &c, sizeof(char)) < 0)
 		    Error();
 		break;
-	    }
-	}
+	    } // end switch
+	}// end for
+	return 0;
     }
 }
 

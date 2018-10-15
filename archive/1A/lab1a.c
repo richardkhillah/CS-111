@@ -69,12 +69,8 @@ int process_shell_output(int read_fd) {
 	char c = rbuf[rb_i];
 	switch (c) {
 	case 0x04: // ^D == EOF
-	    if(d_flag) debug("sh^D");
 	    return 0x04;
-	    exit(0);
-	    //      case '\r':
 	case '\n':
-	    if(d_flag) debug("sh\\n");
 	    if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 		Error();
 	    break;
@@ -117,8 +113,6 @@ int process_keyboard_input(int pipe2shell) {
 		    Error();
 		break;
 	    default:
-		/* write(1, &c, sizeof(char)); */
-		/* write(pipe2shell, &c, sizeof(char)); */
 		if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
 		    Error();
 		if(write(pipe2shell, &c, sizeof(char)) < 0)
@@ -132,15 +126,14 @@ int process_keyboard_input(int pipe2shell) {
 void sighandler(int signum) {
     if(signum == SIGPIPE) {
 	// trying to write to closed pipe.
-	
-	// wait for shell
-	// collect shell exit status
-	// exit??
+	//print_shell_exit_status();
+	exit(0);
     }
 
     if(signum == SIGINT) {
-	// close pipe to shell
-	// wait for child process
+	if(d_flag) debug("SIGINT Received");
+	//print_shell_exit_status();
+	exit(1);
     }
 }
 
@@ -156,70 +149,76 @@ int main(int argc, char* argv[]) {
 	init_pipe(pipe2term);
 
 	/* fork rc the run shell */
-	run_shell(pipe2shell, pipe2term);
-    
-	/* Widow unused ends of pipes */
-	close(pipe2shell[0]);
-	close(pipe2term[1]);
+	int child = fork();
+	if(child < 0) Error();
 
-	/* Setup terminal polling service */
-	struct pollfd pollfds[2];
-	pollfds[0].fd = 0;              /* stdin */
-	pollfds[0].events = POLLIN;
-	pollfds[0].revents = 0;
-	pollfds[1].fd = pipe2term[0];   /* input from shell */
-	pollfds[1].events = POLLIN | POLLHUP | POLLERR;
-	pollfds[1].revents = 0;
-        
-	/* run main loop */
-	while (1) {
-	    /* Poll terminal inputs */
-	    int poll_result = poll(pollfds, 2, TIMEOUT);
-	    if( poll_result  == -1)
-		Error();
-	    if( poll_result == 0)
-		continue;
+	else if(child == 0) {
+	    run_shell(pipe2shell, pipe2term);
+	}
+
+	else {
+	    /* Widow unused ends of pipes */
+	    close(pipe2shell[0]);
+	    close(pipe2term[1]);
+
+	    /* Setup terminal polling service */
+	    struct pollfd pollfds[2];
+	    pollfds[0].fd = 0;              /* stdin */
+	    pollfds[0].events = POLLIN;
+	    pollfds[0].revents = 0;
+	    pollfds[1].fd = pipe2term[0];   /* input from shell */
+	    pollfds[1].events = POLLIN | POLLHUP | POLLERR;
+	    pollfds[1].revents = 0;
+
+	    //	    int child_status;
+	    /* run main loop */
+	    while (1) {
+		/* Poll terminal inputs */
+		int poll_result = poll(pollfds, 2, TIMEOUT);
+		if( poll_result  == -1)
+		    Error();
+		if( poll_result == 0)
+		    continue;
       
-	    /* block shell input and read input from keyboard */
-	    if(pollfds[0].revents & POLLIN) {
-		int ret = process_keyboard_input(pipe2shell[1]);
+		/* block shell input and read input from keyboard */
+		if(pollfds[0].revents & POLLIN) {
+		    int ret = process_keyboard_input(pipe2shell[1]);
+		    if(ret < 0)
+			Error();
 		
-		/* ^C : interrupt character */
-		if (ret == 0x03) {
-		    kill(rc, SIGINT);
-		    break;
-		}
+		    /* ^C : interrupt character */
+		    if (ret == 0x03) {
+			kill(child, SIGINT);
+			//waitpid(child, &child_status, 0);
+			print_shell_exit_status(child);
+			exit(0);
+		    }
 	
-		/* ^D : EOF */
-		if (ret == 0x04) {
-		    close(pipe2shell[1]);
-		}
-	    } // end keyboard read
+		    /* ^D : EOF */
+		    if (ret == 0x04) {
+			close(pipe2shell[1]);
+		    }
+		} // end keyboard read
       
-	    /* block keyboard input and read output from shell */
-	    if(pollfds[1].revents & POLLIN) {
-		int ret = process_shell_output(pipe2term[0]);
+		/* block keyboard input and read output from shell */
+		if(pollfds[1].revents & POLLIN) {
+		    if(d_flag) debug("reading shell input");
+		    int ret = process_shell_output(pipe2term[0]);
+		    if(ret < 0)
+			Error();
+		} // end shell read
 
-		/* received EOF from shell */
-		if (ret == 0x04) {
-		    if(d_flag) debug("closing pipe2term");
-		    close(pipe2term[0]);
+		/* Something happend, so process remaining work then exit */
+		if(pollfds[1].revents & (POLLHUP | POLLERR)) {
+		    /* kill shell */
+		    if(d_flag) debug("POLLHUP | POLLERR received");
+		    print_shell_exit_status(child);
+		    //exit(1);
 		    break;
-		}
-	    } // end shell read
-
-	    /* Something happend, so process remaining work then exit */
-	    if(pollfds[1].revents & (POLLHUP | POLLERR)) {
-		/* kill shell */
-		if(d_flag) debug("POLLHUP | POLLERR received");
-		kill(rc, SIGINT);
-		break;
-	    } // end shell error or hup
-      
-      
-
-	} // end while
-	print_shell_exit_status();
+		} // end shell error or hup
+	    } // end while
+	    //	    print_shell_exit_status();
+	}
     } else {
 	while(1) {
 	    rw_input();
@@ -230,12 +229,12 @@ int main(int argc, char* argv[]) {
 } // end main
 
 void debug(char* msg){
-    fprintf(stderr, "[debug]: %s\n", msg);
+    fprintf(stderr, "[debug]: %s\r\n", msg);
     
 }
 
 void Error(void) {
-    fprintf(stderr, "%s: %s\n", program_name, strerror(errno));
+    fprintf(stderr, "%s: %s\r\n", program_name, strerror(errno));
     exit(1);
 }
 
@@ -260,7 +259,6 @@ void set_options(int argc, char* argv[]){
     while((opt = getopt_long(argc, (char* const*)argv, "sd", long_opts, &optind)) != -1) {
 	switch (opt) {
 	case 's':
-	    //TODO: setup sighandler
 	    signal(SIGINT, sighandler);
 	    signal(SIGPIPE, sighandler);
 	    rc_flag = 1;
@@ -291,7 +289,6 @@ void rw_input(void) {
 		exit(0);
 	    case '\r':
 	    case '\n':
-		//	if(write(STDOUT_FILENO, &CRLF, sizeof(char)*2) < 0)
 		if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 		    Error();
 		break;
@@ -337,11 +334,6 @@ void init_pipe(int pipefd[2]){
 }
 
 void run_shell(int pipe2shell[2], int pipe2term[2]) {
-    rc = fork();
-    if(rc < 0)
-	Error();
-
-    if(rc == 0) {
 	/* setup shell i/o envrionment before calling execvp */
 	/* widow unused pipe ends */
 	close(pipe2shell[1]);  /* inputs write end */
@@ -359,13 +351,13 @@ void run_shell(int pipe2shell[2], int pipe2term[2]) {
 	const char* file = "/bin/bash";
 	if(execl(file, "bash", (char*)NULL) < 0)
 	    Error();
-    }
 }
 
-void print_shell_exit_status(){
+void print_shell_exit_status(int pid){
     if(rc_flag){
 	int status;
-	if(waitpid(-1, &status, 0) == -1)
+	//	if(waitpid(-1, &status, 0) == -1)
+	if(waitpid(pid, &status, 0) == -1)
 	    Error();
 	fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d",
 		WTERMSIG(status), WEXITSTATUS(status));

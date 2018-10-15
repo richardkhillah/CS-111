@@ -88,40 +88,38 @@ int process_keyboard_input(int pipe2shell) {
     char rbuf[RBUF_SIZE];
 
     int rb_size;
-    while(1) {
-	rb_size = read(STDIN_FILENO, rbuf, sizeof(char)*RBUF_SIZE);
-	if(rb_size < 0)
-	    Error();
+    rb_size = read(STDIN_FILENO, rbuf, sizeof(char)*RBUF_SIZE);
+    if(rb_size < 0)
+	Error();
 
-	int rb_i;
-	for(rb_i = 0; rb_i < rb_size; rb_i++) {
-	    char c = rbuf[rb_i];
-	    switch(c) {
-	    case 0x03:          /* ^C : interrupt character */
-		if(d_flag) debug("^C");
-		return 0x03;
-	    case 0x04:          /* ^D : EOF */
-		if(d_flag) debug("^D");
-		return 0x04;
-	    case '\r':
-		if(d_flag) debug("\\r");
-	    case '\n':
-		if(d_flag) debug("\\n");
-		if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
-		    Error();
-		if(write(pipe2shell, "\n", sizeof(char)) < 0)
-		    Error();
-		break;
-	    default:
-		if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
-		    Error();
-		if(write(pipe2shell, &c, sizeof(char)) < 0)
-		    Error();
-		break;
-	    } // end switch
-	}// end for
-	return 0;
-    }
+    int rb_i;
+    for(rb_i = 0; rb_i < rb_size; rb_i++) {
+	char c = rbuf[rb_i];
+	switch(c) {
+	case 0x03:          /* ^C : interrupt character */
+	    if(d_flag) debug("^C");
+	    return 0x03;
+	case 0x04:          /* ^D : EOF */
+	    if(d_flag) debug("^D");
+	    return 0x04;
+	case '\r':
+	    if(d_flag) debug("\\r");
+	case '\n':
+	    if(d_flag) debug("\\n");
+	    if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
+		Error();
+	    if(write(pipe2shell, "\n", sizeof(char)) < 0)
+		Error();
+	    break;
+	default:
+	    if(write(STDOUT_FILENO, &c, sizeof(char)) < 0)
+		Error();
+	    if(write(pipe2shell, &c, sizeof(char)) < 0)
+		Error();
+	    break;
+	} // end switch
+    }// end for
+    return 0;
 }
 
 void sighandler(int signum) {

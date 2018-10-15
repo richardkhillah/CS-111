@@ -69,10 +69,12 @@ int process_shell_output(int read_fd) {
 	char c = rbuf[rb_i];
 	switch (c) {
 	case 0x04: // ^D == EOF
+	    if(d_flag) debug("sh^D");
 	    return 0x04;
 	    exit(0);
 	    //      case '\r':
 	case '\n':
+	    if(d_flag) debug("sh\\n");
 	    if(write(STDOUT_FILENO, "\r\n", sizeof(char)*2) < 0)
 		Error();
 	    break;
@@ -172,7 +174,7 @@ int main(int argc, char* argv[]) {
 	/* run main loop */
 	while (1) {
 	    /* Poll terminal inputs */
-	    int poll_result = poll(pollfds, 2, TIMEOUT)
+	    int poll_result = poll(pollfds, 2, TIMEOUT);
 	    if( poll_result  == -1)
 		Error();
 	    if( poll_result == 0)
@@ -200,6 +202,7 @@ int main(int argc, char* argv[]) {
 
 		/* received EOF from shell */
 		if (ret == 0x04) {
+		    if(d_flag) debug("closing pipe2term");
 		    close(pipe2term[0]);
 		    break;
 		}
@@ -258,6 +261,8 @@ void set_options(int argc, char* argv[]){
 	switch (opt) {
 	case 's':
 	    //TODO: setup sighandler
+	    signal(SIGINT, sighandler);
+	    signal(SIGPIPE, sighandler);
 	    rc_flag = 1;
 	    break;
 	case 'd':

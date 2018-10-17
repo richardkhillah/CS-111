@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <getopt.h>
+#include <termios.h>
+
+#include "common.h"
+
+static struct option const long_opts[] = {
+    {"port", required_argument, NULL, 'p'},
+    {"log", optional_argument, NULL, 'o'},
+    {"encrypt", required_argument, NULL, 'e'},
+    {"host", required_argument, NULL, 'H'},
+    {"debug", no_argument, NULL, 'd'},
+    {NULL, 0, NULL, 0}
+};
+
+/* struct optpair { int flag, char* arg; }; */
+/* struct options { */
+/*     struct optpair port; */
+/*     struct optpair log; */
+/*     struct optpair encrypt; */
+/*     struct optpair host; */
+/*     int debug; */
+/* }; */
+
+void error(char* msg) {
+    fprintf(stderr, "Error: %s\n", msg);
+    exit(EXIT_ERR);
+}
+
+struct options* get_options(int argc, char* argv[], int mode) {
+
+    struct options* o = malloc(sizeof(struct options));
+    int opt, optind;
+
+    while((opt = getopt_long(argc, (char* const*)argv,
+			     "p:oe:H:d", long_opts, &optind)) != -1) {
+	switch (opt) {
+	case 'p':
+	    printf("got p\n");
+	    o->port.flag = 1;
+	    o->port.arg = optarg;
+	    break;
+	case 'o':
+	    if(mode == SERVER)
+		error("Incorrect argument --log");
+	    o->log.flag = 1;
+	    o->log.arg = optarg;
+	    break;
+	case 'e':
+	    o->encrypt.flag = 1;
+	    o->encrypt.arg = optarg;
+	    break;
+	case 'H':
+	    if(mode == SERVER)
+		error("Incorrect argument --host");
+	    o->host.flag = 1;
+	    o->host.arg = optarg;
+	    break;
+	case 'd':
+	    o->debug = 1;
+	    break;
+	default:
+	    error("exiting default");
+	    break;
+	}// end switch 
+    } // end while loop
+    
+    return o;
+}
+
+void reset_input_mode(void) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+}
+
+void set_keyboard(int mode) {
+    if(mode == SERVER)
+	error("Setting keyboard to non-canonical w/. no echo in Server not permitted.");
+
+    struct termios tattr;
+
+    if(!isatty(STDIN_FILENO))
+	error("Not a terminal");
+
+    /* Save original attributes so they can be restored later */
+    tcgetattr(STDIN_FILENO, &saved_attributes);
+    atexit(reset_input_mode);
+
+    /* Set new terminal mode */
+    tcgetattr(STDIN_FILENO, &tattr);
+    tattr.c_iflag = ISTRIP;   /* use only lower 7 bits */
+    tattr.c_oflag = 0;        /* no processing */
+    tattr.c_lflag = 0;        /* no processing */
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &tattr);
+}

@@ -21,13 +21,20 @@ static struct option const long_opts[] = {
     {NULL, 0, NULL, 0}
 };
 
+int port_flag = 0;
 int log_flag = 0;
 int encrypt_flag = 0;
 int debug_flag = 0;
+int host_flag = 0;
 
-int portno;
+int port;
 char* logfile;
+char* encryptionkey;
+char* host;
+
 int lffd;                // logfile fd
+
+int BUF_SIZE = 256;
 
 void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\n", msg, strerror(errno), errno);
@@ -46,40 +53,41 @@ void debug(char* msg) {
 /* read_write will read from either stdin, or a network socket
  * sel(ect) detmines whether we are reading from the keyboard
  * and writing to the server (select 0) or reading from the
- * server and writing to the terminal (select 1). */
+ * server and writing to the terminal (select 1).
+ * sel = 0 : client -> server
+ * sel = 1 : server -> client */
 void read_write(int readfd, int writefd, int sel) {
-    char* buf[BUF_SIZE];
-    int bytes_read = read(read_fd, buf, BUF_SIZE);
+    char buf[BUF_SIZE];
+    int bytes_read = read(readfd, buf, BUF_SIZE);
     if(bytes_read < 0) handle_error("Error reading readfd");
 
-    if(log_flag) {
-	switch(sel){
-	case 0:
-	    fprintf(lffd, "SENT %d bytes: ", bytes_read);
-	    break;
-	case 1:
-	    fprintf(lffd, "RECEIVED %d bytes: ", bytes_read);
-	    break;
-	default:
-	    handle_error("Invalid read_write select.");
-	    exit(1);
-	}
-	write(lffd, buf, bytes_read);
-	write(lffd, "\n", 1);
-    }
-    
     int i = 0;
     for(; i < bytes_read; i++){
-	char c = buff[i];
+	char c = buf[i];
+	if(log_flag) {
+	    FILE* wstream = fopen(logfile, "a");
+	    int i = 0;
+	    switch(sel){
+	    case 0:
+		fprintf(wstream, "SENT %d bytes: %s", bytes_read, &c);
+		break;
+	    case 1:
+		fprintf(wstream, "RECEIVED %d bytes: %s", bytes_read, &c);
+		break;
+	    default:
+		handle_error("Invalid read_write select.");
+		exit(1);
+	    }
+	}
+    
 	// process char by char and echo to stdout
 	if (encrypt_flag == 1 && sel == 1) {
 	    // decrypt input from server
+
+	    // output to stdoud
 	}
 	write(STDOUT_FILENO, &c, sizeof(char));
-	
-	// if encrypt_flag = 1 and we're reading from server,
-	// decrypt before writing to stdout 
-	// write to write_fd
+       	// write to write_fd
     }
 }
 
@@ -91,13 +99,11 @@ void get_options(int argc, char* argv[]){
 	{
 	    switch (opt) {
 	    case 'p':
-		portno = atoi(optarg);
+		port = atoi(optarg);
 		break;
 	    case 'l':
 		log_flag = 1;
-		logfilename = optarg;
-		int status = open(lffd, logfile, O_APPEND);
-		if( status < 0) handle_error("unable to open file");
+		logfile = optarg;
 		break;
 	    case 'e':
 		encrypt_flag = 1;

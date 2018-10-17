@@ -104,17 +104,17 @@ void readpipe() {
 
 }
 
-void shell_proc(int readpipe[2], int writepipe[2]) {
+void exec_shell() {
     if(childpid == 0){
-	close(readpipe[1]);
-	close(writepipe[0]);
+	close(pipe2child[1]);
+	close(pipe2parent[0]);
 
-	dup2(readpipe[0], STDIN_FILENO);
-	dup2(writepipe[1], STDOUT_FILENO);
-	dup2(writepipe[1], STDERR_FILENO);
+	dup2(pipe2child[0], STDIN_FILENO);
+	dup2(pipe2parent[1], STDOUT_FILENO);
+	dup2(pipe2parent[1], STDERR_FILENO);
 
-	close(readpipe[0]);
-	close(writepipe[1]);
+	close(pipe2child[0]);
+	close(pipe2parent[1]);
 
 	if(execl("/bin/bash", "bash", (char*) NULL) < 0)
 	    handle_error("unable to execl");
@@ -158,6 +158,13 @@ int main(int argc, char* argv[]) {
     // setup pipes globally
     init_pipes();
     // fork child, redirect stdin/out/err then call exec
+    childpid = fork();
+
+    if(childpid < 0)
+	handle_error("Failed fork()");
+    else if(childpid == 0)
+	exec_shell();
+    
     close(pipe2child[0]);
     close(pipe2parent[1]);
 

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <error.h>
+#include <string.h>
 #include <getopt.h>
 #include <termios.h>
 
@@ -25,8 +27,8 @@ static struct option const long_opts[] = {
 /*     int debug; */
 /* }; */
 
-void error(char* msg) {
-    fprintf(stderr, "Error: %s\n", msg);
+void err(char* msg) {
+    fprintf(stderr, "[Error] %s: %s\n", strerror(errno), msg);
     exit(EXIT_ERR);
 }
 
@@ -45,7 +47,7 @@ struct options* get_options(int argc, char* argv[], int mode) {
 	    break;
 	case 'o':
 	    if(mode == SERVER)
-		error("Incorrect argument --log");
+		err("Incorrect argument --log");
 	    o->log.flag = 1;
 	    o->log.arg = optarg;
 	    break;
@@ -55,7 +57,7 @@ struct options* get_options(int argc, char* argv[], int mode) {
 	    break;
 	case 'H':
 	    if(mode == SERVER)
-		error("Incorrect argument --host");
+		err("Incorrect argument --host");
 	    o->host.flag = 1;
 	    o->host.arg = optarg;
 	    break;
@@ -63,7 +65,7 @@ struct options* get_options(int argc, char* argv[], int mode) {
 	    o->debug = 1;
 	    break;
 	default:
-	    error("exiting default");
+	    err("exiting default");
 	    break;
 	}// end switch 
     } // end while loop
@@ -83,12 +85,12 @@ void reset_input_mode() {
 
 void set_keyboard(int mode) {
     if(mode == SERVER)
-	error("Setting keyboard to non-canonical w/. no echo in Server not permitted.");
+	err("Setting keyboard to non-canonical w/. no echo in Server not permitted.");
 
     struct termios tattr;
 
     if(!isatty(STDIN_FILENO))
-	error("Not a terminal");
+	err("Not a terminal");
 
     /* Save original attributes so they can be restored later */
     tcgetattr(STDIN_FILENO, &saved_attributes);

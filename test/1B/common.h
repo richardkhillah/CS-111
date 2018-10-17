@@ -31,3 +31,5 @@ extern struct options* get_options(int argc, char* argv[], int mode);
  */
 //extern void set_keyboard(struct termios* saved_attributes, int mode);
 extern void set_keyboard(int mode);
+
+extern void err(char* msg);

@@ -4,3 +4,9 @@ UID: 604853262
 
 research:
 open(2)
+fwrite(3)
+fopen(3)
+fclose(3)
+
+https://www.programiz.com/c-programming/c-file-input-output
+	information on fopen, fwrite

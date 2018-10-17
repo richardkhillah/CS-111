@@ -1,0 +1,41 @@
+#include <sys/types.h>
+#include <sys/stats.h>
+#include <fcntl.h>
+
+#include "common.h"
+#include "commonrw.h"
+
+// or do i want:
+const int BUF_SIZE = 256;
+
+void read_write(char* readpath, char* writepath) {
+    int readfd = open(readpath, O_RDONLY);
+    if(readfd == -1) {
+	fprintf(stderr, "Error opening readpath: %s\n", readpath);
+	exit(1);
+    }
+
+    char buf[BUF_SIZE];
+    int bytes_read = read(readfd, buf, BUF_SIZE);
+    if(bytes_read < 0){
+	fprintf(stderr, "error reading readfd: %d assigned from readpath: %s\n",
+		readfd, readpath);
+	exit(1);
+    }
+
+    int writefd = open(writepath, O_APPEND);
+    if(writefd < 0) {
+	fprintf(stderr, "Error opening writepath: %s\n", writepath);
+	exit(1);
+    }
+
+    int i = 0;
+    for(; i < bytes_read; i++) {
+	char c = buf[i];
+	write(writefd, &c, 1);
+    }
+
+    fprintf(stderr, "finished reading & writing using commonrw-server\n");
+    exit(0);
+}
+

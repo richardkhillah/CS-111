@@ -1,0 +1,17 @@
+#include <sys/types.h>
+#include <sys/stats.h>
+#include <fcntl.h>
+
+#include "common.h"
+#include "commonrw.h"
+
+// or do i want:
+const int BUF_SIZE = 256;
+
+void read_write(char* readpath, char* writepath) {
+    int readfd = open(readpath, O_RDONLY);
+    if(readfd == -1) {
+	fprintf(stderr, "Error opening readpath: %s\n", readpath);
+	exit(1);
+}
+

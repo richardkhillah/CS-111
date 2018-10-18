@@ -68,7 +68,7 @@ void handle_failed_syscall(int signum) {
 }
 
 void debug(char* msg) {
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s\r\n",msg);
 }
 
 void get_options(int argc, char* argv[]){
@@ -129,9 +129,11 @@ void readsoc(int sockfd) {
 	    break;
 	    // perform mappings from socket to shell
 	case 0x03: // ^C -> SIGINT
+	    if(debug_flag) debug("^C");
 	    kill(childpid, SIGINT);
 	    break; // do I wait here?
 	case 0x04: // ^D -> close write side of pipe to shell
+	    if(debug_flag) debug("^D");
 	    close(pipe2child[1]);
 	    // do i wait here?
 	default:
@@ -212,17 +214,19 @@ int main(int argc, char* argv[]) {
 	exit(1);
     }
     // setup signal handlers
-        
+    
     int sockfd, newsockfd, clilen;
     struct sockaddr_in serv_addr, cli_addr;
-
-    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) handle_error("ERROR opening socket");
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    if(debug_flag) debug("socket assigned");
 
-    serv_addr.sin_family = AF_UNIX;
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port);
+    
     if (bind(sockfd, (struct sockaddr *) &serv_addr,
 	     sizeof(serv_addr)) < 0) err("ERROR on binding");
 
@@ -232,7 +236,10 @@ int main(int argc, char* argv[]) {
 
     // accept connection
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *)&clilen);
-    if (newsockfd < 0) err("ERROR on accept");
+    if (newsockfd < 0){
+	if(debug_flag) debug("Server-side error");
+	err("ERROR on accept");
+    }
 
     // setup pipes globally
     init_pipes();

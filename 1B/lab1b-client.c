@@ -56,7 +56,7 @@ void handle_failed_syscall(int signum) {
 }
 
 void debug(char* msg) {
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s\r\n", msg);
 }
 
 void readstd(int sockfd) {
@@ -80,8 +80,8 @@ void readstd(int sockfd) {
 	if(encrypt_flag) {              // if incrypting
 	    // encrypt
 	}
-	
-	write(sockfd, &c, 1);           // write( sock )
+	if(debug_flag) debug("about to write");
+	if(write(sockfd, &c, 1) < 0) handle_error("Client-write to sockfd failed.");
 	if(log_flag) {                  // if logging, write( log )
 	    fwrite(&c, sizeof(char), 1, logstream);
 	}
@@ -123,11 +123,16 @@ void readsoc(int sockfd){
     }
 }
 
+void usage() {
+    fprintf(stderr, \
+	    "usage: ./%s --port=portno [--log=filename, --encrypt=filename]\r\n", program_name);
+}
 
 
 void get_options(int argc, char* argv[]){
     int opt;
     int optind;
+    opterr = 0;
     while((opt = getopt_long(argc, (char* const*)argv, \
 			     "sd", long_opts, &optind)) != -1)
 	{
@@ -146,7 +151,12 @@ void get_options(int argc, char* argv[]){
 	    case 'd':
 		debug_flag = 1;
 		break;
+	    case '?':
+		fprintf(stderr, "./%s: unrecognized option\r\n", \
+			program_name);
 	    default:
+		usage();
+		exit(1);
 		// print custom error
 		break;
 	    }
@@ -215,7 +225,7 @@ int main(int argc, char* argv[]) {
     if(port < 1025) fprintf(stderr, "port must be greater than 1024\r\n");
 
     /* generate a socket*/
-    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) err("ERROR opening socket");
     
     /* get the host */
@@ -223,14 +233,17 @@ int main(int argc, char* argv[]) {
     if (server == NULL) err("ERROR, no such host");
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_UNIX;
+    serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, 
 	  (char *)&serv_addr.sin_addr.s_addr,
 	  server->h_length);
     serv_addr.sin_port = htons(port);
-    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
+    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) {
+	if(debug_flag) debug("Client-side error");
 	err("ERROR connecting");
-
+    }
+    if(debug_flag) debug("Client-side connection established");
+    
     /* Begin polling service */
     struct pollfd pollfds[2];
     pollfds[0].fd = STDIN_FILENO;                   // Poll(2) stdin
@@ -257,7 +270,7 @@ int main(int argc, char* argv[]) {
 	    
 	    if(debug_flag) debug("POLLHUP | POLLERR received");
 	}
-	break;
+
     }
     exit(0);
 }

@@ -42,11 +42,11 @@ int BUF_SIZE = 256;
 int TIMEOUT = 0;
 
 void err(char* msg) {
-    fprintf(stderr, "%s\n", msg);
+    fprintf(stderr, "%s\r\n", msg);
 }
 
 void handle_error(char* msg) {
-    fprintf(stderr, "[%s]: %s (errno %d)\n", msg, strerror(errno), errno);
+    fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
     exit(1);
 }
 
@@ -133,6 +133,7 @@ void get_options(int argc, char* argv[]){
 	{
 	    switch (opt) {
 	    case 'p':
+		port_flag = 1;
 		port = atoi(optarg);
 		break;
 	    case 'l':
@@ -154,7 +155,7 @@ void get_options(int argc, char* argv[]){
 
 void set_program_name(const char* argv0) {
     if(argv0 == NULL) {
-	fprintf(stderr, "%s: set_program_name: %s.\n",	\
+	fprintf(stderr, "%s: set_program_name: %s.\r\n",	\
 		program_name, strerror(errno));
 	abort();
     }
@@ -175,7 +176,7 @@ void set_input_mode(void) {
   
     //TODO: Change error message
     if(!isatty(STDIN_FILENO)) {
-	fprintf(stderr, "Not a terminal.\n");
+	fprintf(stderr, "Not a terminal.\r\n");
 	exit(1);
     }
   
@@ -198,10 +199,12 @@ int main(int argc, char* argv[]) {
     get_options(argc, argv);
 
     /* Ensure --port=port option passed in */
-    if(!port_flag) {
-	fprintf(stderr, "Usage: --port=port\n");
-    } else if( port < 1025 ) {
-	fprintf(stderr, "Error: port must be greater than 1024\n");
+    if( port_flag && port < 1025) {
+	fprintf(stderr, "Error: port must be greater than 1024\r\n");
+	exit(1);
+    } else if(!port_flag) {
+	fprintf(stderr, "Usage: %s --port=number\r\n", program_name);
+	exit(1);
     }
 	
     /* set up socket */
@@ -209,7 +212,7 @@ int main(int argc, char* argv[]) {
 
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    if(port < 1025) fprintf(stderr, "port must be greater than 1024");
+    if(port < 1025) fprintf(stderr, "port must be greater than 1024\r\n");
 
     /* generate a socket*/
     sockfd = socket(AF_UNIX, SOCK_STREAM, 0);

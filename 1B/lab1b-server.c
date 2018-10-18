@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include <errno.h>
+#include <signal.h>
 #include <getopt.h>
 #include <termios.h>
 #include <poll.h>
@@ -42,15 +43,25 @@ int BUF_SIZE = 256;
 int TIMEOUT = 0;
 
 void err(char* msg) {
-    fprintf(stderr, "%s\n", msg);
+    fprintf(stderr, "%s\r\n", msg);
 }
 
 void handle_error(char* msg) {
-    fprintf(stderr, "[%s]: %s (errno %d)\n", msg, strerror(errno), errno);
+    fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
     exit(1);
 }
 
 void handle_failed_syscall(int signum) {
+    if(signum == SIGINT) {
+	// child get's SIGINT
+	//close pipe2parent[1]
+	// exit(0)
+    }
+
+    if(signum == SIGPIPE) {
+	// wait for child
+	// 
+    }
     // print message
     // sigpipe handling
     exit(1);
@@ -68,10 +79,12 @@ void get_options(int argc, char* argv[]){
 	{
 	    switch (opt) {
 	    case 'p':
+		port_flag = 1;
 		port = atoi(optarg);
 		break;
 	    case 'e':
 		encrypt_flag = 1;
+		encryptionkey = optarg;
 		break;
 	    case 'd':
 		debug_flag = 1;
@@ -96,12 +109,72 @@ void set_program_name(const char* argv0) {
     program_name = argv0;
 }
 
-void readsoc() {
+void readsoc(int sockfd) {
+    // forward data receive from socket through pipe to shell
+    char buf[BUF_SIZE];
+    int bytes = read(sockfd, buf, BUF_SIZE); // TODO: BUF_SIZE-1 read??
+    if(bytes < 0) handle_error("Server unsuccessful read socket");
+
+    if(encrypt_flag) {
+	// decrypt 
+    }
+
+    int i = 0;
+    for(; i < bytes; i++) {
+	char c = buf[i];
+	switch(c) {
+	case '\r':
+	case '\n':
+	    write(pipe2child[1], "\n", 1);
+	    break;
+	    // perform mappings from socket to shell
+	case 0x03: // ^C -> SIGINT
+	    kill(childpid, SIGINT);
+	    break; // do I wait here?
+	case 0x04: // ^D -> close write side of pipe to shell
+	    close(pipe2child[1]);
+	    // do i wait here?
+	default:
+	    write(pipe2child[1], &c, 1);
+	    break;
+	} // end for
+    }
+
     
 }
 
-void readpipe() {
+void readpipe(int  sockfd) {
+    // forward data received from pipe from shell to socket
+    char buf[BUF_SIZE];
+    int bytes = read(pipe2parent[0], buf, BUF_SIZE); // BUF_SIZE-1??
+    if(bytes < 0) handle_error("Error reading shell output pipe");
 
+    // char swap[bytes]; // pytes+1??
+    if(encrypt_flag){
+	// encrypt
+
+    }
+
+    int i = 0;
+    for(; i < bytes; i++) {
+	char c = buf[i];
+	switch(c) {
+	case 0x04: // ^D <=> EOF
+	case SIGPIPE:
+	    //   EOF || SIGPIPE from shell
+	    //        ->harvest shell complettion status, log to stderr, exit(0)
+	    // wait for shell.
+	    // log stderr
+	    close(sockfd);
+	    exit(0);
+	case '\n':
+	    write(sockfd, "\r\n", 2);
+	    break;
+	default:
+	    write(sockfd, &c, 1);
+	    break;
+	}
+    }
 }
 
 void exec_shell() {
@@ -131,7 +204,13 @@ void init_pipes() {
 int main(int argc, char* argv[]) {
     set_program_name(argv[0]);
     get_options(argc, argv);
-    
+    if(!port_flag){
+	fprintf(stderr, "usage: %s --port=portnumber\r\n", program_name);
+	exit(1);
+    } else if(port_flag && port < 1025) {
+	fprintf(stderr, "Error: port must be greater than 1024\r\n");
+	exit(1);
+    }
     // setup signal handlers
         
     int sockfd, newsockfd, clilen;
@@ -164,28 +243,47 @@ int main(int argc, char* argv[]) {
 	handle_error("Failed fork()");
     else if(childpid == 0)
 	exec_shell();
-    
-    close(pipe2child[0]);
-    close(pipe2parent[1]);
+    else{
+	/* breakdown undeeded pipes in parent */
+	close(pipe2child[0]);
+	close(pipe2parent[1]);
 
-    // breakdown undeeded pipes in parent
+	/* Begin polling service */
+	struct pollfd pollfds[2];
+	pollfds[0].fd = sockfd;               // Poll(2) socket output
+	pollfds[0].events = POLLIN;                     
+	pollfds[0].revents = 0;
+	pollfds[1].fd = pipe2parent[0];       // Poll(2) shell output
+	pollfds[1].events = POLLIN | POLLHUP | POLLERR;
+	pollfds[1].revents = 0;
 
-    // setup polling
-    // poll socket and pipes
+	while(1) {
 
-    // forward data receive from socket through pipe to shell
-    // perform mappings from socket to shell
-    //   ^C -> SIGINT
-    //   ^D -> close write side of pipe to shell
-    
-    // forward data received from pipe from shell to socket
-    //   EOF || SIGPIPE from shell
-    //        ->harvest shell complettion status, log to stderr, exit(0)
-    //   EOF || read err from network cxn (client exits), close write pipe to shell
-    //        - wait fro EOR from pipe from shell, then harvest and report term stats
+	    /* Poll(2) fd's */
+	    int poll_result = poll(pollfds, 2, TIMEOUT);
+	    if(poll_result  == -1) err("Error: Bad polling.");
+	    if(poll_result == 0) continue;
 
-    // server encounters unrecognized argument, print informative usage message on stderr
-    //     exit(1)
-    
-    return 0;
+	    /* block pipe input and process input from socket */
+	    if(pollfds[0].revents & POLLIN)
+		readsoc(sockfd);	    
+	    
+	    /* block socket input and process input from pipe */
+	    if(pollfds[1].revents & POLLIN)
+		readpipe(sockfd);
+	    
+	    /* Something happened, process remaining work then exit */
+	    if(pollfds[1].revents & (POLLHUP | POLLERR)){
+		// do something
+	    }
+
+	    //   EOF || read err from network cxn (client exits), close write pipe to shell
+	    //        - wait for EOF from pipe from shell, then harvest and report term stats
+
+	    
+	    // server encounters unrecognized argument, print informative usage message on stderr
+	    //     exit(1)
+	}
+    }
+    exit(0);
 }

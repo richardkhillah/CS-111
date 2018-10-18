@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include <errno.h>
 #include <getopt.h>
@@ -13,6 +14,7 @@
 #include <poll.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
@@ -65,6 +67,10 @@ void readstd(int sockfd) {
     FILE* logstream;
     int bytes = read(STDIN_FILENO, buf, BUF_SIZE);
     if( bytes < 0 ) err("unable to read standard input");
+    if( bytes == 0) {
+	// restore
+	exit(0);
+    }
     
     if(log_flag) {
 	logstream = fopen(logfile, "a");
@@ -75,17 +81,21 @@ void readstd(int sockfd) {
     int i = 0;
     for(; i < bytes; i++) {
 	char c = buf[i];
-	write(STDOUT_FILENO, &buf, 1);  // write( disp )
+	write(STDOUT_FILENO, &c, 1);  // write( disp )
 	
 	if(encrypt_flag) {              // if incrypting
 	    // encrypt
 	}
-	if(debug_flag) debug("about to write");
-	if(write(sockfd, &c, 1) < 0) handle_error("Client-write to sockfd failed.");
+	//if( debug_flag) debug("about to write");
+	int written = write(sockfd, &c, 1);
+	if(written < 0) handle_error("Client-write to sockfd failed.");
 	if(log_flag) {                  // if logging, write( log )
 	    fwrite(&c, sizeof(char), 1, logstream);
 	}
     } // end loop
+
+
+    
     if(logstream) {
 	fclose(logstream);
     }
@@ -226,7 +236,7 @@ int main(int argc, char* argv[]) {
 
     /* generate a socket*/
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) err("ERROR opening socket");
+    if (sockfd < 0) handle_error("ERROR opening socket");
     
     /* get the host */
     server = gethostbyname("localhost");

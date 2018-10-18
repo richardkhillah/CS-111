@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include <errno.h>
 #include <signal.h>
@@ -14,6 +15,7 @@
 #include <poll.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
@@ -121,6 +123,7 @@ void readsoc(int sockfd) {
 
     int i = 0;
     for(; i < bytes; i++) {
+	if(debug_flag) debug("Inside server");
 	char c = buf[i];
 	switch(c) {
 	case '\r':
@@ -135,6 +138,7 @@ void readsoc(int sockfd) {
 	case 0x04: // ^D -> close write side of pipe to shell
 	    if(debug_flag) debug("^D");
 	    close(pipe2child[1]);
+	    break;
 	    // do i wait here?
 	default:
 	    write(pipe2child[1], &c, 1);
@@ -215,7 +219,8 @@ int main(int argc, char* argv[]) {
     }
     // setup signal handlers
     
-    int sockfd, newsockfd, clilen;
+    int sockfd, newsockfd;
+    socklen_t clilen;
     struct sockaddr_in serv_addr, cli_addr;
     
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -235,7 +240,7 @@ int main(int argc, char* argv[]) {
     clilen = sizeof(cli_addr);
 
     // accept connection
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *)&clilen);
+    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
     if (newsockfd < 0){
 	if(debug_flag) debug("Server-side error");
 	err("ERROR on accept");
@@ -257,7 +262,7 @@ int main(int argc, char* argv[]) {
 
 	/* Begin polling service */
 	struct pollfd pollfds[2];
-	pollfds[0].fd = sockfd;               // Poll(2) socket output
+	pollfds[0].fd = newsockfd;               // Poll(2) socket output
 	pollfds[0].events = POLLIN;                     
 	pollfds[0].revents = 0;
 	pollfds[1].fd = pipe2parent[0];       // Poll(2) shell output
@@ -269,18 +274,21 @@ int main(int argc, char* argv[]) {
 	    /* Poll(2) fd's */
 	    int poll_result = poll(pollfds, 2, TIMEOUT);
 	    if(poll_result  == -1) err("Error: Bad polling.");
-	    if(poll_result == 0) continue;
+	    //if(poll_result == 0) continue;
 
 	    /* block pipe input and process input from socket */
 	    if(pollfds[0].revents & POLLIN)
-		readsoc(sockfd);	    
+		readsoc(newsockfd);	    
 	    
 	    /* block socket input and process input from pipe */
 	    if(pollfds[1].revents & POLLIN)
-		readpipe(sockfd);
+		readpipe(newsockfd);
 	    
 	    /* Something happened, process remaining work then exit */
 	    if(pollfds[1].revents & (POLLHUP | POLLERR)){
+		close(pipe2child[1]);
+		close(newsockfd);
+		exit(1);
 		// do something
 	    }
 

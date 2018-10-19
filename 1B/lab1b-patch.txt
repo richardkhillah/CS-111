@@ -1,0 +1,137 @@
+From eaaa1cb4348f104fda04bbf61fe4172b18310f80 Mon Sep 17 00:00:00 2001
+From: Richard Khillah <RKhillah@ucla.edu>
+Date: Thu, 18 Oct 2018 18:46:33 -0700
+Subject: [PATCH] Cleaned up all log code that didn't belong
+
+---
+ 1B/lab1b-client   | Bin 14736 -> 14736 bytes
+ 1B/lab1b-client.c |  23 +++++++++++++++--------
+ 2 files changed, 15 insertions(+), 8 deletions(-)
+
+diff --git a/1B/lab1b-client b/1B/lab1b-client
+index 01a7714d11320ecb453f0fc3ce508e328ce69216..e45d16ffa6206d7dde500be6542ad9844d7e3d53 100755
+GIT binary patch
+delta 2527
+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
+
+delta 2480
+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
+G1O5U&{%w{3
+
+diff --git a/1B/lab1b-client.c b/1B/lab1b-client.c
+index c437c3a..0de855d 100644
+--- a/1B/lab1b-client.c
++++ b/1B/lab1b-client.c
+@@ -61,20 +61,26 @@ void debug(char* msg) {
+     fprintf(stderr, "%s\r\n", msg);
+ }
+ 
++/* void log(char* message, char* buf, int size, int wfd) { */
++
++/* } */
++
+ void readstd(int sockfd) {
+     // read standard input
+     char buf[BUF_SIZE];
+-    FILE* logstream;
++    //FILE* logstream;
+     int bytes = read(STDIN_FILENO, buf, BUF_SIZE);
+     if( bytes < 0 ) err("unable to read standard input");
+     if( bytes == 0) {
+ 	// restore
+ 	exit(0);
+     }
+-    
++
+     if(log_flag) {
+-	logstream = fopen(logfile, "a");
+-	if( logstream == NULL ) err("Unable to open logfile");
++	//logstream = fopen(logfile, "a");
++	//if( logstream == NULL ) err("Unable to open logfile");
++	
++	
+     }
+ 
+     /* Write read buffer byte-by-byte to appropiate spots */
+@@ -90,15 +96,16 @@ void readstd(int sockfd) {
+ 	int written = write(sockfd, &c, 1);
+ 	if(written < 0) handle_error("Client-write to sockfd failed.");
+ 	if(log_flag) {                  // if logging, write( log )
+-	    fwrite(&c, sizeof(char), 1, logstream);
++
++	    //fwrite(&c, sizeof(char), 1, logstream);
+ 	}
+     } // end loop
+ 
+ 
+     
+-    if(logstream) {
+-	fclose(logstream);
+-    }
++    //if(logstream) {
++    //fclose(logstream);
++    //}
+ }
+ 
+ void readsoc(int sockfd){
+-- 
+1.8.3.1
+

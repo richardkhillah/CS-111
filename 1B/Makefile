@@ -7,7 +7,7 @@ CFLAGS= -Wall -Wextra
 
 all: lab1b-client lab1b-server
 
-lab1b-client: lab1b-client.c
+lab1b-client: lab1b-client.c log.h
 	$(CC) $(CFLAGS) -o $@ $<
 
 lab1b-server: lab1b-server.c

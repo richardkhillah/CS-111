@@ -19,6 +19,8 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
+#include "log.h"
+
 struct termios saved_attributes;
 const char* program_name;
 static struct option const long_opts[] = {

@@ -96,7 +96,7 @@ void readstd(int sockfd) {
     // read standard input
     char buf[BUF_SIZE];
     FILE* logstream;
-    int bytes = read(STDIN_FILENO, buf, BUF_SIZE);
+    int bytes = read(STDIN_FILENO, buf, BUF_SIZE-1);
     if(debug_flag) {
 	fprintf(stderr, "bytes read: %d\r\n", bytes);
     }
@@ -106,33 +106,38 @@ void readstd(int sockfd) {
 	exit(0);
     }
 
+    // reput logstream fopen here
     if(log_flag) {
-	logstream  = fopen((const char*) logfile, "a+");
-	if( logstream == NULL ) fatal_error("Unable to open logfile");
+    	logstream  = fopen((const char*) logfile, "a+");
+    	if( logstream == NULL ) fatal_error("Unable to open logfile");
 
     }
+
     
     /* Write read buffer byte-by-byte to appropiate spots */
     int i = 0;
     for(; i < bytes; i++) {
 	char c = buf[i];
 	write(STDOUT_FILENO, &c, 1);  // write( disp )
+
+	if(log_flag) {
+	    log_entry(logstream, 0, buf, bytes);
+	}
 	
 	if(encrypt_flag) {              // if incrypting
 	    // encrypt
 	}
+	
 	//if( debug_flag) debug("about to write");
+
 	int written = write(sockfd, &c, 1);
 	if(written < 0) handle_error("Client-write to sockfd failed.");
 	
     } // end loop
-    
-    if(log_flag) {
-	log_entry(logstream, 0, buf, bytes);
-    }
+
     
     if(logstream) {
-	fclose(logstream);
+    	fclose(logstream);
     }
 }
 
@@ -140,33 +145,38 @@ void readsoc(int sockfd){
     /* read socket */
     char buf[BUF_SIZE];
 
-    // FILE* logstream;
-    int bytes = read(sockfd, buf, BUF_SIZE); //or BUF_SIZE-1?
+    FILE* logstream;
+    int bytes = read(sockfd, buf, BUF_SIZE-1); //or BUF_SIZE-1?
     if(bytes < 0) err("Bad soc read");
 
-    /* if( log_flag ) { */
-    /* 	logstream = fopen(logfile, "a"); */
-    /* 	if(logstream == NULL) err("Failed open of logfile"); */
-    /* } */
-
-    // main function loop
+    if( log_flag ) {
+    	logstream = fopen(logfile, "a+");
+    	if(logstream == NULL) err("Failed open of logfile");
+    }
+	if( log_flag) log_entry(logstream, 1, buf, bytes);
+    // MAIN FUNCTION LOOP
     int i = 0;
     for(; i < bytes; i++) {
 	char c = buf[i];
-	// if logging( log )
-	/* if( log_flag ){ */
-	/*     fwrite(&c, sizeof(char), 1, logstream); */
-	/* } */
+
+	/* if(c == '\r') */
+	/*     c = '\n'; */
+
+	if(debug_flag) debug("Calling log_entry()");
+
+
+
 	if( encrypt_flag ) {
 	    // decrypt buffer
 	}
-	// write(disp)
-	write(STDOUT_FILENO, &c, sizeof(char));    
-    }// end loop
+		
+	// WRITE(DISP)
+	write(STDOUT_FILENO, &c, sizeof(char));
 
-    /* if( log_flag ) { */
-    /* 	fclose(logstream); */
-    /* } */
+    }// END LOOP
+
+    if( log_flag)
+	fclose(logstream);
 }
 
 void usage() {
@@ -309,10 +319,16 @@ int main(int argc, char* argv[]) {
 	if( poll_result == 0) continue;
       
 	/* block socket input and read input from keyboard */
-	if(pollfds[0].revents & POLLIN) readstd(sockfd);
+	if(pollfds[0].revents & POLLIN) {
+	    readstd(sockfd);
+	    //pollfds[0].revents = 0;
+	}
       
 	/* block keyboard input and read output from socket */
-	if(pollfds[1].revents & POLLIN) readsoc(sockfd);
+	if(pollfds[1].revents & POLLIN) {
+	    readsoc(sockfd);
+	    //pollfds[1].revents = 0;
+	}
 
 	/* Something happend, so process remaining work then exit */
 	if(pollfds[1].revents & (POLLHUP | POLLERR)) {

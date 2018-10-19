@@ -15,6 +15,7 @@
 #include <poll.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -114,7 +115,7 @@ void set_program_name(const char* argv0) {
 void readsoc(int sockfd) {
     // forward data receive from socket through pipe to shell
     char buf[BUF_SIZE];
-    int bytes = read(sockfd, buf, BUF_SIZE); // TODO: BUF_SIZE-1 read??
+    int bytes = read(sockfd, buf, BUF_SIZE-1); // TODO: BUF_SIZE-1 read??
     if(bytes < 0) handle_error("Server unsuccessful read socket");
 
     if(encrypt_flag) {
@@ -152,7 +153,7 @@ void readsoc(int sockfd) {
 void readpipe(int  sockfd) {
     // forward data received from pipe from shell to socket
     char buf[BUF_SIZE];
-    int bytes = read(pipe2parent[0], buf, BUF_SIZE); // BUF_SIZE-1??
+    int bytes = read(pipe2parent[0], buf, BUF_SIZE-1); // BUF_SIZE-1??
     if(bytes < 0) handle_error("Error reading shell output pipe");
 
     // char swap[bytes]; // pytes+1??
@@ -274,20 +275,25 @@ int main(int argc, char* argv[]) {
 	    /* Poll(2) fd's */
 	    int poll_result = poll(pollfds, 2, TIMEOUT);
 	    if(poll_result  == -1) err("Error: Bad polling.");
-	    //if(poll_result == 0) continue;
+	    if(poll_result == 0) continue;
 
 	    /* block pipe input and process input from socket */
-	    if(pollfds[0].revents & POLLIN)
-		readsoc(newsockfd);	    
-	    
+	    if(pollfds[0].revents & POLLIN){
+		readsoc(newsockfd);
+		pollfds[0].revents = 0;
+	    }
 	    /* block socket input and process input from pipe */
-	    if(pollfds[1].revents & POLLIN)
+	    if(pollfds[1].revents & POLLIN){
 		readpipe(newsockfd);
+		pollfds[1].revents = 0;
+	    }
 	    
 	    /* Something happened, process remaining work then exit */
 	    if(pollfds[1].revents & (POLLHUP | POLLERR)){
 		close(pipe2child[1]);
 		close(newsockfd);
+		int status;
+		waitpid(childpid, &status, 0);
 		exit(1);
 		// do something
 	    }

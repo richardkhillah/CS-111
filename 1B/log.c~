@@ -1,0 +1,64 @@
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
+
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+
+const int SENT = 0;             // use this approach
+const int RECEIVED = 1;         // use this approach  
+
+void fatal_error(char* my_message);
+
+void log_entry(int logfd, int type, char* buf, int len) {
+    int was_written = 0;
+    //      char* c = itoa(len);
+
+    switch(type){
+    case 0:
+	was_written = write(logfd, "SENT ", 5);
+	break;
+    case 1:
+	was_written = write(logfd, "RECEIVED ", 9);
+	break;
+    default:
+	fatal_error("ERROR invalid logging() option");
+    }
+    was_written += write(logfd, "5", sizeof(char));      // or sizeof(*c)?
+    was_written += write(logfd, " bytes: ", 8);
+    was_written += write(logfd, buf, len);
+    was_written += write(logfd, "\n", 1);
+    if( was_written == -1 ) fatal_error("ERROR loggin transmission");
+}
+
+const char* filename = "testing-logging.c";
+const char* readfile = "logtesting.txt";
+
+int main(void) {
+
+    int readfd = open(readfile, O_RDONLY);
+    int logfd = open(filename, O_CREAT | O_APPEND);
+
+    if (logfd < 0 || readfd < 0){
+	fprintf(stderr, "failure to open.\n");
+	exit(1);
+    }
+    char buf[256];
+    int bytes_read;
+    bytes_read = read(readfd, buf, 256);
+    if( bytes_read < 0 ) {
+	fprintf(stderr, "failure to read.\n");
+	exit(1);
+    }
+
+    log_entry(logfd, SENT, buf, bytes_read);
+
+    close(readfd);
+    close(logfd);
+    
+    return 0;
+}

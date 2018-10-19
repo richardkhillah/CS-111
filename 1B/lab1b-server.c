@@ -294,6 +294,7 @@ int main(int argc, char* argv[]) {
 		close(newsockfd);
 		int status;
 		waitpid(childpid, &status, 0);
+		if(debug_flag) debug("Client-side POLLHUP | POLLERR received");
 		exit(1);
 		// do something
 	    }

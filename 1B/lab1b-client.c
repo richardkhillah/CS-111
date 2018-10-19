@@ -153,7 +153,7 @@ void readsoc(int sockfd){
     	logstream = fopen(logfile, "a+");
     	if(logstream == NULL) err("Failed open of logfile");
     }
-	if( log_flag) log_entry(logstream, 1, buf, bytes);
+
     // MAIN FUNCTION LOOP
     int i = 0;
     for(; i < bytes; i++) {
@@ -164,7 +164,7 @@ void readsoc(int sockfd){
 
 	if(debug_flag) debug("Calling log_entry()");
 
-
+	if( log_flag) log_entry(logstream, 1, buf, bytes);
 
 	if( encrypt_flag ) {
 	    // decrypt buffer
@@ -321,19 +321,19 @@ int main(int argc, char* argv[]) {
 	/* block socket input and read input from keyboard */
 	if(pollfds[0].revents & POLLIN) {
 	    readstd(sockfd);
-	    //pollfds[0].revents = 0;
+	    pollfds[0].revents = 0;
 	}
       
 	/* block keyboard input and read output from socket */
 	if(pollfds[1].revents & POLLIN) {
 	    readsoc(sockfd);
-	    //pollfds[1].revents = 0;
+	    pollfds[1].revents = 0;
 	}
 
 	/* Something happend, so process remaining work then exit */
 	if(pollfds[1].revents & (POLLHUP | POLLERR)) {
 	    
-	    if(debug_flag) debug("POLLHUP | POLLERR received");
+	    if(debug_flag) debug("Client-side POLLHUP | POLLERR received");
 	    exit(1);
 	}
 

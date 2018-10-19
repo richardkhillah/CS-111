@@ -19,8 +19,6 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
-#include "log.h"
-
 struct termios saved_attributes;
 const char* program_name;
 static struct option const long_opts[] = {
@@ -44,6 +42,33 @@ char* host;
 
 int BUF_SIZE = 256;
 int TIMEOUT = 0;
+
+const int SENT = 0;             // use this approach
+const int RECEIVED = 1;         // use this approach  
+
+void fatal_error(char* my_message){
+    fprintf(stderr, "%s\r\n", my_message);
+    exit(1);
+}
+
+void log_entry(FILE* logstream, int type, char* buf, int len) {
+    int was_written = 0;
+    
+    switch(type){
+    case 0:
+	if( fprintf(logstream, "SENT ") < 0) fatal_error("Failed to write");
+	break;
+    case 1:
+	if( fprintf(logstream, "RECEIVED ") < 0) fatal_error("Failed to write");
+	break;
+    default:
+	fatal_error("ERROR invalid logging() option");
+    }
+    if( fprintf(logstream, "%d bytes: %s\n", len, buf) < 0)
+	fatal_error("Failed to write");
+
+    if( was_written == -1 ) fatal_error("ERROR loggin transmission");
+}
 
 void err(char* msg) {
     fprintf(stderr, "%s\r\n", msg);
@@ -70,8 +95,11 @@ void debug(char* msg) {
 void readstd(int sockfd) {
     // read standard input
     char buf[BUF_SIZE];
-    //FILE* logstream;
+    FILE* logstream;
     int bytes = read(STDIN_FILENO, buf, BUF_SIZE);
+    if(debug_flag) {
+	fprintf(stderr, "bytes read: %d\r\n", bytes);
+    }
     if( bytes < 0 ) err("unable to read standard input");
     if( bytes == 0) {
 	// restore
@@ -79,12 +107,11 @@ void readstd(int sockfd) {
     }
 
     if(log_flag) {
-	//logstream = fopen(logfile, "a");
-	//if( logstream == NULL ) err("Unable to open logfile");
-	
-	
-    }
+	logstream  = fopen((const char*) logfile, "a+");
+	if( logstream == NULL ) fatal_error("Unable to open logfile");
 
+    }
+    
     /* Write read buffer byte-by-byte to appropiate spots */
     int i = 0;
     for(; i < bytes; i++) {
@@ -97,39 +124,39 @@ void readstd(int sockfd) {
 	//if( debug_flag) debug("about to write");
 	int written = write(sockfd, &c, 1);
 	if(written < 0) handle_error("Client-write to sockfd failed.");
-	if(log_flag) {                  // if logging, write( log )
-
-	    //fwrite(&c, sizeof(char), 1, logstream);
-	}
+	
     } // end loop
-
-
     
-    //if(logstream) {
-    //fclose(logstream);
-    //}
+    if(log_flag) {
+	log_entry(logstream, 0, buf, bytes);
+    }
+    
+    if(logstream) {
+	fclose(logstream);
+    }
 }
 
 void readsoc(int sockfd){
     /* read socket */
     char buf[BUF_SIZE];
-    FILE* logstream;
+
+    // FILE* logstream;
     int bytes = read(sockfd, buf, BUF_SIZE); //or BUF_SIZE-1?
     if(bytes < 0) err("Bad soc read");
 
-    if( log_flag ) {
-	logstream = fopen(logfile, "a");
-	if(logstream == NULL) err("Failed open of logfile");
-    }
+    /* if( log_flag ) { */
+    /* 	logstream = fopen(logfile, "a"); */
+    /* 	if(logstream == NULL) err("Failed open of logfile"); */
+    /* } */
 
     // main function loop
     int i = 0;
     for(; i < bytes; i++) {
 	char c = buf[i];
 	// if logging( log )
-	if( log_flag ){
-	    fwrite(&c, sizeof(char), 1, logstream);
-	}
+	/* if( log_flag ){ */
+	/*     fwrite(&c, sizeof(char), 1, logstream); */
+	/* } */
 	if( encrypt_flag ) {
 	    // decrypt buffer
 	}
@@ -137,9 +164,9 @@ void readsoc(int sockfd){
 	write(STDOUT_FILENO, &c, sizeof(char));    
     }// end loop
 
-    if( log_flag ) {
-	fclose(logstream);
-    }
+    /* if( log_flag ) { */
+    /* 	fclose(logstream); */
+    /* } */
 }
 
 void usage() {
@@ -163,6 +190,9 @@ void get_options(int argc, char* argv[]){
 	    case 'l':
 		log_flag = 1;
 		logfile = optarg;
+		if(debug_flag){
+		    fprintf(stderr, "%s\r\n", logfile);
+		}
 		break;
 	    case 'e':
 		encrypt_flag = 1;
@@ -288,6 +318,7 @@ int main(int argc, char* argv[]) {
 	if(pollfds[1].revents & (POLLHUP | POLLERR)) {
 	    
 	    if(debug_flag) debug("POLLHUP | POLLERR received");
+	    exit(1);
 	}
 
     }

@@ -9,6 +9,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include "log.h"
+
 const int SENT = 0;             // use this approach
 const int RECEIVED = 1;         // use this approach  
 

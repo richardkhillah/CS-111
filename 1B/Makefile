@@ -13,7 +13,8 @@ lab1b-client: lab1b-client.c
 lab1b-server: lab1b-server.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-dist: tar -czvf lab1b-604853262.tar.gz README Makefile lab1b-client.c lab1b-server.c my.key
+dist:
+	tar -czvf lab1b-604853262.tar.gz README Makefile lab1b-client.c lab1b-server.c my.key
 
 clean:
 	rm -rf lab1b-client lab1b-server *tar.gz 

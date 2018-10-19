@@ -61,20 +61,26 @@ void debug(char* msg) {
     fprintf(stderr, "%s\r\n", msg);
 }
 
+/* void log(char* message, char* buf, int size, int wfd) { */
+
+/* } */
+
 void readstd(int sockfd) {
     // read standard input
     char buf[BUF_SIZE];
-    FILE* logstream;
+    //FILE* logstream;
     int bytes = read(STDIN_FILENO, buf, BUF_SIZE);
     if( bytes < 0 ) err("unable to read standard input");
     if( bytes == 0) {
 	// restore
 	exit(0);
     }
-    
+
     if(log_flag) {
-	logstream = fopen(logfile, "a");
-	if( logstream == NULL ) err("Unable to open logfile");
+	//logstream = fopen(logfile, "a");
+	//if( logstream == NULL ) err("Unable to open logfile");
+	
+	
     }
 
     /* Write read buffer byte-by-byte to appropiate spots */
@@ -90,15 +96,16 @@ void readstd(int sockfd) {
 	int written = write(sockfd, &c, 1);
 	if(written < 0) handle_error("Client-write to sockfd failed.");
 	if(log_flag) {                  // if logging, write( log )
-	    fwrite(&c, sizeof(char), 1, logstream);
+
+	    //fwrite(&c, sizeof(char), 1, logstream);
 	}
     } // end loop
 
 
     
-    if(logstream) {
-	fclose(logstream);
-    }
+    //if(logstream) {
+    //fclose(logstream);
+    //}
 }
 
 void readsoc(int sockfd){

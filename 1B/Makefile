@@ -3,7 +3,7 @@
 # UID: 604853262
 
 CC=gcc
-CFLAGS= -Wall -Wextra
+CFLAGS= -Wall -Wextra -lmcrypt
 
 all: lab1b-client lab1b-server
 

@@ -19,7 +19,33 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
+
+#include <mcrypt.h>
+
+MCRYPT ebuf;
+MCRYPT dbuf;
+
+void open_mcrypt(){
+    ebuf = mcrypt_module_open("twofish", NULL, "cfb", NULL);
+    if(ebuf == MCRYPT_FAILED){
+	fprintf(stderr, "failed open_emcrypt");
+	exit(1);
+    }
+
+    dbuf = mcrypt_module_open("twofish", NULL, "cfb", NULL);
+    if(ebuf == MCRYPT_FAILED){
+	fprintf(stderr, "failed open_emcrypt");
+	exit(1);
+    }
+}
+
+void init_mcrypt(){
+    
+}
+void deinit_mcrypt(){}
+void close_mcrypt(){}
+
 
 const char* program_name;
 static struct option const long_opts[] = {
@@ -218,6 +244,9 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr, "Error: port must be greater than 1024\r\n");
 	exit(1);
     }
+
+    open_mcrypt();
+    
     // setup signal handlers
     
     int sockfd, newsockfd;

@@ -1,0 +1,18 @@
+# NAME: Richard Khillah
+# EMAIL: RKhillah@ucla.edu
+# ID: 604853262
+
+MAC: 2CF7F1068F12
+WiFi: 10.0.0.19
+
+my_beaglebone.jpg : A selfie of me holding my assembled Beaglebone
+connected.png 	  : Screen shot of Beagleboan connected via usb showing
+		    Beaglebone name and configured network access
+copy.png	  : Screen shot from a local session in which I copy a
+		    hello world program from laptop to Beaglebone
+build_run.png	  : Screen shot from Wifi ssh where I build and run
+		    the trivial hello world program.
+git.png		  : Screenshot from a Sifi ssh session where I clone
+		    a git repository. Note: git was already installed
+		    on this distribuion of Beaglebone distribution.
+Makefile	  : build the distribution tarball and clean repository.

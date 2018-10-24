@@ -7,11 +7,11 @@ CFLAGS= -Wall -Wextra
 
 DEFAULT=Makefile README
 HEADERS= common.h SortedList.h
-SOURCE= SortedList.c
+SOURCE= lab2_list.c SortedList.c
 
 default: lab2_list
 
-lab2_list: SortedList.c ${HEADERS}
+lab2_list: ${SOURCE} ${HEADERS}
 	$(CC) $(CFLAGS) -o $@ $<
 
 dist:

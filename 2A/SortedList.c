@@ -58,7 +58,7 @@ int SortedList_delete(SortedListElement_t* element) {
 	}
 
 	return 1; // error with the list
-}
+} // end SortedList_delete
 
 
 SortedListElement_t* SortedList_lookup(SortedList_t* list, const char* key) {
@@ -82,6 +82,27 @@ SortedListElement_t* SortedList_lookup(SortedList_t* list, const char* key) {
 	}
 
 	return NULL; // error
-}
+} // end SortedList_lookup()
 
 
+int SortedList_length(SortedList_t* list) {
+	// ensure we have a list to work with
+	if(list == NULL) {
+		return -1; 
+	}
+
+	int numElements = 0;
+
+	SortedList_t* ptr = list->next;
+	
+	while(ptr != list) {
+		numElements++;
+
+		if(opt_yield & LOOKUP_YIELD) {
+			sched_yield();
+		}
+
+		ptr = ptr->next;
+	}
+	return numElements;
+} // end SortedList_length()

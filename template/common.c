@@ -2,11 +2,12 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
-#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <fcntl.h>
+#include <errno.h>
 #include <string.h>
 
 #include "common.h"

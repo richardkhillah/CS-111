@@ -11,3 +11,9 @@
 #include <getopt.h>
 
 #include "common.h"
+
+int main(int argc, char* argv[]) {
+	set_program_name();
+	printf("program_name: %s\n", program_name);
+	return 0;
+}

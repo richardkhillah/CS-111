@@ -14,7 +14,7 @@ OTHER= *.png *.csv
 
 #default: build
 
-build: lab2_add #lab2_list
+build: lab2_add mks #lab2_list
 
 lab2_add:
 	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 
@@ -22,12 +22,24 @@ lab2_add:
 lab2_list:
 	$(CC) $(CFLAGS) -o
 
-tests:
+mks:
+	touch l2add_tests.mk l2list_tests.mk
+	chmod +x generate.sh
+	./generate.sh
 
-graphs:
+-include l2add_tests.mk
+
+tests: clean_slate add_tests
+
+clean_slate: mks 
+add_tests: l2add_tests
+
+GSCRIPTS=lab2_add.gp lab2_list.gp
+graphs: tests
+	./lab2_add.gp
 
 dist:
-	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${SOURCE}
+	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${SOURCE} ${GSCRIPTS}
 
 clean:
-	rm -rf lab2_list lab2_add *tar.gz
+	rm -rf lab2_list lab2_add *tar.gz *.mk *.csv

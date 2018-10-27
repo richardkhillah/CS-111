@@ -1,0 +1,31 @@
+NAME: Richard Khillah
+EMAIL: RKhillah@ucla.edu
+ID: 604853262
+
+
+Source code descriptions:
+lab2_add.c
+
+lab2_list.c
+
+common.c common.h
+
+add_member.c add_member.h
+
+generate.sh
+	contains two for loops. One to generate non-sync options, and the
+	other to generate sync options. The output of the kernal of each loop
+	will be appended to corresponding .csv files, e.g., lab2_add.csv or lab2_list.csv.
+	The script is also used to generate test cases for Makefile.
+	This funcationality simply echos and appends commands to auxillary
+	Makefiles, i.e., lab2_add test cases are concatenated to makel2add.mk.
+	the top level Makefile -include(s) auxiliery makefiles, and when
+	'$ make tests' is executed, Makefile corresponding runs the
+	'add_tests' and 'list_tests' recipes in l2add_tests.mk and l2list_tests.mk respectively.
+
+
+
+QUESTION 2.1.1 - causing conflicts:
+	Why does it take many iterations before errors are seen?
+	Why does a significantly smaller number of iterations so seldom fail?
+

@@ -30,12 +30,13 @@ void add(long long *pointer, long long value) {
 
 void* thread_routine() {
 	/* add 1  */
-	for(int i = 0; i < numIterations; i++) {
+	int i;
+	for(i = 0; i < numIterations; i++) {
 		add(&counter, 1);
 	}
 
 	/* add -1 */
-	for(int i = 0; i < numIterations; i++) {
+	for(i = 0; i < numIterations; i++) {
 		add(&counter, -1);
 	}
 	return NULL;

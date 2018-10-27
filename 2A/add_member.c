@@ -29,7 +29,7 @@ void tag() {
 	if(yield) printf("yield-");
 
 	if(sync_type == NONE) printf("none");
-	else printf("%c\n", sync_type);
+	else printf("%c", sync_type);
 }
 
 

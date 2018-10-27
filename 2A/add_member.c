@@ -23,6 +23,15 @@ void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield] [--sync=type]\n", program_name);
 }
 
+void tag() {
+	printf("add-");
+
+	if(yield) printf("yield-");
+
+	if(sync_type == NONE) printf("none");
+	else printf("%c\n", sync_type);
+}
+
 
 static struct option const long_opts[] = {
 	{"threads", required_argument, NULL, THREADS},

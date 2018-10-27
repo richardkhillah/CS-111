@@ -26,3 +26,5 @@ char sync_type;
 void usage();
 
 void get_options(int argc, char* const* argv);
+
+void tag();

@@ -19,11 +19,12 @@ void add(long long *pointer, long long value) {
 }
 
 int main(int argc, char* argv[]) {
-	fprintf(stderr, "in main: threads was: %d\n", numThreads);
 	set_program_name(argv[0]);
 	get_options(argc, argv);
 
-	fprintf(stderr, "in main: threads is: %d\n", numThreads);
+	tag();
+
+	
 	
 	return 0;
 }

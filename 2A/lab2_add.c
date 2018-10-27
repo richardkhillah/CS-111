@@ -26,10 +26,12 @@ void add(long long *pointer, long long value) {
 
 
 
+
 int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
 	get_options(argc, argv);
 
+	signal(SIGSEGV, handle_sig);
 	tag();
 
 	/* Initial long long counter to zero */
@@ -44,7 +46,9 @@ int main(int argc, char* argv[]) {
 	struct timespec t_start, t_end;
 	clock_gettime(CLOCK_MONOTONIC, &t_start);
 
-	/**/
+	/* set threads off running thread_routine */
+
+
 
 
 	clock_gettime(CLOCK_MONOTONIC, &t_end);	

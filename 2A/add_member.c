@@ -19,6 +19,14 @@ bool yield = false;
 bool sync_flag = false;
 char sync_type = NONE;
 
+void handle_sig(int sig) {
+	if(sig == SIGSEGV) {
+		fatal_error("Segmentation fault");
+	}
+}
+
+
+
 void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield] [--sync=type]\n", program_name);
 }

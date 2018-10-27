@@ -9,8 +9,8 @@
 # if there are any previously generate makefiles or .csv files, 
 # remove them before creating the .mk recipes.
 ADDCSV="lab2_add.csv"
-#ADDMK="lab2_add.mk"
-ADDMK="l2add_tests.mk"
+ADDMK="maketests.mk"
+#ADDMK="l2add_tests.mk"
 
 ADDRULE="test_add"
 LISTRULE="test_list"

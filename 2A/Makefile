@@ -23,11 +23,11 @@ lab2_list:
 	$(CC) $(CFLAGS) -o
 
 mks:
-	touch l2add_tests.mk l2list_tests.mk
+	touch maketests.mk
 	chmod +x generate.sh
 	./generate.sh
 
--include l2add_tests.mk
+-include maketests.mk
 
 # Rules declared in add mk file
 #ADDRULE="test_add"

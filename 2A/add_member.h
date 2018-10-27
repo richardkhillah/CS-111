@@ -17,11 +17,6 @@
 
 typedef int bool;
 
-int numThreads = DEFAULT;
-int numIterations = DEFAULT;
-bool yield = false;
-bool sync_flag = false;
-char sync_type = NONE;
 
 void usage();
 

@@ -8,16 +8,18 @@ CFLAGS= -Wall -Wextra
 DEFAULT=Makefile README
 COMMON=common.c
 
-ADD_SOURCE=lab2_add.c add-member.c
+ADD_SOURCE=lab2_add.c add_member.c
 
 OTHER= *.png *.csv
 
-default: build
+# default: build
 
 build: lab2_add #lab2_list
 
-lab2_add: lab2_add.c add_member.c common.c #${ADD_SOURCE}
-	$(CC) $(CFLAGS) -o $@ $<
+#lab2_add: lab2_add.c add_member.c common.c #${ADD_SOURCE}
+#	$(CC) $(CFLAGS) -o $@ $<
+lab2_add:
+	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c
 
 lab2_list: ${LIST_SOURCE}  #${HEADERS}
 	$(CC) $(CFLAGS) -o $@ $<

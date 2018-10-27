@@ -13,6 +13,12 @@
 #include <string.h>
 #include <getopt.h>
 
+int numThreads = DEFAULT;
+int numIterations = DEFAULT;
+bool yield = false;
+bool sync_flag = false;
+char sync_type = NONE;
+
 void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield] [--sync=type]\n", program_name);
 }

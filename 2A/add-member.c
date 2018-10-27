@@ -18,7 +18,7 @@ void usage() {
 }
 
 
-static struct option const long_opts = {
+static struct option const long_opts[] = {
 	{"threads", optional_argument, NULL, THREADS},
 	{NULL, 0, NULL, 0}
 };

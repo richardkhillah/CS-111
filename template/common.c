@@ -27,12 +27,12 @@ void set_program_name(const char* argv0) {
     program_name = argv0;
 }
 
-void fatal_error(char* my_message){
+void fatal_error(char* msg){
     fprintf(stderr, "%s\r\n", my_message);
     exit(EXIT_ERROR);
 }
 
-void handle_error(char* msg, void* errcode) {
+void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
     exit(EXIT_ERROR);
 }

@@ -14,5 +14,7 @@ echo "l2add_tests:" >> l2add_tests.mk
 for threads in 1 2 4 8 16; do
 	for iterations in 100 1000 10000 100000; do
 		echo "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> l2add_tests.mk
+		# the following declaration is for lnxsrv07
+		#echo -e "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> l2add_tests.mk
 	done
 done

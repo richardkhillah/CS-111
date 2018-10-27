@@ -25,7 +25,18 @@ void add(long long *pointer, long long value) {
 }
 
 
+void* thread_routine() {
+	/* add 1  */
+	for(int i = 0; i < numIterations; i++) {
+		add(&counter, 1);
+	}
 
+	/* add -1 */
+	for(int i = 0; i < numIterations; i++) {
+		add(&counter, -1);
+	}
+	return NULL;
+}
 
 int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
@@ -47,9 +58,18 @@ int main(int argc, char* argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &t_start);
 
 	/* set threads off running thread_routine */
+	for(int i = 0; i < numThreads; i++) {
+		if(pthread_create(threadPool + i, NULL, thread_routine, NULL) != 0)
+			fatal_error2("Error creating a thread.");
 
+	}
 
+	/* rejoin threads to main*/
+	for(int i = 0; i < numThreads; i++) {
+		if(pthread_join(threadPool[i], NULL) != 0)
+			fatal_error2("Error joining a thread.");
 
+	}
 
 	clock_gettime(CLOCK_MONOTONIC, &t_end);	
 

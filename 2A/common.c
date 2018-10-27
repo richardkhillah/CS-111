@@ -2,6 +2,8 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
+#include "common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,8 +11,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-
-#include "common.h"
 
 void set_program_name(const char* argv0) {
     if(argv0 == NULL) {

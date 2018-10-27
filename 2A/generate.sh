@@ -18,6 +18,8 @@ LISTRULE="test_list"
 rm -f *.mk
 rm -f lab2_add.csv
 echo "${ADDRULE}:" >> ${ADDMK}
+
+# NONE (--threads and --iterations only)
 for threads in 1 2 4 8 16; do
 	for iterations in 100 1000 10000 100000; do
 		echo "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
@@ -29,6 +31,7 @@ done
 echo >> ${ADDMK}
 #echo -e >> ${ADDFILE}
 
+# YIELD (--threads, --iterations, --yield)
 for threads in 1 2 4 8 16; do
 	for iterations in 100 1000 10000 100000; do
 		echo "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}

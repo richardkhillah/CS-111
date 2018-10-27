@@ -33,12 +33,12 @@ mks:
 #ADDRULE="test_add"
 #LISTRULE="test_list"
 
-tests: clean_slate add_tests
+tests: clean_slate tests_add
 
 ##
 # Used to ensure fresh .mk and .csv files
 clean_slate: mks 
-add_tests: test_add
+tests_add: test_add
 
 GSCRIPTS=lab2_add.gp lab2_list.gp
 

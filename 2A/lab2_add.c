@@ -15,6 +15,7 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <time.h>
+#include <signal.h>
 
 #define S_TO_NS_CFACTOR 1000000000
 
@@ -61,14 +62,15 @@ int main(int argc, char* argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &time_start);
 
 	/* set threads off running thread_routine */
-	for(int i = 0; i < numThreads; i++) {
+	int i;
+	for(i = 0; i < numThreads; i++) {
 		if(pthread_create(threadPool + i, NULL, thread_routine, NULL) != 0)
 			fatal_error2("Error creating a thread.");
 
 	}
 
 	/* rejoin threads to main */
-	for(int i = 0; i < numThreads; i++) {
+	for(i = 0; i < numThreads; i++) {
 		if(pthread_join(threadPool[i], NULL) != 0)
 			fatal_error2("Error joining a thread.");
 

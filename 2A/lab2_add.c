@@ -2,6 +2,9 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
+#include "common.h"
+#include "add-member.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -10,8 +13,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "common.h"
-#include "add-member.h"
+
 
 
 void add(long long *pointer, long long value) {

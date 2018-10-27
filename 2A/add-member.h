@@ -25,10 +25,4 @@ char sync_type = NONE;
 
 void usage();
 
-
-static struct option const long_opts[] = {
-	{"threads", optional_argument, NULL, THREADS},
-	{NULL, 0, NULL, 0}
-};
-
 void get_options(int argc, char* const* argv);

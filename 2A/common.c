@@ -2,11 +2,12 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
-#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <fcntl.h>
+#include <errno.h>
 #include <string.h>
 
 #include "common.h"
@@ -26,12 +27,12 @@ void set_program_name(const char* argv0) {
     program_name = argv0;
 }
 
-void fatal_error(char* my_message){
+void fatal_error(char* msg){
     fprintf(stderr, "%s\r\n", my_message);
     exit(EXIT_ERROR);
 }
 
-void handle_error(char* msg, void* errcode) {
+void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
     exit(EXIT_ERROR);
 }

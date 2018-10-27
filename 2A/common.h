@@ -23,7 +23,7 @@ void set_program_name(const char* argv0);
 /**
  * 
  */
-void fatal_error(const* msg);
+void fatal_error(char* msg);
 
 /**
  * 

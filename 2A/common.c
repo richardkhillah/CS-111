@@ -34,6 +34,12 @@ void fatal_error(char* msg){
     exit(EXIT_ERROR);
 }
 
+void fatal_error2(char* msg) {
+    fprintf(stderr, "%s: %s\r\n", program_name, msg);
+    usage();
+    exit(EXIT_ERROR_OTHER);
+}
+
 void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
     exit(EXIT_ERROR);

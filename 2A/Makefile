@@ -3,12 +3,12 @@
 # ID: 604853262
 
 CC=gcc
-CFLAGS= -Wall -Wextra
+CFLAGS= -Wall -Wextra -pthread
 
 DEFAULT=Makefile README
-COMMON=common.c
+COMMON=common.c common.h
 
-ADD_SOURCE=lab2_add.c add_member.c
+ADD_SOURCE=lab2_add.c add_member.c add_member.h
 
 OTHER= *.png *.csv
 
@@ -16,13 +16,11 @@ OTHER= *.png *.csv
 
 build: lab2_add #lab2_list
 
-#lab2_add: lab2_add.c add_member.c common.c #${ADD_SOURCE}
-#	$(CC) $(CFLAGS) -o $@ $<
 lab2_add:
-	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c
+	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 
 
-lab2_list: ${LIST_SOURCE}  #${HEADERS}
-	$(CC) $(CFLAGS) -o $@ $<
+lab2_list:
+	$(CC) $(CFLAGS) -o
 
 tests:
 

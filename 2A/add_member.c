@@ -25,17 +25,49 @@ void usage() {
 
 
 static struct option const long_opts[] = {
-	{"threads", optional_argument, NULL, THREADS},
+	{"threads", required_argument, NULL, THREADS},
+	{"iterations", required_argument, NULL, ITERATIONS},
+	{"yield", no_argument, NULL, YIELD},
+	{"sync", required_argument, NULL, SYNC},
 	{NULL, 0, NULL, 0}
 };
 
 void get_options(int argc, char* const* argv) {
 	int opt;
 	int optind;
-	while( (opt = getopt_long(argc, argv, "t:", long_opts, &optind)) != -1 ) {
+	while( (opt = getopt_long(argc, argv, "", long_opts, &optind)) != -1 ) {
 	switch(opt) {
 		case THREADS:
-
+			numThreads = atoi(optarg);
+			if (numThreads <= 0) {
+				fatal_error("--threads: input a numeber greater than 0.");
+			}
+			break;
+		case ITERATIONS:
+			numIterations = atoi(optarg);
+			if (numIterations <= 0) {
+				fatal_error("--iterations: must be a number greater than 0.");
+			}
+			break;
+		case YIELD:
+			yield = true;
+			break;
+		case SYNC:
+			if(optarg) {
+				switch (*optarg) {
+					case MUTEX:
+						sync_type=MUTEX;
+						break;
+					case SPIN:
+						sync_type=SPIN;
+						break;
+					case CAS:
+						sync_type=CAS;
+						break;
+					default:
+						fatal_error("--sync: Invalid option. Acceptable options are: m, s, c ");
+				}
+			}
 			break;
 		default:
 			break;

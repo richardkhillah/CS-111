@@ -3,6 +3,7 @@
 // ID: 604853262
 
 #include "common.h"
+#include "add_member.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +29,8 @@ void set_program_name(const char* argv0) {
 }
 
 void fatal_error(char* msg){
-    fprintf(stderr, "%s\r\n", msg);
+    fprintf(stderr, "%s: %s\r\n", program_name, msg);
+    usage();
     exit(EXIT_ERROR);
 }
 

@@ -17,6 +17,11 @@
 
 typedef int bool;
 
+int numThreads;
+int numIterations;
+bool yield;
+bool sync_flag;
+char sync_type;
 
 void usage();
 

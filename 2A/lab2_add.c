@@ -13,17 +13,17 @@
 #include <string.h>
 #include <getopt.h>
 
-
-
-
 void add(long long *pointer, long long value) {
 	long long sum = *pointer + value;
 	*pointer = sum;
 }
 
 int main(int argc, char* argv[]) {
+	fprintf(stderr, "in main: threads was: %d\n", numThreads);
 	set_program_name(argv[0]);
-	printf("program_name: %s\n", program_name);
-	usage();
+	get_options(argc, argv);
+
+	fprintf(stderr, "in main: threads is: %d\n", numThreads);
+	
 	return 0;
 }

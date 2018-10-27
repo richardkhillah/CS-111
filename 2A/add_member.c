@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <string.h>
 #include <getopt.h>
+#include <signal.h>
 
 int numThreads = DEFAULT;
 int numIterations = DEFAULT;

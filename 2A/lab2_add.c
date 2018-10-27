@@ -11,6 +11,8 @@
 #include <getopt.h>
 
 #include "common.h"
+#include "add-member.h"
+
 
 void add(long long *pointer, long long value) {
 	long long sum = *pointer + value;
@@ -18,7 +20,8 @@ void add(long long *pointer, long long value) {
 }
 
 int main(int argc, char* argv[]) {
-	set_program_name();
+	set_program_name(argv[0]);
 	printf("program_name: %s\n", program_name);
+	usage();
 	return 0;
 }

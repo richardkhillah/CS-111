@@ -29,12 +29,22 @@ mks:
 
 -include l2add_tests.mk
 
+# Rules declared in add mk file
+#ADDRULE="test_add"
+#LISTRULE="test_list"
+
 tests: clean_slate add_tests
 
+##
+# Used to ensure fresh .mk and .csv files
 clean_slate: mks 
-add_tests: l2add_tests
+add_tests: test_add
 
 GSCRIPTS=lab2_add.gp lab2_list.gp
+
+##
+# TODO: possibly remove dependency on tests to allow user to use previously
+# generated numbers
 graphs: tests
 	./lab2_add.gp
 

@@ -12,9 +12,12 @@ ADDCSV="lab2_add.csv"
 #ADDMK="lab2_add.mk"
 ADDMK="l2add_tests.mk"
 
+ADDRULE="test_add"
+LISTRULE="test_list"
+
 rm -f *.mk
 rm -f lab2_add.csv
-echo "l2add_tests:" >> ${ADDMK}
+echo "${ADDRULE}:" >> ${ADDMK}
 for threads in 1 2 4 8 16; do
 	for iterations in 100 1000 10000 100000; do
 		echo "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}

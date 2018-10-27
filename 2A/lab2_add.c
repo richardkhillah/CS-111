@@ -16,6 +16,8 @@
 #include <pthread.h>
 #include <time.h>
 
+#define S_TO_NS_CFACTOR 1000000000
+
 
 long long counter;
 
@@ -48,14 +50,15 @@ int main(int argc, char* argv[]) {
 	/* Initial long long counter to zero */
 	counter = 0;
 
+	/* create threadpool based on numThreads. Default = 1 */
 	pthread_t *threadPool;
 	threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
-	
 	if(threadPool == NULL)
 		fatal_error2("Error allocating thread pool");
 
-	struct timespec t_start, t_end;
-	clock_gettime(CLOCK_MONOTONIC, &t_start);
+	/* Get time before setting threads off to run thread_routine */
+	struct timespec time_start, time_end;
+	clock_gettime(CLOCK_MONOTONIC, &time_start);
 
 	/* set threads off running thread_routine */
 	for(int i = 0; i < numThreads; i++) {
@@ -64,14 +67,32 @@ int main(int argc, char* argv[]) {
 
 	}
 
-	/* rejoin threads to main*/
+	/* rejoin threads to main */
 	for(int i = 0; i < numThreads; i++) {
 		if(pthread_join(threadPool[i], NULL) != 0)
 			fatal_error2("Error joining a thread.");
 
 	}
 
-	clock_gettime(CLOCK_MONOTONIC, &t_end);	
+	/* end time - time after threads have been rejoined to main */
+	clock_gettime(CLOCK_MONOTONIC, &time_end);	
+
+	/**
+	 * Calculate performance metrics: elapsed time, number operations
+	 * and average time each operation took to run, then report to console.
+	 * Start with less precise time spec granularity then account for high 
+	 * granularity time spec. 
+	 */
+	long long time_elapsed = (time_end.tv_sec - time_start.tv_sec) * S_TO_NS_CFACTOR;
+	time_elapsed += time_end.tv_nsec;
+	time_elapsed -= time_start.tv_nsec;
+
+	long long numOperations = numThreads * numIterations * 2;
+	long long time_average = time_elapsed / numOperations;
+
+	printf(",%d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, counter);
+
+	free(threadPool);
 
 	return 0;
 }

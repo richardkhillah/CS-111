@@ -15,6 +15,7 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <time.h>
+#include <sched.h>
 #include <signal.h>
 
 #define S_TO_NS_CFACTOR 1000000000
@@ -24,6 +25,9 @@ long long counter;
 
 void add(long long *pointer, long long value) {
 	long long sum = *pointer + value;
+
+	if (yield)
+		sched_yield();
 	*pointer = sum;
 }
 

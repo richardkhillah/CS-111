@@ -1,7 +1,6 @@
+#! /usr/local/cs/bin/gnuplot
 # # for localhost
 # # ! /usr/local/bin/gnuplot
-## for lnxsrv07
-#! /usr/local/cs/bin/gnuplot
 ## original
 # # ! /usr/bin/gnuplot
 #

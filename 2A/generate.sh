@@ -9,8 +9,8 @@
 # if there are any previously generate makefiles or .csv files, 
 # remove them before creating the .mk recipes.
 
-ECHO="echo" # use on local machine
-#ECHO="echo -e" # use on lnxsrv07
+#ECHO="echo" # use on local machine
+ECHO="echo -e" # use on lnxsrv07
 
 ADDCSV="lab2_add.csv"
 ADDMK="maketests.mk"
@@ -21,25 +21,25 @@ LISTRULE="test_list"
 
 rm -f *.mk
 rm -f lab2_add.csv
-$(ECHO) "${ADDRULE}:" >> ${ADDMK}
+$ECHO "${ADDRULE}:" >> ${ADDMK}
 
 # NONE (--threads and --iterations only)
 for threads in 1 2 4 8 16; do
 	for iterations in 100 1000 10000 100000; do
-		$(ECHO) "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 		# the following declaration is for lnxsrv07
-		#$(ECHO) -e "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		#$ECHO -e "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
 done
 
-$(ECHO) >> ${ADDMK}
-#$(ECHO) -e >> ${ADDFILE}
+$ECHO >> ${ADDMK}
+#$ECHO -e >> ${ADDFILE}
 
 # YIELD (--threads, --iterations, --yield)
 for threads in 1 2 4 8 12; do
 	for iterations in 10 20 40 80 100 1000 10000 100000; do
-		$(ECHO) "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
 		# the following declaration is for lnxsrv07
-		#$(ECHO) -e "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
+		#$ECHO -e "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
 	done
 done

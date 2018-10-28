@@ -45,7 +45,7 @@ GSCRIPTS=lab2_add.gp lab2_list.gp
 ##
 # TODO: possibly remove dependency on tests to allow user to use previously
 # generated numbers
-graphs: tests
+graphs: #tests
 	./lab2_add.gp
 
 dist:

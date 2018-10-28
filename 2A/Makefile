@@ -52,4 +52,4 @@ dist:
 	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${SOURCE} ${GSCRIPTS}
 
 clean:
-	rm -rf lab2_list lab2_add *tar.gz *.mk *.csv
+	rm -rf lab2_list lab2_add *tar.gz *.mk *.csv *.png

@@ -9,8 +9,8 @@
 # if there are any previously generate makefiles or .csv files, 
 # remove them before creating the .mk recipes.
 
-ECHO="echo" # use on local machine
-#oECHO="echo -e" # use on lnxsrv07
+#ECHO="echo" # use on local machine
+ECHO="echo -e" # use on lnxsrv07
 
 ADDCSV="lab2_add.csv"
 ADDMK="maketests.mk"

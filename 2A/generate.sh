@@ -23,33 +23,48 @@ rm -f *.mk
 rm -f lab2_add.csv
 $ECHO "${ADDRULE}:" >> ${ADDMK}
 
-## start lab2_add-1.png
-for threads in 1 2 4 8 12; do
-	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
-	done
-done
-$ECHO >> ${ADDMK}
-# YIELD (--threads, --iterations, --yield)
 for threads in 1 2 4 8 12; do
 	for iterations in 10 20 40 80 100 1000 10000 100000; do
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
 	done
 done
+$ECHO >> ${ADDMK}
+for threads in 1 2 4 8 12; do
+	for sync in m c; do
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK}
+	done
+done
+$ECHO >> ${ADDMK}
+for threads in 1 2 4 8 12; do
+	$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=s >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=s --yield >> lab2_add.csv" >> ${ADDMK}
+
+# YIELD (--threads, --iterations, --yield)
+#for threads in 1 2 4 8 12; do
+#	for iterations in 10 20 40 80 100 1000 10000 100000; do
+#		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
+#	done
+#done
 ## end lab2_add-1.png
 
-$ECHO >> ${ADDMK}
+#$ECHO >> ${ADDMK}
 ############################################################
 
+
+
+
+
 ## start lab2_add-2.png
-for threads in 2 8; do
-	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
-	done
-done
-$ECHO >> ${ADDMK}
-for threads in 2 8; do
-	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
-	done
-done
+#for threads in 2 8; do
+#	for iterations in 100 1000 10000 100000; do
+#		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+#	done
+#done
+#$ECHO >> ${ADDMK}
+#for threads in 2 8; do
+#	for iterations in 100 1000 10000 100000; do
+#		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
+#	done
+#done

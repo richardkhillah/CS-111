@@ -24,10 +24,11 @@ rm -f lab2_add.csv
 $ECHO "${ADDRULE}:" >> ${ADDMK}
 
 ## start lab2_add-1.png
-for iterations in 100 1000 10000 100000; do
-	$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+for threads in 1 2 4 8 12; do
+	for iterations in 100 1000 10000 100000; do
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+	done
 done
-
 $ECHO >> ${ADDMK}
 # YIELD (--threads, --iterations, --yield)
 for threads in 1 2 4 8 12; do

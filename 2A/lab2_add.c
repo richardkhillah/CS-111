@@ -31,7 +31,20 @@ void add(long long *pointer, long long value) {
 	*pointer = sum;
 }
 
+void add_CAS(long long *pointer, long long value) {
+	long long temp;
+    long long new;
+    do {
+        temp = *pointer;
+        new = temp + value;
+        if (yield)
+            sched_yield();
+
+    } while(__sync_val_compare_and_swap(pointer, temp, new) != temp);
+}
+
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int spinLock = 0;
 
 void* thread_routine() {
 	/* add 1  */
@@ -47,6 +60,18 @@ void* thread_routine() {
 				add(&counter, 1);
 				if (pthread_mutex_unlock(&lock) != 0)
 					fatal_error2("Error unlcoking pthread mutex lock");
+				break;
+			}
+			case SPIN:{
+				while(__sync_lock_test_and_set(&spinLock, 1));
+
+				add(&counter, 1);
+
+				__sync_lock_release(&spinLock);
+				break;
+			}
+			case CAS: {
+				add_CAS(&counter, 1);
 				break;
 			}
 			/* No need for default case since get_options() has ensured sync_type options */
@@ -69,6 +94,18 @@ void* thread_routine() {
 					fatal_error2("Error unlcoking pthread mutex lock");
 				break;
 			} // end case MUTEX
+			case SPIN:{
+				while(__sync_lock_test_and_set(&spinLock, 1));
+
+				add(&counter, 1);
+
+				__sync_lock_release(&spinLock);
+				break;
+			} // end case SPIN
+			case CAS: {
+				add_CAS(&counter, -1);
+				break;
+			}	
 			/* No need for default case since get_options() has ensured sync_type options */
 		} // end switch
 	} // end for

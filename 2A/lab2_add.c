@@ -31,18 +31,47 @@ void add(long long *pointer, long long value) {
 	*pointer = sum;
 }
 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 void* thread_routine() {
 	/* add 1  */
 	int i;
 	for(i = 0; i < numIterations; i++) {
-		add(&counter, 1);
+		switch (sync_type) {
+			case NONE:
+				add(&counter, 1);
+				break;
+			case MUTEX: {
+				if (pthread_mutex_lock(&lock) != 0)
+					fatal_error2("Error locking pthread mutex lock");
+				add(&counter, 1);
+				if (pthread_mutex_unlock(&lock) != 0)
+					fatal_error2("Error unlcoking pthread mutex lock");
+				break;
+			}
+			/* No need for default case since get_options() has ensured sync_type options */
+		}
 	}
 
 	/* add -1 */
 	for(i = 0; i < numIterations; i++) {
 		add(&counter, -1);
-	}
+
+		switch (sync_type) {
+			case NONE:
+				add(&counter, -1);
+				break;
+			case MUTEX: {
+				if (pthread_mutex_lock(&lock) != 0)
+					fatal_error2("Error locking pthread mutex lock");
+				add(&counter, -1);
+				if (pthread_mutex_unlock(&lock) != 0)
+					fatal_error2("Error unlcoking pthread mutex lock");
+				break;
+			} // end case MUTEX
+			/* No need for default case since get_options() has ensured sync_type options */
+		} // end switch
+	} // end for
 	return NULL;
 }
 

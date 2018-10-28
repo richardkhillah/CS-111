@@ -33,7 +33,7 @@ mks:
 #ADDRULE="test_add"
 #LISTRULE="test_list"
 
-tests: clean_slate tests_add
+tests: tests_add #clean_slate tests_add
 
 ##
 # Used to ensure fresh .mk and .csv files

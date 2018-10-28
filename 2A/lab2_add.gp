@@ -1,9 +1,9 @@
-## for localhost
-##! /usr/local/bin/gnuplot
+# # for localhost
+# # ! /usr/local/bin/gnuplot
 ## for lnxsrv07
 #! /usr/local/cs/bin/gnuplot
 ## original
-# #! /usr/bin/gnuplot
+# # ! /usr/bin/gnuplot
 #
 # purpose:
 #	 generate data reduction graphs for the multi-threaded add project

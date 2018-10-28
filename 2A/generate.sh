@@ -28,29 +28,34 @@ for threads in 1 2 4 8 12; do
 		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
 done
+$ECHO >> ${ADDMK}
 
 # B
+# no yield
 for threads in 2 4 8 12; do
 	for iterations in 10 20 40 80 100 1000 10000 100000; do
 		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
 done
+# yes yield
 for threads in 2 4 8 12; do
 	for iterations in 10 20 40 80 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
 	done
 done
 $ECHO >> ${ADDMK}
 
 # C
+# no yield
 for threads in 2 8; do
 	for iterations in 100 1000 10000 100000; do
 		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
 done
+# yes yield
 for threads in 2 8; do
 	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --yield >> lab2_add.csv" >> ${ADDMK}
 	done
 done
 $ECHO >> ${ADDMK}
@@ -62,6 +67,7 @@ done
 $ECHO >> ${ADDMK}
 
 # E
+# no yield
 for threads in 2 4 8 12; do
 	for sync in m c s; do
 		if [[ $(sync) -eq s ]]; then
@@ -71,6 +77,7 @@ for threads in 2 4 8 12; do
 		fi
 	done
 done
+# yes yield
 for threads in 2 4 8 12; do
 	for sync in m c s; do
 		if [[ $(sync) -eq s ]]; then
@@ -83,11 +90,12 @@ done
 $ECHO >> ${ADDMK}
 
 # F
+# no yield
 for threads in 1 2 4 8 12; do
 	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 >> lab2_add.csv" >> ${ADDMK}
 	for sync in m c s; do
 		if [[ $(sync) -eq s ]]; then
-			$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
+			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
 		else
 			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
 		fi

@@ -40,7 +40,6 @@ done
 
 $ECHO >> ${ADDMK}
 ############################################################
-$ECHO >> ${ADDMK}
 
 ## start lab2_add-2.png
 for threads in 2 8; do

@@ -32,14 +32,16 @@ done
 $ECHO >> ${ADDMK}
 for threads in 1 2 4 8 12; do
 	for sync in m c; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK}
 	done
 done
 $ECHO >> ${ADDMK}
 for threads in 1 2 4 8 12; do
 	$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=s >> lab2_add.csv" >> ${ADDMK}
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=s --yield >> lab2_add.csv" >> ${ADDMK}
+	$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=s --yield >> lab2_add.csv" >> ${ADDMK}
+done
+
 
 # YIELD (--threads, --iterations, --yield)
 #for threads in 1 2 4 8 12; do

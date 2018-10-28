@@ -33,7 +33,7 @@ mks:
 #ADDRULE="test_add"
 #LISTRULE="test_list"
 
-#tests: clean_slate tests_add
+tests: clean_slate tests_add
 
 ##
 # Used to ensure fresh .mk and .csv files
@@ -55,7 +55,7 @@ clean:
 	rm -rf lab2_list lab2_add *tar.gz *.mk *.csv *.png
 
 
-tests: #build
+ctests: #build
 	-./lab2_add --threads=2  --iterations=100    >> lab2_add.csv
 	-./lab2_add --threads=2  --iterations=1000   >> lab2_add.csv
 	-./lab2_add --threads=2  --iterations=10000  >> lab2_add.csv

@@ -3,7 +3,7 @@
 # ID: 604853262
 
 CC=gcc
-CFLAGS= -Wall -Wextra -pthread
+CFLAGS= -Wall -Wextra -pthread -std=gnu99
 
 DEFAULT=Makefile README
 COMMON=common.c common.h
@@ -14,7 +14,7 @@ OTHER= *.png *.csv
 
 #default: build
 
-build: lab2_add mks #lab2_list
+build: lab2_add lab2_list mks #lab2_list
 
 lab2_add:
 	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 

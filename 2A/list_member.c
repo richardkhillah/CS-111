@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <string.h>
 #include <getopt.h>
+#include <signal.h>
 
 #include "common.h"
 #include "list_member.h"

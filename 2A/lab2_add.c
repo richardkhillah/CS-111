@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
 	long long time_average = time_elapsed / numOperations;
 
 	tag();
-	printf(", %d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, counter);
+	printf("%d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, counter);
 
 	free(threadPool);
 

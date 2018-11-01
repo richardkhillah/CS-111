@@ -22,11 +22,9 @@ char sync_type = NONE;
 
 void handle_sig(int sig) {
 	if(sig == SIGSEGV) {
-		fatal_error("Segmentation fault");
+		fatal_error("Segmentation fault", NULL, 1);
 	}
 }
-
-
 
 void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield] [--sync=type]\n", program_name);
@@ -58,13 +56,13 @@ void get_options(int argc, char* const* argv) {
 		case THREADS:
 			numThreads = atoi(optarg);
 			if (numThreads <= 0) {
-				fatal_error("--threads: input a numeber greater than 0.");
+				fatal_error("--threads: input a number greater than 0.", (void*)usage, 1);
 			}
 			break;
 		case ITERATIONS:
 			numIterations = atoi(optarg);
 			if (numIterations <= 0) {
-				fatal_error("--iterations: must be a number greater than 0.");
+				fatal_error("--iterations: must be a number greater than 0.", (void*)usage, 1);
 			}
 			break;
 		case YIELD:
@@ -83,11 +81,12 @@ void get_options(int argc, char* const* argv) {
 						sync_type=CAS;
 						break;
 					default:
-						fatal_error("--sync: Invalid option. Acceptable options are: m, s, c ");
+						fatal_error("--sync: Invalid option. Acceptable options are: m, s, c ", (void*)usage, 1);
 				}
 			}
 			break;
 		default:
+			fatal_error("invalid option", (void*)usage, 1);
 			break;
 	}
 	} // end while

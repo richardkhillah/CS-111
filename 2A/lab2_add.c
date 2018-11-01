@@ -56,10 +56,10 @@ void* thread_routine() {
 				break;
 			case MUTEX: {
 				if (pthread_mutex_lock(&lock) != 0)
-					fatal_error2("Error locking pthread mutex lock");
+					fatal_error("Error locking pthread mutex lock", NULL, 2);
 				add(&counter, 1);
 				if (pthread_mutex_unlock(&lock) != 0)
-					fatal_error2("Error unlcoking pthread mutex lock");
+					fatal_error("Error unlcoking pthread mutex lock", NULL, 2);
 				break;
 			}
 			case SPIN:{
@@ -88,10 +88,10 @@ void* thread_routine() {
 				break;
 			case MUTEX: {
 				if (pthread_mutex_lock(&lock) != 0)
-					fatal_error2("Error locking pthread mutex lock");
+					fatal_error("Error locking pthread mutex lock", NULL, 2);
 				add(&counter, -1);
 				if (pthread_mutex_unlock(&lock) != 0)
-					fatal_error2("Error unlcoking pthread mutex lock");
+					fatal_error("Error unlcoking pthread mutex lock", NULL, 2);
 				break;
 			} // end case MUTEX
 			case SPIN:{
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
 	pthread_t *threadPool;
 	threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
 	if(threadPool == NULL)
-		fatal_error2("Error allocating thread pool");
+		fatal_error("Error allocating thread pool", NULL, 2);
 
 	/* Get time before setting threads off to run thread_routine */
 	struct timespec time_start, time_end;
@@ -136,14 +136,14 @@ int main(int argc, char* argv[]) {
 	int i;
 	for(i = 0; i < numThreads; i++) {
 		if(pthread_create(threadPool + i, NULL, thread_routine, NULL) != 0)
-			fatal_error2("Error creating a thread.");
+			fatal_error("Error creating a thread.", NULL, 2);
 
 	}
 
 	/* rejoin threads to main */
 	for(i = 0; i < numThreads; i++) {
 		if(pthread_join(threadPool[i], NULL) != 0)
-			fatal_error2("Error joining a thread.");
+			fatal_error("Error joining a thread.", NULL, 2);
 
 	}
 

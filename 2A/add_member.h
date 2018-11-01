@@ -23,7 +23,7 @@ bool yield;
 bool sync_flag;
 char sync_type;
 
-void usage();
+void usage(void);
 
 void get_options(int argc, char* const* argv);
 

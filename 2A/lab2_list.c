@@ -130,21 +130,28 @@ int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
 	get_options(argc, argv);
 
+	if(debug_flag) debug("before allocating head");
 	head = (SortedList_t *)malloc(sizeof(SortedList_t));
 	if( head == NULL ) {
 		fatal_error("Error initializing list");
 	}
 
 	// should I do a circular list?
-
+	head->next = head;
+    head->prev = head;
+    head->key = NULL;
+	
+	if(debug_flag) debug("about to make elements");
 	int numElements = numThreads * numIterations;
 	elements = (SortedListElement_t *)malloc(numElements * sizeof(SortedListElement_t));
 	if( elements == NULL ) {
 		fatal_error("Error initializing SortedList elements");
 	}
 
+	if(debug_flag) debug("about to run for loop");
 	int i = 0;
 	for (; i < numElements; i++) {
+		if(debug_flag) debug("inside rand_ele_len for loop");
 		//TODO: CHANGE THIS!!
 		int random_ele_len = 3 + (rand() % 8);
 		char* key = (char *)malloc(random_ele_len * sizeof(char));
@@ -153,7 +160,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		int j = 0;
-		for(; j < random_ele_len; j++) {
+		for(; j < random_ele_len - 1; j++) {
 			key[j] = (char)(rand() % 255 + 1); // TODO: THIS OK?
 		}
 		key[random_ele_len-1] = '\0'; // null terminate c-string
@@ -162,12 +169,14 @@ int main(int argc, char* argv[]) {
 		//free(key); // THIS OKAY?
 	}
 
+	if(debug_flag) debug("about to make threadPool");
 	pthread_t* threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
 
 	if(threadPool == NULL) {
 		fatal_error("Error creating thread pool");
 	}
 
+	if(debug_flag) debug("about to malloc tids");
 	int* tids = (int *)malloc(numThreads * sizeof(int));
 	if(tids == NULL) {
 		fatal_error("Error creating thread id list");
@@ -177,6 +186,7 @@ int main(int argc, char* argv[]) {
 	struct timespec time_start, time_end;
 	clock_gettime(CLOCK_MONOTONIC, &time_start);
 
+	if(debug_flag) debug("about to start thread routines");
 	i = 0;
 	for (; i < numThreads; i++) {
 		if(pthread_create(threadPool + i, NULL, thread_routine, tids + i) != 0) {
@@ -184,6 +194,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if(debug_flag) debug("about to join threads");
 	i = 0;
 	for(; i < numThreads; i++) {
 		if (pthread_join(threadPool[i], NULL) != 0) {
@@ -194,6 +205,7 @@ int main(int argc, char* argv[]) {
 	// Get end time
 	clock_gettime(CLOCK_MONOTONIC, &time_end);
 
+	if(debug_flag) debug("getting list length");
 	int list_length = SortedList_length(head);
 	if(list_length != 0) {
 		fatal_error2("List is not list 0");
@@ -212,6 +224,6 @@ int main(int argc, char* argv[]) {
 	free(threadPool);
 	free(tids);
 	free(elements);
-	free(head);
+	//free(head);
 	return 0;
 }

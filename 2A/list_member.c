@@ -15,6 +15,8 @@
 #include "list_member.h"
 #include "SortedList.h"
 
+bool debug_flag = false;
+
 #define INSERT 'i'
 #define DELETE 'd'
 #define LOOKUP 'l'
@@ -29,11 +31,16 @@ void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield=[idl]] [--sync=[s, m]]]\n", program_name);
 }
 
+//void debug(char* msg) {
+//	fprintf(stderr, "[%s]: %s\n", program_name, msg);
+//}
+
 static struct option const long_opts[] = {
 	{"threads", required_argument, NULL, THREADS},
 	{"iterations", required_argument, NULL, ITERATIONS},
-	{"yield", no_argument, NULL, YIELD},
+	{"yield", required_argument, NULL, YIELD},
 	{"sync", required_argument, NULL, SYNC},
+	{"debug", no_argument, NULL, DEBUG},
 	{NULL, 0, NULL, 0}
 };
 
@@ -94,6 +101,9 @@ void get_options(int argc, char* const* argv) {
 					}
 				}
 				break;
+			case DEBUG:
+				debug_flag = true;
+				break;
 			case '?':
 			default:
 				fatal_error("Invalid argument");
@@ -116,9 +126,11 @@ void tag() {
 			printf("l");
 		}
 	} else {
-		printf("none-");
+		printf("none");
 	}
 
+	printf("-");
+	
 	if(sync_type != NONE) {
 		printf("%c", sync_type);
 	} else {

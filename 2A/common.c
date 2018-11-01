@@ -46,5 +46,5 @@ void handle_error(char* msg) {
 }
 
 void debug(char* msg) {
-    fprintf(stderr, "%s\r\n", msg);
+    fprintf(stderr, "[%s]: %s\r\n",program_name, msg);
 }

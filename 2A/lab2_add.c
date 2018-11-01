@@ -18,7 +18,7 @@
 #include <sched.h>
 #include <signal.h>
 
-#define S_TO_NS_CFACTOR 1000000000
+#define SEC_TO_NS_CFACTOR 1000000000
 
 
 long long counter;
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
 	 * Start with less precise time spec granularity then account for high 
 	 * granularity time spec. 
 	 */
-	long long time_elapsed = (time_end.tv_sec - time_start.tv_sec) * S_TO_NS_CFACTOR;
+	long long time_elapsed = (time_end.tv_sec - time_start.tv_sec) * SEC_TO_NS_CFACTOR;
 	time_elapsed += time_end.tv_nsec;
 	time_elapsed -= time_start.tv_nsec;
 

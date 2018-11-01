@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <string.h>
+
 #include <errno.h>
 #include <sched.h>
 
 #include "SortedList.h"
 #include "common.h"
 
-opt_yield = 0;
+int opt_yield = 0;
 
 void SortedList_insert(SortedList_t* list, SortedListElement_t* element) {
 	// ensure valid list and element
@@ -78,7 +80,7 @@ SortedListElement_t* SortedList_lookup(SortedList_t* list, const char* key) {
 			sched_yield();
 		}
 
-		ptr = p->next; // keep looking
+		ptr = ptr->next; // keep looking
 	}
 
 	return NULL; // error

@@ -23,17 +23,13 @@ bool debug_flag = false;
 
 int numThreads = DEFAULT;
 int numIterations = DEFAULT;
-bool yield = false;
+int opt_yield = 0; 
 bool sync_flag = false;
 char sync_type = NONE;
 
 void usage() {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield=[idl]] [--sync=[s, m]]]\n", program_name);
 }
-
-//void debug(char* msg) {
-//	fprintf(stderr, "[%s]: %s\n", program_name, msg);
-//}
 
 static struct option const long_opts[] = {
 	{"threads", required_argument, NULL, THREADS},
@@ -68,13 +64,13 @@ void get_options(int argc, char* const* argv) {
 					while(optarg[i] != '\0') {
 						switch(optarg[i]) {
 							case INSERT:
-								yield |= INSERT_YIELD;
+								opt_yield |= INSERT_YIELD;
 								break;
 							case DELETE:
-								yield |= DELETE_YIELD;
+								opt_yield |= DELETE_YIELD;
 								break;
 							case LOOKUP:
-								yield |= LOOKUP_YIELD;
+								opt_yield |= LOOKUP_YIELD;
 								break;
 							case '?':
 							default:
@@ -113,16 +109,16 @@ void get_options(int argc, char* const* argv) {
 
 void tag() {
 	printf("list-");
-	if(yield) {
-		if(yield & INSERT_YIELD) {
+	if(opt_yield) {
+		if(opt_yield & INSERT_YIELD) {
 			printf("i");
 		}
 
-		if(yield & DELETE_YIELD) {
+		if(opt_yield & DELETE_YIELD) {
 			printf("d");
 		}
 
-		if(yield & LOOKUP_YIELD) {
+		if(opt_yield & LOOKUP_YIELD) {
 			printf("l");
 		}
 	} else {

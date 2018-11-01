@@ -10,7 +10,7 @@
 #include "SortedList.h"
 #include "common.h"
 
-int opt_yield = 0;
+//int opt_yield = 0;
 
 void SortedList_insert(SortedList_t* list, SortedListElement_t* element) {
 	// ensure valid list and element

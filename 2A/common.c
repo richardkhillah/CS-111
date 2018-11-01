@@ -28,21 +28,29 @@ void set_program_name(const char* argv0) {
     program_name = argv0;
 }
 
-void fatal_error(char* msg){
+//void fatal_error(char* msg, int usage, int errcode){
+void fatal_error(char* msg, void (*usage)(void), int errcode){
     fprintf(stderr, "%s: %s\r\n", program_name, msg);
-    usage();
-    exit(EXIT_ERROR);
-}
+    
 
-void fatal_error2(char* msg) {
-    fprintf(stderr, "%s: %s\r\n", program_name, msg);
-    usage();
-    exit(EXIT_ERROR_OTHER);
+    if(usage != NULL) {
+        (*usage)();
+    }
+
+    switch(errcode) {
+        case EXIT_ERROR_1:
+            exit(EXIT_ERROR_1);
+        case EXIT_ERROR_2:
+            exit(EXIT_ERROR_2);
+        default:
+            fprintf(stderr, "invalid error code... existing anyway\r\n");
+            exit(EXIT_ERROR_ERROR);
+    }
 }
 
 void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
-    exit(EXIT_ERROR);
+    exit(EXIT_ERROR_1);
 }
 
 void debug(char* msg) {

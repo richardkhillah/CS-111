@@ -27,7 +27,7 @@ int opt_yield = 0;
 bool sync_flag = false;
 char sync_type = NONE;
 
-void usage() {
+void usage(void) {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield=[idl]] [--sync=[s, m]]]\n", program_name);
 }
 
@@ -49,13 +49,13 @@ void get_options(int argc, char* const* argv) {
 				numThreads = atoi(optarg);
 
 				if(numThreads < 1)
-					fatal_error("Number of threads must be greater than 0");
+					fatal_error("Number of threads must be greater than 0", (void*)usage, 1);
 				break;
 			case ITERATIONS:
 				numIterations = atoi(optarg);
 
 				if(numIterations < 1)
-					fatal_error("Number of iterations must be greater than 0");
+					fatal_error("Number of iterations must be greater than 0", (void*)usage, 1);
 				break;
 			case YIELD:
 				if(optarg){	
@@ -74,12 +74,12 @@ void get_options(int argc, char* const* argv) {
 								break;
 							case '?':
 							default:
-								fatal_error("Invalid `--yield` argument");
+								fatal_error("Invalid `--yield` argument", (void*)usage, 1);
 						}
 						i++;
 					}
 				} else {
-					fatal_error("Must declare a valid `--yield` option");
+					fatal_error("Must declare a valid `--yield` option", (void*)usage, 1);
 				}
 				break;
 
@@ -93,7 +93,7 @@ void get_options(int argc, char* const* argv) {
 							sync_type = SPIN;
 							break;
 						default:
-							fatal_error("Invalid --sync option");
+							fatal_error("Invalid --sync option", (void*)usage, 1);
 					}
 				}
 				break;
@@ -102,7 +102,7 @@ void get_options(int argc, char* const* argv) {
 				break;
 			case '?':
 			default:
-				fatal_error("Invalid argument");
+				fatal_error("Invalid argument", (void*)usage, 1);
 		}
 	}
 }
@@ -136,7 +136,7 @@ void tag() {
 
 void handle_sig(int sig) {
 	if(sig == SIGSEGV) {
-		fatal_error("Segmentation fault");
+		fatal_error("Segmentation fault", 0, 1);
 	}
 }
 

@@ -18,13 +18,14 @@ void set_program_name(const char* argv0);
 
 // common exit status codes
 #define EXIT_SUCCESS 0
-#define EXIT_ERROR 1
-#define EXIT_ERROR_OTHER 2
+#define EXIT_ERROR_1 1
+#define EXIT_ERROR_2 2
+#define EXIT_ERROR_ERROR 3
 
 /**
  * 
  */
-void fatal_error(char* msg);
+void fatal_error(char* msg, void (*usage)(void), int errcode);
 
 /**
  * 
@@ -40,6 +41,8 @@ void handle_error(char* msg);
  * 
  */
 void debug(char* msg);
+
+extern void usage(void);
 
 /**
  *

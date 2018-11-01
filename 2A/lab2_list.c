@@ -36,11 +36,11 @@ void * thread_routine(void* arg) {
 			}
 			case MUTEX: {
 				if(pthread_mutex_lock(&lock) != 0) {
-					fatal_error2("Error getting the lock");
+					fatal_error("Error getting the lock", 0, 2);
 				}
 				SortedList_insert(head, elements+i);
 				if(pthread_mutex_unlock(&lock) != 0) {
-					fatal_error2("Error releasing the lock");
+					fatal_error("Error releasing the lock", 0, 2);
 				}
 				break;
 			}
@@ -63,11 +63,11 @@ void * thread_routine(void* arg) {
 		}
 		case MUTEX: {
 			if(pthread_mutex_lock(&lock) != 0) {
-				fatal_error2("Error getting the lock");
+				fatal_error("Error getting the lock", 0, 2);
 			}
 			SortedList_length(head);
 			if(pthread_mutex_unlock(&lock) != 0) {
-				fatal_error2("Error releasing the lock");
+				fatal_error("Error releasing the lock", 0, 2);
 			}
 			break;
 		}
@@ -88,24 +88,24 @@ void * thread_routine(void* arg) {
 			case NONE: {
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
-					fatal_error2("Element not found. NULL element lookup.");
+					fatal_error("Element not found. NULL element lookup.", 0, 2);
 				}
 				SortedList_delete(el);
 				break;
 			}
 			case MUTEX: {
 				if(pthread_mutex_lock(&lock) != 0) {
-					fatal_error2("Error getting the lock");
+					fatal_error("Error getting the lock", 0, 2);
 				}
 
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
-					fatal_error2("Element not found. NULL element lookup.");
+					fatal_error("Element not found. NULL element lookup.", 0, 2);
 				}
 				SortedList_delete(el);
 				
 				if(pthread_mutex_unlock(&lock) != 0) {
-					fatal_error2("Error releasing the lock");
+					fatal_error("Error releasing the lock", 0, 2);
 				}
 				break;
 			}
@@ -114,7 +114,7 @@ void * thread_routine(void* arg) {
 
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
-					fatal_error2("Element not found. NULL element lookup.");
+					fatal_error("Element not found. NULL element lookup.", 0, 2);
 				}
 				SortedList_delete(el);
 
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 
 	head = (SortedList_t *)malloc(sizeof(SortedList_t));
 	if( head == NULL ) {
-		fatal_error("Error initializing list");
+		fatal_error("Error initializing list", 0, 1);
 	}
 
 	// should I do a circular list?
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
 	int numElements = numThreads * numIterations;
 	elements = (SortedListElement_t *)malloc(numElements * sizeof(SortedListElement_t));
 	if( elements == NULL ) {
-		fatal_error("Error initializing SortedList elements");
+		fatal_error("Error initializing SortedList elements", 0, 1);
 	}
 
 	int i;
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
 		int random_element_len = 3 + (rand() % 8);
 		char* key = (char *)malloc(random_element_len * sizeof(char));
 		if(key == NULL) {
-			fatal_error("Error creating random element");
+			fatal_error("Error creating random element", 0, 1);
 		}
 
 		int j;
@@ -166,12 +166,12 @@ int main(int argc, char* argv[]) {
 
 	pthread_t* threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
 	if(threadPool == NULL) {
-		fatal_error("Error creating thread pool");
+		fatal_error("Error creating thread pool", 0, 1);
 	}
 
 	int* tids = (int *)malloc(numThreads * sizeof(int));
 	if(tids == NULL) {
-		fatal_error("Error creating thread tid list");
+		fatal_error("Error creating thread tid list", 0, 1);
 	}
 
 	// Get start time
@@ -182,14 +182,14 @@ int main(int argc, char* argv[]) {
 	for (k = 0; k < numThreads; k++) {
 		tids[k] = k;
 		if(pthread_create(threadPool + k, NULL, thread_routine, tids + k) != 0) {
-			fatal_error2("Error creating threads");
+			fatal_error("Error creating threads", 0, 2);
 		}
 	}
 
 	int n;
 	for(n = 0; n < numThreads; n++) {
 		if (pthread_join(threadPool[n], NULL) != 0) {
-			fatal_error2("Error joining threads");
+			fatal_error("Error joining threads", 0, 2);
 		}
 	}
 
@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
 
 	int list_length = SortedList_length(head);
 	if(list_length != 0) {
-		fatal_error2("List is not list 0");
+		fatal_error("List is not list 0", 0, 2);
 	}
 
 	long long time_elapsed = (time_end.tv_sec - time_start.tv_sec) * SEC_TO_NS_CFACTOR;

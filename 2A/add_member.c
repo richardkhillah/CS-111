@@ -35,8 +35,8 @@ void tag() {
 
 	if(yield) printf("yield-");
 
-	if(sync_type == NONE) printf("none");
-	else printf("%c", sync_type);
+	if(sync_type == NONE) printf("none,");
+	else printf("%c,", sync_type);
 }
 
 

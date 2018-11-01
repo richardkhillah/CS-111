@@ -117,7 +117,6 @@ int main(int argc, char* argv[]) {
 	get_options(argc, argv);
 
 	signal(SIGSEGV, handle_sig);
-	tag();
 
 	/* Initial long long counter to zero */
 	counter = 0;
@@ -163,7 +162,8 @@ int main(int argc, char* argv[]) {
 	long long numOperations = numThreads * numIterations * 2;
 	long long time_average = time_elapsed / numOperations;
 
-	printf(",%d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, counter);
+	tag();
+	printf(", %d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, counter);
 
 	free(threadPool);
 

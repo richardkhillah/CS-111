@@ -23,17 +23,17 @@ SortedList_t* head;
 SortedListElement_t* elements;
 
 void * thread_routine(void* arg) {
-	int id = *((int *)arg);
+	int tid = *((int *)arg);
 
 	int num_ops = numThreads * numIterations;
 
-	// add items to list
-	int i = id;
-	for(; i < num_ops; i+=numThreads) {
+	int i;
+	for(i = tid; i < num_ops; i+=numThreads) {
 		switch(sync_type) {
-			case NONE:
+			case NONE: {
 				SortedList_insert(head, elements+i);
 				break;
+			}
 			case MUTEX: {
 				if(pthread_mutex_lock(&lock) != 0) {
 					fatal_error2("Error getting the lock");
@@ -42,24 +42,25 @@ void * thread_routine(void* arg) {
 				if(pthread_mutex_unlock(&lock) != 0) {
 					fatal_error2("Error releasing the lock");
 				}
-			}
 				break;
+			}
 			case SPIN: {
 				while(__sync_lock_test_and_set(&spinLock, 1));
 
 				SortedList_insert(head, elements+i);
 
 				__sync_lock_release(&spinLock);
-			}
 				break;
+			}
 		}
 	}
 
 	// get the list length
 	switch(sync_type) {
-		case NONE:
+		case NONE: {
 			SortedList_length(head);
 			break;
+		}
 		case MUTEX: {
 			if(pthread_mutex_lock(&lock) != 0) {
 				fatal_error2("Error getting the lock");
@@ -68,36 +69,36 @@ void * thread_routine(void* arg) {
 			if(pthread_mutex_unlock(&lock) != 0) {
 				fatal_error2("Error releasing the lock");
 			}
-		}
 			break;
+		}
 		case SPIN: {
 			while(__sync_lock_test_and_set(&spinLock, 1));
 
 			SortedList_length(head);
 
 			__sync_lock_release(&spinLock);
+			break;
 		}
-				break;
 	}
 
 	// delete items
-	i = id;
-	for(; i < num_ops; i+=numThreads) {
+	int n = tid;
+	for(; n < num_ops; n+=numThreads) {
 		switch(sync_type) {
 			case NONE: {
-				SortedListElement_t *el = SortedList_lookup(head, elements[i].key);
+				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
 					fatal_error2("Element not found. NULL element lookup.");
 				}
 				SortedList_delete(el);
-			}
 				break;
+			}
 			case MUTEX: {
 				if(pthread_mutex_lock(&lock) != 0) {
 					fatal_error2("Error getting the lock");
 				}
 
-				SortedListElement_t *el = SortedList_lookup(head, elements[i].key);
+				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
 					fatal_error2("Element not found. NULL element lookup.");
 				}
@@ -106,20 +107,20 @@ void * thread_routine(void* arg) {
 				if(pthread_mutex_unlock(&lock) != 0) {
 					fatal_error2("Error releasing the lock");
 				}
-			}
 				break;
+			}
 			case SPIN: {
 				while(__sync_lock_test_and_set(&spinLock, 1));
 
-				SortedListElement_t *el = SortedList_lookup(head, elements[i].key);
+				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
 					fatal_error2("Element not found. NULL element lookup.");
 				}
 				SortedList_delete(el);
 
 				__sync_lock_release(&spinLock);
-			}
 				break;
+			}
 		}
 	}
 
@@ -146,23 +147,21 @@ int main(int argc, char* argv[]) {
 		fatal_error("Error initializing SortedList elements");
 	}
 
-	int i = 0;
-	for (; i < numElements; i++) {
-		//TODO: CHANGE THIS!!
-		int random_ele_len = 3 + (rand() % 8);
-		char* key = (char *)malloc(random_ele_len * sizeof(char));
+	int i;
+	for (i = 0; i < numElements; i++) {
+		int random_element_len = 3 + (rand() % 8);
+		char* key = (char *)malloc(random_element_len * sizeof(char));
 		if(key == NULL) {
 			fatal_error("Error creating random element");
 		}
 
-		int j = 0;
-		for(; j < random_ele_len - 1; j++) {
+		int j;
+		for(j = 0; j < random_element_len - 1; j++) {
 			key[j] = (char)(rand() % 255 + 1); // TODO: THIS OK?
 		}
-		key[random_ele_len-1] = '\0'; // null terminate c-string
 
+		key[random_element_len-1] = '\0'; // null terminate c-string
 		elements[i].key = key;
-		//free(key); // THIS OKAY?
 	}
 
 	pthread_t* threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
@@ -172,24 +171,24 @@ int main(int argc, char* argv[]) {
 
 	int* tids = (int *)malloc(numThreads * sizeof(int));
 	if(tids == NULL) {
-		fatal_error("Error creating thread id list");
+		fatal_error("Error creating thread tid list");
 	}
 
 	// Get start time
 	struct timespec time_start, time_end;
 	clock_gettime(CLOCK_MONOTONIC, &time_start);
 
-	i = 0;
-	for (; i < numThreads; i++) {
-		tids[i] = i;
-		if(pthread_create(threadPool + i, NULL, thread_routine, tids + i) != 0) {
+	int k;
+	for (k = 0; k < numThreads; k++) {
+		tids[k] = k;
+		if(pthread_create(threadPool + k, NULL, thread_routine, tids + k) != 0) {
 			fatal_error2("Error creating threads");
 		}
 	}
 
-	i = 0;
-	for(; i < numThreads; i++) {
-		if (pthread_join(threadPool[i], NULL) != 0) {
+	int n;
+	for(n = 0; n < numThreads; n++) {
+		if (pthread_join(threadPool[n], NULL) != 0) {
 			fatal_error2("Error joining threads");
 		}
 	}

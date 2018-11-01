@@ -55,7 +55,7 @@ clean:
 	rm -rf lab2_list lab2_add *tar.gz *.mk *.csv *.png
 
 
-ctests: #build
+caddtests: #build
 	-./lab2_add --threads=2  --iterations=100    >> lab2_add.csv
 	-./lab2_add --threads=2  --iterations=1000   >> lab2_add.csv
 	-./lab2_add --threads=2  --iterations=10000  >> lab2_add.csv
@@ -167,6 +167,7 @@ ctests: #build
 	-./lab2_add --threads=12 --iterations=10000 --sync=s >> lab2_add.csv
 
 
+clisttests:
 	-./lab2_list --threads=1  --iterations=10	      >> lab2_list.csv
 	-./lab2_list --threads=1  --iterations=100	      >> lab2_list.csv
 	-./lab2_list --threads=1  --iterations=1000	      >> lab2_list.csv

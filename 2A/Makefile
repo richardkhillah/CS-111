@@ -19,6 +19,9 @@ build: lab2_add mks #lab2_list
 lab2_add:
 	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 
 
+lab2_add2:
+	$(CC) $(CFLAGS) -o lab2_add lab2_add2.c
+
 lab2_list:
 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c list_member.c common.c
 

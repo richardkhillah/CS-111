@@ -14,6 +14,8 @@
 #include "common.h"
 #include "list_member.h"
 
+#define SEC_TO_NS_CFACTOR 1000000000
+
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 int spinLock = 0;
 
@@ -193,7 +195,19 @@ int main(int argc, char* argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &time_end);
 
 	int list_length = SortedList_length(head);
-	if(list_length )
+	if(list_length != 0) {
+		fatal_error2("List is not list 0");
+	}
+
+	long long time_elapsed = (time_end.tv_sec - time_start.tv_sec) * SEC_TO_NS_CFACTOR;
+	time_elapsed += time_end.tv_nsec;
+	time_elapsed -= time_start.tv_nsec;
+
+	long long numOperations = numThreads * numIterations * 2;
+	long long time_average = time_elapsed / numOperations;
+
+	tag();
+	printf(",%d,%d,1,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average);
 
 	free(threadPool);
 	free(tids);

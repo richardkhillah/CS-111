@@ -101,7 +101,30 @@ void get_options(int argc, char* const* argv) {
 	}
 }
 
-void tag();
+void tag() {
+	printf("list-");
+	if(yield) {
+		if(yield & INSERT_YIELD) {
+			printf("i");
+		}
+
+		if(yield & DELETE_YIELD) {
+			printf("d");
+		}
+
+		if(yield & LOOKUP_YIELD) {
+			printf("l");
+		}
+	} else {
+		printf("none-");
+	}
+
+	if(sync_type != NONE) {
+		printf("%c", sync_type);
+	} else {
+		printf("none");
+	}
+}
 
 void handle_sig(int sig) {
 	if(sig == SIGSEGV) {

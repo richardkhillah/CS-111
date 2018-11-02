@@ -80,7 +80,7 @@ void* thread_routine() {
 
 	/* add -1 */
 	for(i = 0; i < numIterations; i++) {
-		add(&counter, -1);
+	    //add(&counter, -1);
 
 		switch (sync_type) {
 			case NONE:
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 	/* create threadpool based on numThreads. Default = 1 */
 
 	if(debug_flag) {
-		fprintf(stderr, "thread count = %s\n", numThreads);
+		fprintf(stderr, "thread count = %d\n", numThreads);
 	}
 	pthread_t *threadPool;
 	threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));

@@ -25,7 +25,7 @@ $ECHO "${ADDRULE}:" >> ${ADDMK}
 # A
 for threads in 1 2 4 8 12; do
 	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
 done
 $ECHO >> ${ADDMK}

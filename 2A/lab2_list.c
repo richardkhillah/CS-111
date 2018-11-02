@@ -1,3 +1,7 @@
+// NAME: Richard Khillah
+// EMAIL: RKhillah@ucla.edu
+// ID: 604853262
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,7 +16,6 @@
 
 #include "SortedList.h"
 #include "utils.h"
-//#include "list_member.h"
 #include "helper.h"
 
 #define SEC_TO_NS_CFACTOR 1000000000

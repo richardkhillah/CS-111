@@ -1,3 +1,7 @@
+// NAME: Richard Khillah
+// EMAIL: RKhillah@ucla.edu
+// ID: 604853262
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

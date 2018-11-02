@@ -7,7 +7,7 @@ UID=604853262
 CC=gcc
 CFLAGS= -Wall -Wextra -pthread -std=gnu99
 
-DEFAULT=Makefile README
+DEFAULT=Makefile README utils.c utils.h
 UTILS=utils.c utils.h
 
 ADD_SOURCE=lab2_add.c helper.h lab2_add-helper.c
@@ -33,22 +33,22 @@ mks:
 
 tests: test_add test_list
 
-# Used to ensure fresh .mk and .csv files
-# clean_slate: mks 
-# tests_add: test_add 
-# tests_list: test_list
-
 GSCRIPTS=lab2_add.gp lab2_list.gp
 
 graphs: #tests
 	./lab2_add.gp
 	./lab2_list.gp
 
-IMAGES=lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
-CSVS=lab2_add.csv lab2_list.csv
+#IMAGES=lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
+#CSVS=lab2_add.csv lab2_list.csv
+
+PNGS= *.png 
+CSVS= *.csv
 
 dist:
-	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(UTILS) $(OTHER_FILES)
+	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(UTILS) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
+
+#$(OTHER_FILES)
 
 # ${IMAGES} ${CSVS}
 

@@ -1,6 +1,6 @@
-//NAME: Richard Khillah
-//EMAIL: RKhillah@ucla.edu
-//ID: 604853262
+// NAME: Richard Khillah
+// EMAIL: RKhillah@ucla.edu
+// ID: 604853262
 /**
  * SortedList (and SortedListElement)
  *

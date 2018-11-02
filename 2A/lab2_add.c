@@ -97,7 +97,7 @@ void* thread_routine() {
 			case SPIN:{
 				while(__sync_lock_test_and_set(&spinLock, 1));
 
-				add(&counter, 1);
+				add(&counter, -1);
 
 				__sync_lock_release(&spinLock);
 				break;

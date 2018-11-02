@@ -22,13 +22,13 @@ typedef int bool;
 
 int numThreads;
 int numIterations;
-int opt_yield;
+bool opt_yield; 
 bool sync_flag;
 char sync_type;
 
 bool debug_flag;
 
-void usage();
+void usage(void);
 
 void get_options(int argc, char* const* argv);
 

@@ -10,8 +10,8 @@ CFLAGS= -Wall -Wextra -pthread -std=gnu99
 DEFAULT=Makefile README
 UTILS=utils.c utils.h
 
-ADD_SOURCE=lab2_add.c add_member.h add_member.c
-LIST_SOURCE=lab2_list.c SortedList.h SortedList.c list_member.h list_member.c
+ADD_SOURCE=lab2_add.c helper.h lab2_add-helper.c
+LIST_SOURCE=lab2_list.c SortedList.h SortedList.c helper.h lab2_list-helper.c
 
 OTHER_FILES= *.png *.csv
 
@@ -20,10 +20,10 @@ OTHER_FILES= *.png *.csv
 build: lab2_add lab2_list
 
 lab2_add:
-	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c utils.c 
+	$(CC) $(CFLAGS) -o lab2_add lab2_add.c lab2_add-helper.c utils.c 
 
 lab2_list:
-	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c list_member.c utils.c
+	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
 
 mks:
 	touch maketests.mk

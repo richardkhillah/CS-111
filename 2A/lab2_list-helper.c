@@ -12,7 +12,8 @@
 #include <signal.h>
 
 #include "utils.h"
-#include "list_member.h"
+//#include "list_member.h"
+#include "helper.h"
 #include "SortedList.h"
 
 #define INSERT 'i'

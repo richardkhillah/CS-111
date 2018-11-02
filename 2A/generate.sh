@@ -126,12 +126,13 @@ done
 $ECHO >> ${ADDMK}
 
 #C
-for threads in 2 4 8 12; do
-	for iterations in 1 2 4 8 16 32; do
-		for yield in i d il dl; do
+for yield in i d il dl; do
+	for threads in 2 4 8 12; do
+		for iterations in 1 2 4 8 16 32; do
 			$ECHO "\t-./lab2_list --threads=${threads} --iterations=${iterations} --yield=${yield} >> lab2_list.csv" >> ${ADDMK}
 		done
 	done
+	$ECHO >> ${ADDMK}
 done
 $ECHO >> ${ADDMK}
 
@@ -143,9 +144,11 @@ for sync in m s; do
 done
 $ECHO >> ${ADDMK}
 
-for threads in 1 2 4 8 12 16 24; do
-	for sync in m s; do
-		$ECHO "\t-./lab2_list --threads=${threads} --iterations=${iterations} >> lab2_list.csv" >> ${ADDMK}
+#E
+#$ECHO "\t-./lab2_list --threads=1 --iterations=1000 >> lab2_list.csv" >> ${ADDMK}
+for sync in m s; do
+	for threads in 1 2 4 8 12 16 24; do
+		$ECHO "\t-./lab2_list --threads=${threads} --iterations=1000 >> lab2_list.csv" >> ${ADDMK}
 	done
 done
 $ECHO >> ${ADDMK}

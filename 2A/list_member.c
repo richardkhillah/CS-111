@@ -11,11 +11,9 @@
 #include <getopt.h>
 #include <signal.h>
 
-#include "common.h"
+#include "utils.h"
 #include "list_member.h"
 #include "SortedList.h"
-
-bool debug_flag = false;
 
 #define INSERT 'i'
 #define DELETE 'd'
@@ -26,6 +24,7 @@ int numIterations = DEFAULT;
 int opt_yield = 0; 
 bool sync_flag = false;
 char sync_type = NONE;
+bool debug_flag = false;
 
 void usage(void) {
 	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield=[idl]] [--sync=[s, m]]]\n", program_name);

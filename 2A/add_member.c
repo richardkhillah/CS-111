@@ -2,9 +2,6 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
-#include "common.h"
-#include "add_member.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,6 +10,9 @@
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
+
+#include "utils.h"
+#include "add_member.h"
 
 int numThreads = DEFAULT;
 int numIterations = DEFAULT;

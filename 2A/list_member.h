@@ -10,10 +10,9 @@
 #define NONE 'n'
 #define MUTEX 'm'
 #define SPIN 's'
-//#define CAS 'c'
+#define CAS 'c'
 
 #define DEFAULT 1
-
 #define true 1
 #define false 0
 

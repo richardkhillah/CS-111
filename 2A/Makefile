@@ -8,7 +8,7 @@ CC=gcc
 CFLAGS= -Wall -Wextra -pthread -std=gnu99
 
 DEFAULT=Makefile README
-COMMON=common.c common.h
+UTILS=utils.c utils.h
 
 ADD_SOURCE=lab2_add.c add_member.h add_member.c
 LIST_SOURCE=lab2_list.c SortedList.h SortedList.c list_member.h list_member.c
@@ -20,10 +20,10 @@ OTHER_FILES= *.png *.csv
 build: lab2_add lab2_list
 
 lab2_add:
-	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 
+	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c utils.c 
 
 lab2_list:
-	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c list_member.c common.c
+	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c list_member.c utils.c
 
 mks:
 	touch maketests.mk
@@ -40,7 +40,7 @@ tests: test_add test_list
 
 GSCRIPTS=lab2_add.gp lab2_list.gp
 
-graphs: tests
+graphs: #tests
 	./lab2_add.gp
 	./lab2_list.gp
 
@@ -48,7 +48,7 @@ IMAGES=lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.pn
 CSVS=lab2_add.csv lab2_list.csv
 
 dist:
-	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(COMMON) $(OTHER_FILES)
+	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(UTILS) $(OTHER_FILES)
 
 # ${IMAGES} ${CSVS}
 

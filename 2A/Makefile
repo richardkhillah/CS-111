@@ -17,7 +17,7 @@ OTHER_FILES= *.png *.csv
 
 #default: build
 
-build: lab2_add lab2_list #mks
+build: lab2_add lab2_list
 
 lab2_add:
 	$(CC) $(CFLAGS) -o lab2_add lab2_add.c add_member.c common.c 
@@ -40,19 +40,22 @@ tests: test_add test_list
 
 GSCRIPTS=lab2_add.gp lab2_list.gp
 
-graphs:
+graphs: tests
 	./lab2_add.gp
 	./lab2_list.gp
+IMAGES=lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
+CSVS=lab2_add.csv lab2_list.csv
 
 dist:
-	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${ADD_SOURCE} ${LIST_SOURCE} ${GSCRIPTS} ${OTHER_FILES} ${COMMON}
+	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${ADD_SOURCE} ${LIST_SOURCE} ${GSCRIPTS} ${COMMON} ${IMAGES} ${CSVS}
+
 clean:
-	rm -rf lab2_list lab2_add *tar.gz *.csv *.mk *.png
+	rm -rf lab2_list lab2_add *tar.gz *.png *.csv
 
 check:
 	./P2A_check.sh ${UID}
 
-test_add:
+test_add: lab2_add
 	-./lab2_add --threads=1 --iterations=100 >> lab2_add.csv
 	-./lab2_add --threads=1 --iterations=1000 >> lab2_add.csv
 	-./lab2_add --threads=1 --iterations=10000 >> lab2_add.csv
@@ -219,7 +222,7 @@ test_add:
 	-./lab2_add --threads=12 --iterations=10000 --sync=s >> lab2_add.csv
 
 
-test_list:
+test_list: lab2_list
 	-./lab2_list --threads=1 --iterations=10 >> lab2_list.csv
 	-./lab2_list --threads=1 --iterations=100 >> lab2_list.csv
 	-./lab2_list --threads=1 --iterations=1000 >> lab2_list.csv

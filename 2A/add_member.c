@@ -19,6 +19,7 @@ int numIterations = DEFAULT;
 bool yield = false;
 bool sync_flag = false;
 char sync_type = NONE;
+bool debug_flag = false;
 
 void handle_sig(int sig) {
 	if(sig == SIGSEGV) {
@@ -45,6 +46,7 @@ static struct option const long_opts[] = {
 	{"iterations", required_argument, NULL, ITERATIONS},
 	{"yield", no_argument, NULL, YIELD},
 	{"sync", required_argument, NULL, SYNC},
+	{"debug", no_argument, NULL, DEBUG},
 	{NULL, 0, NULL, 0}
 };
 
@@ -84,6 +86,9 @@ void get_options(int argc, char* const* argv) {
 						fatal_error("--sync: Invalid option. Acceptable options are: m, s, c ", (void*)usage, 1);
 				}
 			}
+			break;
+		case DEBUG:
+			debug_flag = true;
 			break;
 		default:
 			fatal_error("invalid option", (void*)usage, 1);

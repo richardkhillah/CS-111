@@ -122,6 +122,10 @@ int main(int argc, char* argv[]) {
 	counter = 0;
 
 	/* create threadpool based on numThreads. Default = 1 */
+
+	if(debug_flag) {
+		fprintf(stderr, "thread count = %s\n", numThreads);
+	}
 	pthread_t *threadPool;
 	threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
 	if(threadPool == NULL)

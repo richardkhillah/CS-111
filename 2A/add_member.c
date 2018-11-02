@@ -31,9 +31,9 @@ void usage() {
 }
 
 void tag() {
-	printf("add-");
+	printf("add-\r\n");
 
-	if(yield) printf("yield-");
+	if(yield) printf("yield-\r\n");
 
 	if(sync_type == NONE) printf("none,");
 	else printf("%c,", sync_type);

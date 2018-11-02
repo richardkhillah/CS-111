@@ -71,14 +71,17 @@ done
 # E
 # no yield
 for threads in 1 2 4 8 12; do
+	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 >> lab2_add.csv" >> ${ADDMK}
 	for sync in m c s; do
 		if [ ${sync} == s ]; then
 			$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
 			$ECHO "\t-./lab2_add --threads=${threads} --iterations=1000 --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK}
-		else
-			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
-			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK} 
+		# else
+		# 	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
+		# 	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK} 
 		fi
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
+		$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} --yield >> lab2_add.csv" >> ${ADDMK} 
 	done
 done
 # # yes yield
@@ -95,16 +98,16 @@ done
 
 # F
 # no yield
-for threads in 1 2 4 8 12; do
-	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 >> lab2_add.csv" >> ${ADDMK}
-	for sync in m c s; do
-		if [[ $(sync) -eq s ]]; then
-			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
-		else
-			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
-		fi
-	done
-done
+# for threads in 1 2 4 8 12; do
+# 	$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 >> lab2_add.csv" >> ${ADDMK}
+# 	for sync in m c s; do
+# 		if [[ $(sync) -eq s ]]; then
+# 			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK}
+# 		else
+# 			$ECHO "\t-./lab2_add --threads=${threads} --iterations=10000 --sync=${sync} >> lab2_add.csv" >> ${ADDMK} 
+# 		fi
+# 	done
+# done
 
 # # YIELD (--threads, --iterations, --yield)
 # for threads in 1 2 4 8 12; do

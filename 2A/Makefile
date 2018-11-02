@@ -31,7 +31,7 @@ lab2_list:
 
 tests: test_add test_list
 
-graphs: #tests
+graphs:
 	./lab2_add.gp
 	./lab2_list.gp
 

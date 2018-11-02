@@ -23,11 +23,11 @@ rm -f *.mk
 rm -f lab2_add.csv
 $ECHO "${ADDRULE}:" >> ${ADDMK}
 # A
-for threads in 2 4 8; do
+#for threads in 1 2 4 8; do
 	for iterations in 100 1000 10000 100000; do
-		$ECHO "\t-./lab2_add --threads=${threads} --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
+		$ECHO "\t-./lab2_add --iterations=${iterations} >> lab2_add.csv" >> ${ADDMK}
 	done
-done
+#done
 $ECHO >> ${ADDMK}
 
 # B

@@ -13,9 +13,13 @@ UTILS=utils.c utils.h
 ADD_SOURCE=lab2_add.c helper.h lab2_add-helper.c
 LIST_SOURCE=lab2_list.c SortedList.h SortedList.c helper.h lab2_list-helper.c
 
+GSCRIPTS=lab2_add.gp lab2_list.gp
+PNGS= *.png 
+CSVS= *.csv
+
 OTHER_FILES= *.png *.csv
 
-#default: build
+default: build
 
 build: lab2_add lab2_list
 
@@ -25,32 +29,14 @@ lab2_add:
 lab2_list:
 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
 
-mks:
-	touch maketests.mk
-	./generate.sh
-
-# -include maketests.mk
-
 tests: test_add test_list
-
-GSCRIPTS=lab2_add.gp lab2_list.gp
 
 graphs: #tests
 	./lab2_add.gp
 	./lab2_list.gp
 
-#IMAGES=lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
-#CSVS=lab2_add.csv lab2_list.csv
-
-PNGS= *.png 
-CSVS= *.csv
-
 dist:
 	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(UTILS) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
-
-#$(OTHER_FILES)
-
-# ${IMAGES} ${CSVS}
 
 clean:
 	rm -rf lab2_list lab2_add *tar.gz *.png *.csv

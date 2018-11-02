@@ -36,12 +36,13 @@ mks:
 #ADDRULE="test_add"
 #LISTRULE="test_list"
 
-tests: tests_add #clean_slate tests_add
+tests: tests_add tests_list
 
 ##
 # Used to ensure fresh .mk and .csv files
 clean_slate: mks 
-tests_add: test_add
+tests_add: test_add 
+tests_list: test_list
 
 GSCRIPTS=lab2_add.gp lab2_list.gp
 
@@ -50,6 +51,7 @@ GSCRIPTS=lab2_add.gp lab2_list.gp
 # generated numbers
 graphs: #tests
 	./lab2_add.gp
+	./lab2_list.gp
 
 dist:
 	tar -cvzf lab2a-604853262.tar.gz ${DEFAULT} ${SOURCE} ${GSCRIPTS}

@@ -205,11 +205,11 @@ int main(int argc, char* argv[]) {
 	time_elapsed += time_end.tv_nsec;
 	time_elapsed -= time_start.tv_nsec;
 
-	long long numOperations = numThreads * numIterations * 2;
+	long long numOperations = numThreads * numIterations * 3;
 	long long time_average = time_elapsed / numOperations;
 
 	tag();
-	printf(",%d,%d,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average);
+	printf(",%d,%d,1,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average);
 
 	free(threadPool);
 	free(tids);

@@ -16,7 +16,7 @@
 
 int numThreads = DEFAULT;
 int numIterations = DEFAULT;
-bool yield = false;
+bool opt_yield = false;
 bool sync_flag = false;
 char sync_type = NONE;
 bool debug_flag = false;
@@ -34,7 +34,7 @@ void usage() {
 void tag() {
 	printf("add-");
 
-	if(yield) printf("yield-");
+	if(opt_yield) printf("yield-");
 
 	if(sync_type == NONE) printf("none,");
 	else printf("%c,", sync_type);
@@ -68,7 +68,7 @@ void get_options(int argc, char* const* argv) {
 			}
 			break;
 		case YIELD:
-			yield = true;
+			opt_yield = true;
 			break;
 		case SYNC:
 			if(optarg) {

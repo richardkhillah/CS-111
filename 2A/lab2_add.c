@@ -26,7 +26,7 @@ long long counter;
 void add(long long *pointer, long long value) {
 	long long sum = *pointer + value;
 
-	if (yield)
+	if (opt_yield)
 		sched_yield();
 	*pointer = sum;
 }
@@ -37,7 +37,7 @@ void add_CAS(long long *pointer, long long value) {
     do {
         temp = *pointer;
         new = temp + value;
-        if (yield)
+        if (opt_yield)
             sched_yield();
 
     } while(__sync_val_compare_and_swap(pointer, temp, new) != temp);

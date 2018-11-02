@@ -23,6 +23,7 @@ typedef int bool;
 
 int numThreads;
 int numIterations;
+int opt_yield;
 bool sync_flag;
 char sync_type;
 

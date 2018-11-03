@@ -31,11 +31,11 @@ lab2_list:
 
 tests: test_add test_list
 
-graphs:
+graphs: tests
 	./lab2_add.gp
 	./lab2_list.gp
 
-dist:
+dist: graphs
 	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(UTILS) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
 
 clean:

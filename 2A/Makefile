@@ -29,7 +29,7 @@ lab2_add:
 lab2_list:
 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
 
-tests: test_add test_list
+tests: build test_add test_list
 
 graphs: tests
 	./lab2_add.gp

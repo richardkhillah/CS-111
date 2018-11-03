@@ -17,8 +17,6 @@ GSCRIPTS=lab2_add.gp lab2_list.gp
 PNGS= *.png 
 CSVS= *.csv
 
-OTHER_FILES= *.png *.csv
-
 default: build
 
 build: lab2_add lab2_list
@@ -39,7 +37,10 @@ dist: graphs
 	tar -cvzf lab2a-604853262.tar.gz $(DEFAULT) $(UTILS) $(ADD_SOURCE) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
 
 clean:
-	rm -rf lab2_list lab2_add *tar.gz *.png *.csv
+	rm -rf lab2_list lab2_add *tar.gz
+
+clean_all: clean
+	rm -rf $(PNGS) $(CSVS)
 
 check:
 	./P2A_check.sh $(UID)

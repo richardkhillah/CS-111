@@ -7,7 +7,7 @@ LAB_NUMBER=lab2
 LAB_PART=b
 
 CC=gcc
-CFLAGS= -Wall -Wextra -pthread -std=gnu99 -g
+CFLAGS= -Wall -Wextra -pthread -std=gnu99 -g -lprofiler
 
 DEFAULT=Makefile README utils.c utils.h
 UTILS=utils.c utils.h
@@ -74,10 +74,7 @@ profile:
 	pprof ./lab2_list profile --list=thread_routine > profile.out
 
 clean:
-	rm -rf lab2_list *tar.gz
-
-clean_all: clean
-	rm -rf $(PNGS) $(CSVS)
+	rm -rf lab2_list $(PNGS) $(CSVS) *tar.gz *.dSYM
 
 check:
 	./P2B_check.sh $(UID)

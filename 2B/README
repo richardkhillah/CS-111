@@ -1,0 +1,88 @@
+NAME: Richard Khillah
+EMAIL: RKhillah@ucla.edu
+ID: 604853262
+
+Limitations ... everything runs completely and all tests in the sanity check pass except for 2, which is really the result of failing one test, namely.
+
+Source code descriptions:
+Makefile ... builds the deliverable programs (lab2_add and lab2_list), output, graphs, and tarball using `make`, `make tests`, `make graphs`, and `make dist`, respectively.
+
+lab2_add.c ... a C program that tests a shared variable add function, generates performance statistics, and takes the following command-line options:
+	--threads=N
+	--iterations=N
+	--yield
+	--sync=[m, c, s]
+
+SortedList.h ... The header file for the sorted list interface
+
+SortedList.c ... The implementation of the sorted list
+
+utils.h ... the header file for standard commonly used utilies
+utils.c ... the implementation of utils.h
+
+helper.h ... the file defining variable common between both lab2_add.c and lab2_list.c
+
+lab2_add-helper.c and lab2_list-helper.c ... implementing each how they use the functions in helper.h
+
+lab2_list.c ... a C program that tests a shared linked-list using the methods described in the SortedList.h header file, generates performance statistics, and takes the following command-line options:
+	--threads=N
+	--iterations=N
+	--yield=[i, d, l] (in any combination, e.g., ild)
+	--sync=[m, s]
+
+generate.sh ... script used to generate test cases
+
+lab2_add.gp and lab2_list.gp ... provided test scripts that use the below mentioned .csv files to generate the graphs for the lab.
+
+lab2_add-?.png ... the required output image files produced by lab2_add.gp
+
+lab2_list-?.png ... the required output image files produced by lab2_list.gp
+
+lab2_add.csv and lab2_list.csv ... the file containing outputs for each lab2_add and lab2_list test case in the Makefile, respectively. Also required file for running the above .gp test scripts
+
+
+QUESTION 2.1.1 - causing conflicts:
+	Why does it take many iterations before errors are seen?
+	Why does a significantly smaller number of iterations so seldom fail?
+
+	Creating a thread takes longer than 100 iterations of adding, but as the number of iterations increases, it takes longer and longer to complete addition, hence it take a large number of iterations before failure. Essentially, with fewer operations, one thread is able to complete most, if not all, the iterations before another thread is created let alone gets to run.
+
+
+QUESTION 2.1.2 - cost of yielding:
+	Why are the --yield runs so much slower?
+	Where is the additional time going?
+	Is it possible to get valid per-operation timings if we are using the --yield option? If so, explain how. If not, explain why not.
+
+	Yielding causes the thread to give up the cpu thus causing a context switch to another thread and the overhead of the context switch is high. The additional time is going to the context switchs. It is not possible to get valid per-operation timings while we are using yield in this manner since the overhead of constantly giving up the CPU and context switching will skew the time spent actually executing the add routine.
+
+
+QUESTION 2.1.3 - measurement errors:
+	Why does the average cost per operation drop with increasing iterations?
+	If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+
+	The average cost per operation drops with increasing iterations because although we are adding time to the total elapsed time, the addtion routine is cheap compared to the overhead of thread creation, thus increasing the number of iterations essentially divides the total elapsed time by more work having been done. Run a bunch of trials with increasing iterations, capture outputs, plot and look at the chart and find where the curve plateus (i.e. stops going down). the first point point on the curve where cost is at a minum is the optimal number of iteratoins and what the "correct" cost is.
+
+
+QUESTION 2.1.4 - costs of serialization:
+	Why do all of the options perform similarly for low numbers of threads?
+	Why do the three protected operations slow down as the number of threads rises?
+
+	With a lower numbers of threads there is less contention for the locks which both decreases the overall elapsed time and enables more useful work to occur.
+	The three operations slow down due to the overhead of contention. More threads means more contention which means more time.
+
+
+PART 2:
+QUESTION 2.2.1 - scalability of Mutex
+	Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+	Comment on the general shapes of the curves, and explain why they have this shape.
+	Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+
+	The shape of the graph in part 1 is intially concave down and levels off around 4 threads and the shape of the graph in part 2 is directly proportional to the number of threads.
+	In part 1, the critical-section latency of the add routine is much lower than the critical-section latency of the list routines in part 2.
+	The difference in critical-section latency (for fixed number of iterations) appears to be the main reason for the difference in graphs (performance).
+
+
+QUESTION 2.2.2 - scalability of spin locks
+	Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape. Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+
+	Both trends are certainly increasing with a fairly linear trjectory. The spin-lock curve certainly appears to have a higher rate of increase than mutex locks most likely attributed to increasing contention proportional to the number of threads. We see increasing divergence between mutex protection and spin-lock protection as the number of threads increases because spin-locks waste CPU cycles spinning while mutexes put threads to sleep until a lock is aquired. 

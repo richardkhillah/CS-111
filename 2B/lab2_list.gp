@@ -13,10 +13,10 @@
 #	7. run time per operation (ns)
 #
 # output:
-#	lab2b_list-1.png ... cost per operation vs threads and iterations
-#	lab2b_list-2.png ... threads and iterations that run (un-protected) w/o failure
-#	lab2b_list-3.png ... threads and iterations that run (protected) w/o failure
-#	lab2b_list-4.png ... cost per operation vs number of threads
+#	lab2b_1.png ... operations per second vs number of threads 
+#	lab2b_2.png ... 
+#	lab2b_3.png ... 
+#	lab2b_4.png ... 
 #
 # Note:
 #	Managing data is simplified by keeping all of the results in a single
@@ -32,7 +32,7 @@ set terminal png
 set datafile separator ","
 
 # how synchronization method affects the total number of operations per second
-set title "List-1: Cost per Operation vs Number of Threads"
+set title "List-1: Operation per Second vs Number of Threads"
 set xlabel "Threads"
 set logscale x 2
 set ylabel "Throughput"

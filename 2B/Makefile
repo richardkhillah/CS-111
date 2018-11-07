@@ -7,7 +7,7 @@ LAB_NUMBER=lab2
 LAB_PART=b
 
 CC=gcc
-CFLAGS= -Wall -Wextra -pthread -std=gnu99
+CFLAGS= -Wall -Wextra -pthread -std=gnu99 -g
 
 DEFAULT=Makefile README utils.c utils.h
 UTILS=utils.c utils.h
@@ -35,6 +35,9 @@ dist: graphs
 
 clean:
 	rm -rf lab2_list *tar.gz
+
+profile:
+	pprof ./lab2_list profile.out
 
 clean_all: clean
 	rm -rf $(PNGS) $(CSVS)

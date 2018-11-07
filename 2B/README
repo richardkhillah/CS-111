@@ -41,6 +41,24 @@ lab2_list-?.png ... the required output image files produced by lab2_list.gp
 lab2_add.csv and lab2_list.csv ... the file containing outputs for each lab2_add and lab2_list test case in the Makefile, respectively. Also required file for running the above .gp test scripts
 
 
+QUESTION 2.3.1 - CPU time in the basic list implementation:
+Where do you believe most of the CPU time is spent in the 1 and 2-thread list tests ?
+Why do you believe these to be the most expensive parts of the code?
+Where do you believe most of the CPU time is being spent in the high-thread spin-lock tests?
+Where do you believe most of the CPU time is being spent in the high-thread mutex tests?
+
+Most of the CPU time during the 1- and 2-thread list tests is being spent actually performing list operations.
+
+for the high-thread spin-lock tests, most of the CPU time is likely being spent spinning/waiting for a lock to be free.
+for the high-thread mutex tests, most of the CPU time is likely being spent performing list operations since the thread will be sleeping until it aquires the lock.
+
+
+
+
+============================================================
+Lab2a questions
+============================================================
+
 QUESTION 2.1.1 - causing conflicts:
 	Why does it take many iterations before errors are seen?
 	Why does a significantly smaller number of iterations so seldom fail?

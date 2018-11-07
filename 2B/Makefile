@@ -42,10 +42,9 @@ clean_all: clean
 check:
 	./P2B_check.sh $(UID)
 
-
 test_list: lab2_list
-	./generate-tests.sh
-	
+	-./generate-tests.sh
+
 # test_list: lab2_list
 # 	-./lab2_list --threads=1 --iterations=10 >> lab2_list.csv
 # 	-./lab2_list --threads=1 --iterations=100 >> lab2_list.csv

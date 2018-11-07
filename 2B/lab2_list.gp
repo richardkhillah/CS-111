@@ -34,8 +34,8 @@ set datafile separator ","
 # how synchronization method affects the total number of operations per second
 set title "List-1: Cost per Operation vs Number of Threads"
 set xlabel "Threads"
-set logscale x 10
-set ylabel "Cost per Operation (ns)"
+set logscale x 2
+set ylabel "Throughput"
 set logscale y 10 
 set output 'lab2b_list-1.png'
 

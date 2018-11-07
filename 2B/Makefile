@@ -18,6 +18,41 @@ GSCRIPTS=lab2_list.gp
 PNGS= *.png
 CSVS= *.csv
 
+# default: build
+
+# build: lab2_list
+
+# lab2_list:
+# 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
+
+# tests: build
+# 	-./generate-tests.sh	
+
+# graphs: tests
+# 	./lab2_list.gp
+
+# profile:
+# 	pprof ./lab2_list profile.out
+
+# dist: graphs
+# 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
+
+# clean:
+# 	rm -rf lab2_list *tar.gz
+
+# clean_all: clean
+# 	rm -rf $(PNGS) $(CSVS)
+
+# check:
+# 	./P2B_check.sh $(UID)
+
+
+
+
+
+############################################################
+## DEVELOPER RULES
+############################################################
 default: build
 
 build: lab2_list
@@ -25,19 +60,21 @@ build: lab2_list
 lab2_list:
 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
 
-tests: build test_list
+tests: build 
+	-./generate-tests.sh
 
-graphs: tests
-	./lab2_list.gp
+graphs: 
+	gnuplot lab2_list.gp
 
 dist: graphs
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
 
+profile:
+	CPUPROFILE=profile ./lab2_list --iterations=1000 --threads=12 --sync=s
+	pprof ./lab2_list profile --list=thread_routine > profile.out
+
 clean:
 	rm -rf lab2_list *tar.gz
-
-profile:
-	pprof ./lab2_list profile.out
 
 clean_all: clean
 	rm -rf $(PNGS) $(CSVS)
@@ -45,8 +82,12 @@ clean_all: clean
 check:
 	./P2B_check.sh $(UID)
 
-test_list: lab2_list
-	-./generate-tests.sh
+
+############################################################
+## END DEVELOPER RULES
+############################################################
+
+
 
 # test_list: lab2_list
 # 	-./lab2_list --threads=1 --iterations=10 >> lab2_list.csv

@@ -26,10 +26,20 @@ int spinLock = 0;
 SortedList_t* head;
 SortedListElement_t* elements;
 
+long long* thread_times;
+
+long long getElapsedTime(struct timespec start, struct timespec end) {
+	long long elapsedtime = (end.tv_sec - start.tv_sec) * SEC_TO_NS_CFACTOR;
+    elapsedtime += end.tv_nsec;
+    elapsedtime -= start.tv_nsec;
+
+    return elapsedtime;
+}
+
 void * thread_routine(void* arg) {
 	int tid = *((int *)arg);
-
 	int num_ops = numThreads * numIterations;
+	struct timespec beforeLock, afterLock;
 
 	int i;
 	for(i = tid; i < num_ops; i+=numThreads) {
@@ -39,10 +49,15 @@ void * thread_routine(void* arg) {
 				break;
 			}
 			case MUTEX: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 				if(pthread_mutex_lock(&lock) != 0) {
 					fatal_error("Error getting the lock", 0, 2);
 				}
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
+
 				SortedList_insert(head, elements+i);
+
 				if(pthread_mutex_unlock(&lock) != 0) {
 					fatal_error("Error releasing the lock", 0, 2);
 				}
@@ -66,10 +81,15 @@ void * thread_routine(void* arg) {
 			break;
 		}
 		case MUTEX: {
+			clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 			if(pthread_mutex_lock(&lock) != 0) {
 				fatal_error("Error getting the lock", 0, 2);
 			}
+			clock_gettime(CLOCK_MONOTONIC, &afterLock);
+			thread_times[tid] += getElapsedTime(beforeLock, afterLock);
+
 			SortedList_length(head);
+
 			if(pthread_mutex_unlock(&lock) != 0) {
 				fatal_error("Error releasing the lock", 0, 2);
 			}
@@ -98,14 +118,18 @@ void * thread_routine(void* arg) {
 				break;
 			}
 			case MUTEX: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 				if(pthread_mutex_lock(&lock) != 0) {
 					fatal_error("Error getting the lock", 0, 2);
 				}
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {
 					fatal_error("Element not found. NULL element lookup.", 0, 2);
 				}
+
 				SortedList_delete(el);
 				
 				if(pthread_mutex_unlock(&lock) != 0) {
@@ -135,39 +159,39 @@ int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
 	get_options(argc, argv);
 
+	/* Create a circular list */
 	head = (SortedList_t *)malloc(sizeof(SortedList_t));
 	if( head == NULL ) {
 		fatal_error("Error initializing list", 0, 1);
 	}
 
-	// should I do a circular list?
 	head->next = head;
     head->prev = head;
     head->key = NULL;
 
+    /* generate random elements with random lengths for each thread */
 	int numElements = numThreads * numIterations;
 	elements = (SortedListElement_t *)malloc(numElements * sizeof(SortedListElement_t));
 	if( elements == NULL ) {
 		fatal_error("Error initializing SortedList elements", 0, 1);
 	}
 
-	int i;
-	for (i = 0; i < numElements; i++) {
+	for (int i = 0; i < numElements; i++) {
 		int random_element_len = 3 + (rand() % 8);
 		char* key = (char *)malloc(random_element_len * sizeof(char));
 		if(key == NULL) {
 			fatal_error("Error creating random element", 0, 1);
 		}
 
-		int j;
-		for(j = 0; j < random_element_len - 1; j++) {
-			key[j] = (char)(rand() % 255 + 1); // TODO: THIS OK?
+		for(int j = 0; j < random_element_len - 1; j++) {
+			key[j] = (char)(rand() % 255 + 1);
 		}
 
-		key[random_element_len-1] = '\0'; // null terminate c-string
-		elements[i].key = key;
+		key[random_element_len-1] = '\0';
+		elements[i].key = key; // = &key[0]; //??
 	}
 
+	/* Allocate memory for the threadPool, thread_ids (tids), and thread_times */
 	pthread_t* threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
 	if(threadPool == NULL) {
 		fatal_error("Error creating thread pool", 0, 1);
@@ -178,20 +202,27 @@ int main(int argc, char* argv[]) {
 		fatal_error("Error creating thread tid list", 0, 1);
 	}
 
+	/* initialize thread_times to 0 using calloc. this ensure:
+	 *   1. threadtimes are recoreded accurately
+	 *   2. in the non-sync cases, the non case is not affected
+	 */
+	thread_times = (long long*)calloc(numThreads, sizeof(long long));
+	if (thread_times == NULL) {
+		fatal_error("Error creating thread_times for threads", 0, 1);
+	}
+
 	// Get start time
 	struct timespec time_start, time_end;
 	clock_gettime(CLOCK_MONOTONIC, &time_start);
 
-	int k;
-	for (k = 0; k < numThreads; k++) {
+	for (int k = 0; k < numThreads; k++) {
 		tids[k] = k;
 		if(pthread_create(threadPool + k, NULL, thread_routine, tids + k) != 0) {
 			fatal_error("Error creating threads", 0, 2);
 		}
 	}
 
-	int n;
-	for(n = 0; n < numThreads; n++) {
+	for(int n = 0; n < numThreads; n++) {
 		if (pthread_join(threadPool[n], NULL) != 0) {
 			fatal_error("Error joining threads", 0, 2);
 		}
@@ -211,10 +242,20 @@ int main(int argc, char* argv[]) {
 
 	long long numOperations = numThreads * numIterations * 3;
 	long long time_average = time_elapsed / numOperations;
+	long long total_lock_acquisition_time = 0;
+	
+	/* add up total lock acquisition time and divide by number of operations
+	 * to compute average wait-time for lock
+	 */
+	for (int i = 0; i < numThreads; i++) {
+		total_lock_acquisition_time += thread_times[i];
+	}
+	total_lock_acquisition_time /= numOperations;
 
 	tag();
-	printf(",%d,%d,1,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average);
+	printf(",%d,%d,1,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, total_lock_acquisition_time);
 
+	free(thread_times);
 	free(threadPool);
 	free(tids);
 	free(elements);

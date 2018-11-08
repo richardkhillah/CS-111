@@ -50,6 +50,9 @@ void get_options(int argc, char* const* argv) {
 				numThreads = atoi(optarg);
 
 				if(numThreads < 1)
+					if(debug_flag){
+						fprintf(stderr, "numThreads=%d\n", numThreads);
+					}
 					fatal_error("Number of threads must be greater than 0", (void*)usage, 1);
 				break;
 			case ITERATIONS:

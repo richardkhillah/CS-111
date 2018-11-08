@@ -20,11 +20,10 @@
 
 #define SEC_TO_NS_CFACTOR 1000000000
 
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-int spinLock = 0;
-
-SortedList_t* head;
+SortedList_t* heads;
 SortedListElement_t* elements;
+pthread_mutex_t* locks;
+int* spinLocks;
 
 long long* thread_times;
 
@@ -36,12 +35,24 @@ long long getElapsedTime(struct timespec start, struct timespec end) {
     return elapsedtime;
 }
 
+int hash(const char* key) {
+	int i = 0;
+	int id = 0;
+	while(key[i] != '\0') {
+		id += key[i++];
+	}
+
+	return abs(id) % numLists;
+}
+
 void * thread_routine(void* arg) {
 	int tid = *((int *)arg);
 	int num_ops = numThreads * numIterations;
 	struct timespec beforeLock, afterLock;
 
 	for(int i = tid; i < num_ops; i+=numThreads) {
+		int listId = hash(elements[i].key); // get the list elemenet belongs
+		SortedList_t* head = heads+listId; // get the correct list
 		switch(sync_type) {
 			case NONE: {
 				SortedList_insert(head, elements+i);
@@ -49,7 +60,7 @@ void * thread_routine(void* arg) {
 			}
 			case MUTEX: {
 				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-				if(pthread_mutex_lock(&lock) != 0) {
+				if(pthread_mutex_lock(locks+listId) != 0) {
 					fatal_error("Error getting the lock", 0, 2);
 				}
 				clock_gettime(CLOCK_MONOTONIC, &afterLock);
@@ -57,61 +68,67 @@ void * thread_routine(void* arg) {
 
 				SortedList_insert(head, elements+i);
 
-				if(pthread_mutex_unlock(&lock) != 0) {
+				if(pthread_mutex_unlock(locks+listId) != 0) {
 					fatal_error("Error releasing the lock", 0, 2);
 				}
 				break;
 			}
 			case SPIN: {
 				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-				while(__sync_lock_test_and_set(&spinLock, 1));
+				while(__sync_lock_test_and_set(spinLocks+listId, 1));
 				clock_gettime(CLOCK_MONOTONIC, &afterLock);
 				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 				
 				SortedList_insert(head, elements+i);
 
-				__sync_lock_release(&spinLock);
+				__sync_lock_release(spinLocks+listId);
 				break;
 			}
 		}
 	}
 
-	// get the list length
-	switch(sync_type) {
-		case NONE: {
-			SortedList_length(head);
-			break;
-		}
-		case MUTEX: {
-			clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-			if(pthread_mutex_lock(&lock) != 0) {
-				fatal_error("Error getting the lock", 0, 2);
+	int total_length = 0;
+	for(int i = 0; i < numLists; i++) {
+		SortedList_t* head = heads+i;
+		switch(sync_type) {
+			case NONE: {
+				total_length += SortedList_length(head);
+				break;
 			}
-			clock_gettime(CLOCK_MONOTONIC, &afterLock);
-			thread_times[tid] += getElapsedTime(beforeLock, afterLock);
+			case MUTEX: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
+				if(pthread_mutex_lock(locks+i) != 0) {
+					fatal_error("Error getting the lock", 0, 2);
+				}
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
-			SortedList_length(head);
+				total_length += SortedList_length(head);
 
-			if(pthread_mutex_unlock(&lock) != 0) {
-				fatal_error("Error releasing the lock", 0, 2);
+				if(pthread_mutex_unlock(locks+i) != 0) {
+					fatal_error("Error releasing the lock", 0, 2);
+				}
+				break;
 			}
-			break;
-		}
-		case SPIN: {
-			clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-			while(__sync_lock_test_and_set(&spinLock, 1));
-			clock_gettime(CLOCK_MONOTONIC, &afterLock);
-			thread_times[tid] += getElapsedTime(beforeLock, afterLock);
+			case SPIN: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
+				while(__sync_lock_test_and_set(spinLocks+i, 1));
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
-			SortedList_length(head);
+				total_length += SortedList_length(head);
 
-			__sync_lock_release(&spinLock);
-			break;
+				__sync_lock_release(spinLocks+i);
+				break;
+			}
 		}
+
 	}
-
+	
 	// delete items
 	for(int n = tid; n < num_ops; n+=numThreads) {
+		int listId = hash(elements[n].key); // get the list elemenet belongs
+		SortedList_t* head = heads + listId; // get the correct list
 		switch(sync_type) {
 			case NONE: {
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
@@ -123,7 +140,7 @@ void * thread_routine(void* arg) {
 			}
 			case MUTEX: {
 				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-				if(pthread_mutex_lock(&lock) != 0) {
+				if(pthread_mutex_lock(locks+listId) != 0) {
 					fatal_error("Error getting the lock", 0, 2);
 				}
 				clock_gettime(CLOCK_MONOTONIC, &afterLock);
@@ -136,14 +153,14 @@ void * thread_routine(void* arg) {
 
 				SortedList_delete(el);
 				
-				if(pthread_mutex_unlock(&lock) != 0) {
+				if(pthread_mutex_unlock(locks+listId) != 0) {
 					fatal_error("Error releasing the lock", 0, 2);
 				}
 				break;
 			}
 			case SPIN: {
 				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
-				while(__sync_lock_test_and_set(&spinLock, 1));
+				while(__sync_lock_test_and_set(spinLocks+listId, 1));
 				clock_gettime(CLOCK_MONOTONIC, &afterLock);
 				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
@@ -153,7 +170,7 @@ void * thread_routine(void* arg) {
 				}
 				SortedList_delete(el);
 
-				__sync_lock_release(&spinLock);
+				__sync_lock_release(spinLocks+listId);
 				break;
 			}
 		}
@@ -162,21 +179,39 @@ void * thread_routine(void* arg) {
 	return NULL;
 }
 
-int main(int argc, char* argv[]) {
-	set_program_name(argv[0]);
-	get_options(argc, argv);
-
+void init() {
 	/* Create a circular list */
-	head = (SortedList_t *)malloc(sizeof(SortedList_t));
-	if( head == NULL ) {
+	heads = (SortedList_t *)malloc(numLists * sizeof(SortedList_t));
+	if( heads == NULL ) {
 		fatal_error("Error initializing list", 0, 1);
 	}
 
-	head->next = head;
-    head->prev = head;
-    head->key = NULL;
+	locks = (pthread_mutex_t*)malloc(numLists*(sizeof(pthread_mutex_t)));
+	spinLocks = (int*)malloc(numLists*sizeof(int));
+	if(locks == NULL || spinLocks || NULL) {
+		fatal_error("Error initializing locks", NULL, 1);
+	}
 
-    /* generate random elements with random lengths for each thread */
+	for(int i = 0; i < numLists; i++) {
+		pthread_mutex_init(locks+i, NULL);
+		spinLocks[i] = 0;
+
+		SortedList_t* head = heads+i;
+		head->next = head;
+	    head->prev = head;
+	    head->key = NULL;
+	}
+
+	/* initialize thread_times to 0 using calloc. this ensure:
+	 *   1. threadtimes are recoreded accurately
+	 *   2. in the non-sync cases, the non case is not affected
+	 */
+	thread_times = (long long*)calloc(numThreads, sizeof(long long));
+	if (thread_times == NULL) {
+		fatal_error("Error creating thread_times for threads", 0, 1);
+	}
+
+	/* generate random elements with random lengths for each thread */
 	int numElements = numThreads * numIterations;
 	elements = (SortedListElement_t *)malloc(numElements * sizeof(SortedListElement_t));
 	if( elements == NULL ) {
@@ -197,6 +232,12 @@ int main(int argc, char* argv[]) {
 		key[random_element_len-1] = '\0';
 		elements[i].key = key; // = &key[0]; //??
 	}
+}
+
+int main(int argc, char* argv[]) {
+	set_program_name(argv[0]);
+	get_options(argc, argv);
+	signal(SIGSEGV, handle_sig);
 
 	/* Allocate memory for the threadPool, thread_ids (tids), and thread_times */
 	pthread_t* threadPool = (pthread_t *)malloc(numThreads * sizeof(pthread_t));
@@ -209,14 +250,7 @@ int main(int argc, char* argv[]) {
 		fatal_error("Error creating thread tid list", 0, 1);
 	}
 
-	/* initialize thread_times to 0 using calloc. this ensure:
-	 *   1. threadtimes are recoreded accurately
-	 *   2. in the non-sync cases, the non case is not affected
-	 */
-	thread_times = (long long*)calloc(numThreads, sizeof(long long));
-	if (thread_times == NULL) {
-		fatal_error("Error creating thread_times for threads", 0, 1);
-	}
+	init();
 
 	// Get start time
 	struct timespec time_start, time_end;
@@ -238,8 +272,11 @@ int main(int argc, char* argv[]) {
 	// Get end time
 	clock_gettime(CLOCK_MONOTONIC, &time_end);
 
-	int list_length = SortedList_length(head);
-	if(list_length != 0) {
+	int total_list_length = 0;
+	for(int i = 0; i < numLists; i++){
+		total_list_length += SortedList_length(heads+i);
+	}
+	if(total_list_length != 0) {
 		fatal_error("List is not list 0", 0, 2);
 	}
 
@@ -260,8 +297,12 @@ int main(int argc, char* argv[]) {
 	total_lock_acquisition_time /= numOperations;
 
 	tag();
-	printf(",%d,%d,1,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numOperations, time_elapsed, time_average, total_lock_acquisition_time);
+	printf(",%d,%d,%d,%lld,%lld,%lld,%lld\n", numThreads, numIterations, numLists, numOperations, time_elapsed, time_average, total_lock_acquisition_time);
 
+
+	free(spinLocks);
+	free(locks);
+	free(heads);
 	free(thread_times);
 	free(threadPool);
 	free(tids);

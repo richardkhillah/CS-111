@@ -41,8 +41,7 @@ void * thread_routine(void* arg) {
 	int num_ops = numThreads * numIterations;
 	struct timespec beforeLock, afterLock;
 
-	int i;
-	for(i = tid; i < num_ops; i+=numThreads) {
+	for(int i = tid; i < num_ops; i+=numThreads) {
 		switch(sync_type) {
 			case NONE: {
 				SortedList_insert(head, elements+i);
@@ -64,8 +63,11 @@ void * thread_routine(void* arg) {
 				break;
 			}
 			case SPIN: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 				while(__sync_lock_test_and_set(&spinLock, 1));
-
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
+				
 				SortedList_insert(head, elements+i);
 
 				__sync_lock_release(&spinLock);
@@ -96,7 +98,10 @@ void * thread_routine(void* arg) {
 			break;
 		}
 		case SPIN: {
+			clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 			while(__sync_lock_test_and_set(&spinLock, 1));
+			clock_gettime(CLOCK_MONOTONIC, &afterLock);
+			thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
 			SortedList_length(head);
 
@@ -106,8 +111,7 @@ void * thread_routine(void* arg) {
 	}
 
 	// delete items
-	int n = tid;
-	for(; n < num_ops; n+=numThreads) {
+	for(int n = tid; n < num_ops; n+=numThreads) {
 		switch(sync_type) {
 			case NONE: {
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
@@ -138,7 +142,10 @@ void * thread_routine(void* arg) {
 				break;
 			}
 			case SPIN: {
+				clock_gettime(CLOCK_MONOTONIC, &beforeLock);
 				while(__sync_lock_test_and_set(&spinLock, 1));
+				clock_gettime(CLOCK_MONOTONIC, &afterLock);
+				thread_times[tid] += getElapsedTime(beforeLock, afterLock);
 
 				SortedListElement_t *el = SortedList_lookup(head, elements[n].key);
 				if(el == NULL) {

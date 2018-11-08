@@ -7,7 +7,7 @@ LAB_NUMBER=lab2
 LAB_PART=b
 
 CC=gcc
-CFLAGS= -Wall -Wextra -pthread -std=gnu99 -g -lprofiler
+CFLAGS= -Wall -Wextra -pthread -std=gnu99 -g # -lprofiler
 
 DEFAULT=Makefile README utils.c utils.h
 UTILS=utils.c utils.h

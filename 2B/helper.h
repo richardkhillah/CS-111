@@ -6,6 +6,7 @@
 #define ITERATIONS 'i'
 #define YIELD 'y'
 #define SYNC 's'
+#define LIST 'l'
 
 #define NONE 'n'
 #define MUTEX 'm'
@@ -25,6 +26,7 @@ int numIterations;
 bool opt_yield; 
 bool sync_flag;
 char sync_type;
+int numLists;
 
 bool debug_flag;
 

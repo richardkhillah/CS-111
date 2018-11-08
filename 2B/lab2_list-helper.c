@@ -12,7 +12,6 @@
 #include <signal.h>
 
 #include "utils.h"
-//#include "list_member.h"
 #include "helper.h"
 #include "SortedList.h"
 
@@ -25,10 +24,11 @@ int numIterations = DEFAULT;
 int opt_yield = 0; 
 bool sync_flag = false;
 char sync_type = NONE;
+int numLists = DEFAULT;
 bool debug_flag = false;
 
 void usage(void) {
-	fprintf(stderr, "Usage: ./%s [--threads=num] [--iterations=num] [--yield=[idl]] [--sync=[s, m]]]\n", program_name);
+	fprintf(stderr, "Usage: ./%s [--threads=#] [--iterations=#] [--lists=#] [--yield=[idl]] [--sync=[s, m]]\n", program_name);
 }
 
 static struct option const long_opts[] = {
@@ -36,6 +36,7 @@ static struct option const long_opts[] = {
 	{"iterations", required_argument, NULL, ITERATIONS},
 	{"yield", required_argument, NULL, YIELD},
 	{"sync", required_argument, NULL, SYNC},
+	{"lists", required_argument, NULL, LIST},
 	{"debug", no_argument, NULL, DEBUG},
 	{NULL, 0, NULL, 0}
 };
@@ -97,6 +98,13 @@ void get_options(int argc, char* const* argv) {
 					}
 				}
 				break;
+			case LIST: {
+				numLists = atoi(optarg);
+				if(numLists < 0) {
+					fatal_error("Number of sublists must be greater than 0", (void*)usage, 1);
+				}
+				break;
+			}
 			case DEBUG:
 				debug_flag = true;
 				break;

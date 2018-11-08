@@ -53,7 +53,23 @@ for the high-thread spin-lock tests, most of the CPU time is likely being spent 
 for the high-thread mutex tests, most of the CPU time is likely being spent performing list operations since the thread will be sleeping until it aquires the lock.
 
 
+QUESTION 2.3.2 - Execution Profiling:
+Where (what lines of code) are consuming most of the CPU time when the spin-lock version of the list exerciser is run with a large number of threads?
 
+Why does this operation become so expensive with large numbers of threads?
+
+
+
+
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
+Why does the average lock-wait time rise so dramatically with the number of contending threads?
+
+Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+
+How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+
+The average lock-wait time dramatically rises with the number of contending threads because there is more and more contension on a single lock, i.e., all the threads are waiting to get one lock. Completion time rises less dramatically because the time list operations take remains constant and the completion time averages total operation time.
 
 ============================================================
 Lab2a questions

@@ -37,7 +37,7 @@ set xlabel "Threads"
 set logscale x 2
 set ylabel "Throughput"
 set logscale y 10 
-set output 'lab2b_list-1.png'
+set output 'lab2b_1.png'
 
 # grep out only single threaded, un-protected, non-yield results
 plot \
@@ -46,3 +46,18 @@ plot \
      "< grep 'list-none-s,[1-9]*,' lab2b_list.csv" using ($2):(1000000000/($7)) \
 	title 'spin-lock' with linespoints lc rgb 'green'
 
+
+
+# how much time is spent waiting for locks
+set title "List-2: Per Operation Times for Mutex Operations"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Average Time per Operation"
+set logscale y 10 
+set output 'lab2b_2.png'
+
+plot \
+	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($8) \
+	title 'Wait time for lock' with linespoints lc rgb 'red', \
+	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2_list.csv" using ($2):($7) \
+	title 'Operation time' with linespoints lc rgb 'green'

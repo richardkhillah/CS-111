@@ -62,8 +62,8 @@ build: lab2_list
 lab2_list:
 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
 
-tests: build 
-	-./generate-tests.sh
+# tests: build 
+# 	-./generate-tests.sh
 
 graphs: tests
 	gnuplot lab2_list.gp
@@ -86,143 +86,123 @@ check:
 ## END DEVELOPER RULES
 ############################################################
 
-
-
-# test_list: lab2_list
-# 	-./lab2_list --threads=1 --iterations=10 >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=100 >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=1000 >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=10000 >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=20000 >> lab2_list.csv
-
-# 	-./lab2_list --threads=2 --iterations=1 >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=10 >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=100 >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=1000 >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1 >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=10 >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=100 >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1000 >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1 >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=10 >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=100 >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1000 >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1 >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=10 >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=100 >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1000 >> lab2_list.csv
-
-# 	-./lab2_list --threads=2 --iterations=1 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=2 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=4 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=8 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=16 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=32 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=2 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=4 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=8 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=16 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=2 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=4 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=8 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=16 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=2 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=4 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=8 --yield=i >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=16 --yield=i >> lab2_list.csv
-
-# 	-./lab2_list --threads=2 --iterations=1 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=2 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=4 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=8 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=16 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=32 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=2 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=4 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=8 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=16 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=2 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=4 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=8 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=16 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=2 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=4 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=8 --yield=d >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=16 --yield=d >> lab2_list.csv
-
-# 	-./lab2_list --threads=2 --iterations=1 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=2 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=4 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=8 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=16 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=32 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=2 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=4 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=8 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=16 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=2 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=4 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=8 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=16 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=2 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=4 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=8 --yield=il >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=16 --yield=il >> lab2_list.csv
-
-# 	-./lab2_list --threads=2 --iterations=1 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=2 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=4 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=8 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=16 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=32 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=2 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=4 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=8 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=16 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=2 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=4 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=8 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=16 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=2 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=4 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=8 --yield=dl >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=16 --yield=dl >> lab2_list.csv
-
-
-# 	-./lab2_list --threads=12 --iterations=32 --yield=i --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=d --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=il --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=dl --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=i --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=d --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=il --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=32 --yield=dl --sync=s >> lab2_list.csv
-
-# 	-./lab2_list --threads=1 --iterations=1000 >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=16 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=24 --iterations=1000 --sync=m >> lab2_list.csv
-# 	-./lab2_list --threads=1 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=2 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=4 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=8 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=12 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=16 --iterations=1000 --sync=s >> lab2_list.csv
-# 	-./lab2_list --threads=24 --iterations=1000 --sync=s >> lab2_list.csv
-
+tests: build
+	-./lab2_list --threads=1 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=24 --iterations=1000 --sync=m >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=24 --iterations=1000 --sync=s >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=2 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=4 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=8 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=16 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=2 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=4 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=8 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=16 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=2 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=4 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=8 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=16 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=2 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=4 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=8 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=16 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=1 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=2 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=4 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=8 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=16 --yield=id --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=10 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=20 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=40 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=80 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=10 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=20 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=40 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=80 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=10 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=20 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=40 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=80 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=10 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=20 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=40 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=80 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=10 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=20 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=40 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=80 --yield=id --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=10 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=20 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=40 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=80 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=10 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=20 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=40 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=80 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=10 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=20 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=40 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=80 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=10 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=20 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=40 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=80 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=10 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=20 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=40 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=16 --iterations=80 --yield=id --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=s --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=s --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=s --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=s --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=s --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=s --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=s --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=s --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=s --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=s --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=s --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=s --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=s --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=s --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=s --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=s --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=m --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=m --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=1 --iterations=1000 --sync=m --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=m --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=m --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=2 --iterations=1000 --sync=m --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=m --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=m --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=4 --iterations=1000 --sync=m --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=m --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=m --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=8 --iterations=1000 --sync=m --lists=16 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=m --lists=1 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=m --lists=4 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=m --lists=8 >> lab2b_list.csv
+	-./lab2_list --threads=12 --iterations=1000 --sync=m --lists=16 >> lab2b_list.csv

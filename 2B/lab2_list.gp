@@ -76,6 +76,6 @@ plot \
 	 "<grep list-id-none lab2b_list.csv" using ($2):($5) \
 	title 'No Synchronization' with points lc rgb 'red', \
 	 "<grep list-id-m lab2b_list.csv" using ($2):($5) \
-	title 'Mutex' with points lc rgb 'green', \ 
+	title 'Mutex' with points lc rgb 'green', \
 	 "<grep list-id-s lab2b_list.csv" using ($2):($5) \
-	title 'Spin-lock' with points lc rgb 'blue', \ 
+	title 'Spin-lock' with points lc rgb 'blue'

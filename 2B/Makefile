@@ -68,11 +68,11 @@ tests: build
 graphs: tests
 	gnuplot lab2_list.gp
 
-profile: graphs
+profile:
 	CPUPROFILE=profile ./lab2_list --iterations=1000 --threads=12 --sync=s
 	pprof ./lab2_list profile --list=thread_routine > profile.out
 
-dist: profile
+dist: graphs
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS) $(PROFILE)
 
 clean:

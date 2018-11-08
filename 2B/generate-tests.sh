@@ -23,3 +23,13 @@ for sync in s m; do
 	done
 done
 
+
+# synchonized without yields with set iterations, varying threads and list numbers
+for sync in s m; do
+	for threads in 1 2 4 8 12; do
+		for lists in 1 4 8 16; do
+			$LIST --threads={threads} --iterations=1000 --sync={sync} --lists={lists} >> $OUT_FILE
+		done
+	done
+done
+

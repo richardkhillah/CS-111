@@ -230,7 +230,7 @@ void init() {
 		}
 
 		key[random_element_len-1] = '\0';
-		elements[i].key = key; // = &key[0]; //??
+		elements[i].key = &key[0]; // = &key[0]; //??
 	}
 }
 

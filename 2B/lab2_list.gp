@@ -61,3 +61,21 @@ plot \
 	title 'Wait time for lock' with linespoints lc rgb 'red', \
 	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($7) \
 	title 'Operation time' with linespoints lc rgb 'green'
+
+
+
+# 
+set title "List-3: Number of Operations w/o Failure"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Successful Operations"
+set logscale y 10
+set output 'lab2b_3.png'
+
+plot \
+	 "<grep list-id-none lab2b_list.csv" using ($2):($5) \
+	title 'No Synchronization' with points lc rgb 'red', \
+	 "<grep list-id-m lab2b_list.csv" using ($2):($5) \
+	title 'Mutex' with points lc rgb 'green', \ 
+	 "<grep list-id-s lab2b_list.csv" using ($2):($5) \
+	title 'Spin-lock' with points lc rgb 'blue', \ 

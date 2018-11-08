@@ -59,5 +59,5 @@ set output 'lab2b_2.png'
 plot \
 	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($8) \
 	title 'Wait time for lock' with linespoints lc rgb 'red', \
-	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2_list.csv" using ($2):($7) \
+	 "< grep 'list-none-m,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($7) \
 	title 'Operation time' with linespoints lc rgb 'green'

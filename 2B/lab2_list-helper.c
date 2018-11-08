@@ -48,12 +48,12 @@ void get_options(int argc, char* const* argv) {
 		switch(opt) {
 			case THREADS:
 				numThreads = atoi(optarg);
-
-				if(numThreads < 1)
-					if(debug_flag){
+				if(debug_flag) {
 						fprintf(stderr, "numThreads=%d\n", numThreads);
-					}
+				}
+				if(numThreads < 1){
 					fatal_error("Number of threads must be greater than 0", (void*)usage, 1);
+				}
 				break;
 			case ITERATIONS:
 				numIterations = atoi(optarg);

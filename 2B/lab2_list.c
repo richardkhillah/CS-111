@@ -188,7 +188,7 @@ void init() {
 
 	locks = (pthread_mutex_t*)malloc(numLists*(sizeof(pthread_mutex_t)));
 	spinLocks = (int*)malloc(numLists*sizeof(int));
-	if(locks == NULL || spinLocks || NULL) {
+	if(locks == NULL || spinLocks == NULL) {
 		fatal_error("Error initializing locks", NULL, 1);
 	}
 

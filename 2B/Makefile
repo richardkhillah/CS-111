@@ -17,6 +17,8 @@ LIST_SOURCE=lab2_list.c SortedList.h SortedList.c helper.h lab2_list-helper.c
 GSCRIPTS=lab2_list.gp
 PNGS= *.png
 CSVS= *.csv
+PROFILE=profile.out
+
 
 # default: build
 
@@ -74,7 +76,7 @@ dist: profile
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS) $(PROFILE)
 
 clean:
-	rm -rf lab2_list $(PNGS) $(CSVS) *tar.gz *.dSYM
+	rm -rf lab2_list *tar.gz *.dSYM
 
 check:
 	./P2B_check.sh $(UID)

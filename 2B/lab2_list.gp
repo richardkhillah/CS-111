@@ -64,11 +64,12 @@ plot \
 
 
 
-# 
-set title "List-3: Number of Operations w/o Failure"
+# Protected iterations that run without failure
+set title "List-3: Successful iterations that run w/o Failure"
 set xlabel "Threads"
 set logscale x 2
-set ylabel "Successful Operations"
+set xrange [0:5]
+set ylabel "Successful iterations"
 set logscale y 10
 set output 'lab2b_3.png'
 

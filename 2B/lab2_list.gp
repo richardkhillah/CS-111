@@ -105,7 +105,7 @@ plot \
 
 
 # aggregated throughput (total operations per sec) vs num threads
-set title "List-5: Mutex aggregate throughput vs number of threads with varying number of lists"
+set title "List-5: Spin-lock aggregate throughput vs number of threads with varying number of lists"
 set xlabel "Threads"
 set logscale x 2
 set xrange [0.75:]

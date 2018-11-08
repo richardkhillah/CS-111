@@ -20,9 +20,9 @@ SortedList.c ... The implementation of the sorted list
 utils.h ... the header file for standard commonly used utilies
 utils.c ... the implementation of utils.h
 
-helper.h ... the file defining variable common between both lab2_add.c and lab2_list.c
+helper.h ... the file defining variable common between lab2_list.c
 
-lab2_add-helper.c and lab2_list-helper.c ... implementing each how they use the functions in helper.h
+lab2_list-helper.c ... implementing each how they use the functions in helper.h
 
 lab2_list.c ... a C program that tests a shared linked-list using the methods described in the SortedList.h header file, generates performance statistics, and takes the following command-line options:
 	--threads=N
@@ -32,13 +32,11 @@ lab2_list.c ... a C program that tests a shared linked-list using the methods de
 
 generate.sh ... script used to generate test cases
 
-lab2_add.gp and lab2_list.gp ... provided test scripts that use the below mentioned .csv files to generate the graphs for the lab.
-
-lab2_add-?.png ... the required output image files produced by lab2_add.gp
+lab2_list.gp ... provided test scripts that use the below mentioned .csv files to generate the graphs for the lab.
 
 lab2_list-?.png ... the required output image files produced by lab2_list.gp
 
-lab2_add.csv and lab2_list.csv ... the file containing outputs for each lab2_add and lab2_list test case in the Makefile, respectively. Also required file for running the above .gp test scripts
+lab2b_list.csv ... the file containing outputs for lab2b_list test cases in the Makefile. Also required file for running the above .gp test scripts
 
 
 QUESTION 2.3.1 - CPU time in the basic list implementation:
@@ -71,52 +69,15 @@ How is it possible for the wait time per operation to go up faster (or higher) t
 
 The average lock-wait time dramatically rises with the number of contending threads because there is more and more contension on a single lock, i.e., all the threads are waiting to get one lock. Completion time rises less dramatically because the time list operations take remains constant and the completion time averages total operation time.
 
-============================================================
-Lab2a questions
-============================================================
 
-QUESTION 2.1.1 - causing conflicts:
-	Why does it take many iterations before errors are seen?
-	Why does a significantly smaller number of iterations so seldom fail?
+QUESTION 2.3.4 - Performance of Partitioned Lists
+Explain the change in performance of the synchronized methods as a function of the number of lists.
+Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
 
-	Creating a thread takes longer than 100 iterations of adding, but as the number of iterations increases, it takes longer and longer to complete addition, hence it take a large number of iterations before failure. Essentially, with fewer operations, one thread is able to complete most, if not all, the iterations before another thread is created let alone gets to run.
+It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
 
+Throughput should continue to increase as the number of lengths increases, but not indefinatley, that is, afterall, the point. The multi-list essentially acts as a divide and conquer mechanism: splitting one list into many pieces, essentially distributing unique critical sections across a threadpool. 
 
-QUESTION 2.1.2 - cost of yielding:
-	Why are the --yield runs so much slower?
-	Where is the additional time going?
-	Is it possible to get valid per-operation timings if we are using the --yield option? If so, explain how. If not, explain why not.
+In this scenario, the more threads there are the better; untill there are too many threads and not enough lists. Theoretically, given N lists and N threads, all lists can be operated on parallely, thus increasing throughput by a near factor of N.
 
-	Yielding causes the thread to give up the cpu thus causing a context switch to another thread and the overhead of the context switch is high. The additional time is going to the context switchs. It is not possible to get valid per-operation timings while we are using yield in this manner since the overhead of constantly giving up the CPU and context switching will skew the time spent actually executing the add routine.
-
-
-QUESTION 2.1.3 - measurement errors:
-	Why does the average cost per operation drop with increasing iterations?
-	If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
-
-	The average cost per operation drops with increasing iterations because although we are adding time to the total elapsed time, the addtion routine is cheap compared to the overhead of thread creation, thus increasing the number of iterations essentially divides the total elapsed time by more work having been done. Run a bunch of trials with increasing iterations, capture outputs, plot and look at the chart and find where the curve plateus (i.e. stops going down). the first point point on the curve where cost is at a minum is the optimal number of iteratoins and what the "correct" cost is.
-
-
-QUESTION 2.1.4 - costs of serialization:
-	Why do all of the options perform similarly for low numbers of threads?
-	Why do the three protected operations slow down as the number of threads rises?
-
-	With a lower numbers of threads there is less contention for the locks which both decreases the overall elapsed time and enables more useful work to occur.
-	The three operations slow down due to the overhead of contention. More threads means more contention which means more time.
-
-
-PART 2:
-QUESTION 2.2.1 - scalability of Mutex
-	Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
-	Comment on the general shapes of the curves, and explain why they have this shape.
-	Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
-
-	The shape of the graph in part 1 is intially concave down and levels off around 4 threads and the shape of the graph in part 2 is directly proportional to the number of threads.
-	In part 1, the critical-section latency of the add routine is much lower than the critical-section latency of the list routines in part 2.
-	The difference in critical-section latency (for fixed number of iterations) appears to be the main reason for the difference in graphs (performance).
-
-
-QUESTION 2.2.2 - scalability of spin locks
-	Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape. Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
-
-	Both trends are certainly increasing with a fairly linear trjectory. The spin-lock curve certainly appears to have a higher rate of increase than mutex locks most likely attributed to increasing contention proportional to the number of threads. We see increasing divergence between mutex protection and spin-lock protection as the number of threads increases because spin-locks waste CPU cycles spinning while mutexes put threads to sleep until a lock is aquired. 
+This does not appear to be true in the above curves. The key distinction is PARALLELISM. An N-way partitioned list (given N threads) can effectively increase throughput by a factor of N (also ideally provided kernal level threads) where this is not the case with a single list. As mentioned above, and N-Way partitioned list distributes workload that can be done in parallel, more imporantly reduces lock contention due to a partioned critical sectin, while a single list does nothing to minimize lock contention or spread out the critical section.

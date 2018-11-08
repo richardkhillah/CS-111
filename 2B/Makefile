@@ -63,15 +63,15 @@ lab2_list:
 tests: build 
 	-./generate-tests.sh
 
-graphs: 
+graphs: tests
 	gnuplot lab2_list.gp
 
-dist: graphs
-	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
-
-profile:
+profile: graphs
 	CPUPROFILE=profile ./lab2_list --iterations=1000 --threads=12 --sync=s
 	pprof ./lab2_list profile --list=thread_routine > profile.out
+
+dist: profile
+	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS) $(PROFILE)
 
 clean:
 	rm -rf lab2_list $(PNGS) $(CSVS) *tar.gz *.dSYM

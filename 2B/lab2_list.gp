@@ -68,15 +68,15 @@ plot \
 set title "List-3: Successful iterations that run w/o Failure"
 set xlabel "Threads"
 set logscale x 2
-set xrange [0:5]
+set xrange [0.75:]
 set ylabel "Successful iterations"
 set logscale y 10
 set output 'lab2b_3.png'
 
 plot \
-	 "<grep list-id-none lab2b_list.csv" using ($2):($5) \
+	 "<grep list-id-none lab2b_list.csv" using ($2):($3) \
 	title 'No Synchronization' with points lc rgb 'red', \
-	 "<grep list-id-m lab2b_list.csv" using ($2):($5) \
+	 "<grep list-id-m lab2b_list.csv" using ($2):($3) \
 	title 'Mutex' with points lc rgb 'green', \
-	 "<grep list-id-s lab2b_list.csv" using ($2):($5) \
+	 "<grep list-id-s lab2b_list.csv" using ($2):($3) \
 	title 'Spin-lock' with points lc rgb 'blue'

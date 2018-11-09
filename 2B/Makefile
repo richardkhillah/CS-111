@@ -19,39 +19,6 @@ PNGS= *.png
 CSVS= *.csv
 PROFILE=profile.out
 
-
-# default: build
-
-# build: lab2_list
-
-# lab2_list:
-# 	$(CC) $(CFLAGS) -o lab2_list lab2_list.c SortedList.c lab2_list-helper.c utils.c
-
-# tests: build
-# 	-./generate-tests.sh	
-
-# graphs: tests
-# 	./lab2_list.gp
-
-# profile:
-# 	pprof ./lab2_list profile.out
-
-# dist: graphs
-# 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS)
-
-# clean:
-# 	rm -rf lab2_list *tar.gz
-
-# clean_all: clean
-# 	rm -rf $(PNGS) $(CSVS)
-
-# check:
-# 	./P2B_check.sh $(UID)
-
-
-
-
-
 ############################################################
 ## DEVELOPER RULES
 ############################################################
@@ -70,7 +37,7 @@ graphs: tests
 
 profile:
 	CPUPROFILE=profile ./lab2_list --iterations=1000 --threads=12 --sync=s
-	pprof ./lab2_list profile --list=thread_routine > profile.out
+	pprof --list=thread_routine ./lab2_list profile > profile.out
 
 dist: graphs
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(LIST_SOURCE) $(GSCRIPTS) $(PNGS) $(CSVS) $(PROFILE)

@@ -3,10 +3,10 @@
 # ID: 604853262
 
 UID=604853262
-LAB_NUMBER=lab10
+LAB_NUMBER=lab4
 LAB_PART=b
 EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
-EXECUTABLE_SOURCE=main.c 
+EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).c
 CHECK_SCRIPT=
 
 CC=gcc
@@ -14,7 +14,7 @@ CFLAGS= -Wall -Wextra -std=gnu99
 
 DEFAULT=Makefile README utils.c utils.h
 
-EXTRAS=./tmp/1.ts ./tmp/4.ts
+EXTRAS=
 
 default: build
 

@@ -1,0 +1,18 @@
+NAME: Richard Khillah
+EMAIL: RKhillah@ucla.edu
+ID: 604853262
+
+Limitations:
+
+Files:
+Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
+
+utils.h: the header file for standard commonly used utilies
+
+utils.c: the implementation of utils.h
+
+deliverable1: 
+
+deliverable2: 
+
+deliverable3:

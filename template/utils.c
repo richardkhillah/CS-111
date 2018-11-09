@@ -2,6 +2,8 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
+#include "utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,8 +11,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-
-#include "common.h"
 
 void set_program_name(const char* argv0) {
     if(argv0 == NULL) {
@@ -27,16 +27,30 @@ void set_program_name(const char* argv0) {
     program_name = argv0;
 }
 
-void fatal_error(char* msg){
+void fatal_error(char* msg, void (*usage)(void), int errcode){
     fprintf(stderr, "%s: %s\r\n", program_name, msg);
-    exit(EXIT_ERROR);
+    
+
+    if(usage != NULL) {
+        (*usage)();
+    }
+
+    switch(errcode) {
+        case EXIT_ERROR1:
+            exit(EXIT_ERROR1);
+        case EXIT_ERROR2:
+            exit(EXIT_ERROR2);
+        default:
+            fprintf(stderr, "invalid error code... existing anyway\r\n");
+            exit(EXIT_ERROR3);
+    }
 }
 
 void handle_error(char* msg) {
     fprintf(stderr, "[%s]: %s (errno %d)\r\n", msg, strerror(errno), errno);
-    exit(EXIT_ERROR);
+    exit(EXIT_ERROR1);
 }
 
 void debug(char* msg) {
-    fprintf(stderr, "%s\r\n", msg);
+    fprintf(stderr, "[%s]: %s\r\n",program_name, msg);
 }

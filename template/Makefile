@@ -2,25 +2,34 @@
 # EMAIL: RKhillah@ucla.edu
 # ID: 604853262
 
+UID=604853262
+LAB_NUMBER=lab10
+LAB_PART=b
+EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
+EXECUTABLE_SOURCE=main.c 
+CHECK_SCRIPT=
 
 CC=gcc
-CFLAGS= -Wall -Wextra
-PT_FLAGS= -pthread
+CFLAGS= -Wall -Wextra -std=gnu99
 
-EXENAME=
-SOURCE=
+DEFAULT=Makefile README utils.c utils.h
 
-DIST_NAME=
-DIST_FILES=README Makefile common.h common.c ${SOURCE} 
+EXTRAS=./tmp/1.ts ./tmp/4.ts
 
-RM_FILES=
+default: build
 
-default:
+build: $(EXECUTABLE_NAME)
 
-${EXENAME}: ${SOURCE} common.h
+$(EXECUTABLE_NAME):
+	$(CC) $(CFLAGS) -o $@ $(EXECUTABLE_SOURCE) utils.c
 
+dist:
+	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS)
 
-dist: 
-	tar -czvf ${DIST_NAME}.tar.gz ${SOURCE} ${DIST_FILES}
 clean:
-	rm -rf *tar.gz ${EXENAME} ${RM_FILES}
+	rm -rf $(EXECUTABLE_NAME) *tar.gz
+
+check:
+	./$(CHECK_SCRIPT) $(UID)
+
+tests:

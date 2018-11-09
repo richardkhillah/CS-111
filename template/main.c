@@ -2,18 +2,20 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <errno.h>
 #include <string.h>
-#include <getopt.h>
 
-#include "common.h"
+#include "utils.h"
+
+void usage(void) {
+	fprintf(stderr, "Usage: ./%s \n", program_name);
+}
 
 int main(int argc, char* argv[]) {
-	set_program_name();
-	printf("program_name: %s\n", program_name);
+	printf("Hello, world!\n");
 	return 0;
 }

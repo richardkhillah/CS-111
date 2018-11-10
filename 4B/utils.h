@@ -15,6 +15,8 @@ const char* program_name;
 
 void set_program_name(const char* argv0);
 
+#define DEBUG 'd'
+int debug_flag;
 
 // common exit status codes
 #define EXIT_SUCCESS 0

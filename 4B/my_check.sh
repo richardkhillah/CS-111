@@ -19,14 +19,15 @@ echo
 p=2
 s="c"
 echo "... $PGM supports --scale, --period, --log --debug"
-./$PGM --period=$p --scale=$s --log="LOGFILE" --debug<<-EOF
-SCALE=F
-PERIOD=1
-START
-STOP
-LOG test
-OFF
+./$PGM --period=$p --scale=$s --log="LOGFILE" --debug <<-EOF
+# SCALE=F
+# PERIOD=1
+# START
+# STOP
+# LOG test
+# OFF
 EOF
+
 ret=$?
 if [ $ret -ne 0 ]
 then

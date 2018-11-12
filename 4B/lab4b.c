@@ -99,7 +99,7 @@ int logging = 0;
 
 int period = 1;
 char* logfile;
-FILE* logstream;
+FILE* logstream = NULL;
 char scale = FAHRENHEIT;
 
 struct tm* gettime() {

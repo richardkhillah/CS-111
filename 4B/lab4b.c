@@ -125,14 +125,12 @@ void print_curr_time(FILE* fd) {
 	time(&rawtime);
 	if (rawtime == (time_t)-1)
 	{
-		//process_failed_sys_call("time");
 		fatal_error("Error getting rawtime", NULL, 1);
 	}
 
 	struct tm* local_time = localtime(&rawtime);
 	if (local_time == NULL)
 	{
-		//process_failed_sys_call("Error getting localtime");
 		fatal_error("Error getting rawtime", NULL, 1);
 	}
 
@@ -185,7 +183,7 @@ void generate_temp_report(int temp_pin, char* scale, char* log) {
 		FILE* fd = fopen(log, "a+");
 		if (fd == NULL)
 		{
-			process_failed_sys_call("fopen");
+			ferr1("Failed to open logfile");
 		}
 
 		print_curr_time(fd);
@@ -206,7 +204,7 @@ void shutdown(char* log) {
 		FILE* fd = fopen(log, "a+");
 		if (fd == NULL)
 		{
-			process_failed_sys_call("fopen");
+			ferr1("Failed to open logfile");
 		}
 
 		print_curr_time(fd);
@@ -308,7 +306,7 @@ int main(int argc, char** argv) {
 	{
 		if (poll(fds, 1, 0) < 0)
 		{
-			process_failed_sys_call("poll");
+			ferr1("Failed to poll");
 		}
 
 		if (report)
@@ -321,7 +319,7 @@ int main(int argc, char** argv) {
 			int bytes_read = read(0, buf, sizeof(buf));
 			if (bytes_read < 0)
 			{
-				process_failed_sys_call("read");
+				ferr1("Failed to read stdin");
 			}
 
 			char* command = strtok(buf, "\n");
@@ -332,7 +330,7 @@ int main(int argc, char** argv) {
 					FILE* fd = fopen(log, "a+");
 					if (fd == NULL)
 					{
-						process_failed_sys_call("fopen");
+						ferr1("Failed to open logfile");
 					}
 
 					fprintf(fd, "%s\n", command);

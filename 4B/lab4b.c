@@ -271,9 +271,8 @@ int main(int argc, char** argv) {
 	char* log = NULL;
 
 	process_cl_arguments(argc, argv, &period, &scale, &log);
-
 	if(debug_flag) ferr1u("testing debug_flag!!");
-	ferr1u("TESTING");
+
 
 	// Connect to temperature sensor
 	mraa_aio_context temp_pin = mraa_aio_init(1);

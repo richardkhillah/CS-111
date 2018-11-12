@@ -258,7 +258,26 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "adding something through logstream\n");
 		fprintf(logstream, "adding something here\n");
 	}
+
+	while (1) {
+		if(running) {
+			struct tm* time = gettime();
+			float temp = gettemp(temp_sensor);
+			/* log to console */
+			printtime(time);
+			printf("%.1f\n", temp);
+
+			/* log to logfile */
+			if(logging){
+				if(fprintf(logstream,  "%02d:%02d:%02d %.1f\n", time->tm_hour, time->tm_min, time->tm_sec, temp) < 0) {
+					fatal_error("there was an issue writing to log file", NULL, 1);
+				}
+			}
+			sleep(period);
+		}
+	}
 	
+
 
 	if(debug_flag) print_options();
 	cleanup();

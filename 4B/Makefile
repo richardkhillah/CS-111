@@ -13,8 +13,8 @@ TEMP=./"tmp"
 
 
 CC=gcc
-CFLAGS= -Wall -Wextra -std=gnu99 -lm 
-#-lmraa
+#CFLAGS= -Wall -Wextra -std=gnu99 -lm
+CFLAGS= -Wall -Wextra -std=gnu99 -lm -lmraa
 
 DEFAULT=Makefile README utils.c utils.h
 

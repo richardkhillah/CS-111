@@ -15,6 +15,7 @@ TEMP=./"tmp"
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm
 local_flags= $(CFLAGS) -D DUMMY
+dev_flags=$(local_flags) -D DEV
 beagle_flags= $(CFLAGS) -lmraa 
 
 DEFAULT=Makefile README utils.c utils.h
@@ -22,13 +23,17 @@ DEFAULT=Makefile README utils.c utils.h
 EXTRAS=
 
 BEAGLEBONE_VERSION=$(uname -r | grep 'beaglebone')
+DEV_VERSION=$(uname | grep 'Darwin')
 
 default: build
 
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-ifeq ($(BEAGLEBONE_VERSION),)
+	echo $(DEV_VERSION)
+ifeq ($(DEV_VERSION), "Darwin")
+	$(CC) $(dev_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
+else ifeq ($(BEAGLEBONE_VERSION),)
 	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 else
 	$(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c

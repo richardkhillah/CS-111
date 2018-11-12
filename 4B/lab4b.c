@@ -24,6 +24,9 @@ long SUCCESS_CODE = 0;
 long ERR_CODE = 1;
 long FAIL_CODE = 2;
 
+#define ferr1(m) fatal_error(m, NULL, 1);
+#define ferr1u(m) fatal_error(m, (void*)usage, 1);
+
 #ifdef DUMMY
 // Mock implementations for local dev/test
 typedef int mraa_aio_context;
@@ -72,6 +75,9 @@ void process_cl_arguments(int argc, char** argv,
 		{"period", required_argument, NULL, 'p'},
 		{"scale", required_argument, NULL, 's'},
 		{"log", required_argument, NULL, 'l'},
+#ifdef DEV
+		{"debug", no_argument, NULL, DEBUG},
+#endif
 		{0, 0, 0, 0}
 	};
 	int option_index = 0;
@@ -98,6 +104,12 @@ void process_cl_arguments(int argc, char** argv,
 			case 'l':
 				*logfile = optarg;
 				break;
+#ifdef DEV
+			case 'd':
+				fprintf(stderr, "setting debug_flag\n");
+				debug_flag = 1;
+				break;
+#endif
 			case '?':
 				fprintf(stderr, "%s\n", "ERROR: Invalid argument.");
 				fprintf(stderr, "%s\n", "Usage: lab4b [--period=#] [--scale=[C, F]] [--log=filename]");
@@ -113,13 +125,15 @@ void print_curr_time(FILE* fd) {
 	time(&rawtime);
 	if (rawtime == (time_t)-1)
 	{
-		process_failed_sys_call("time");
+		//process_failed_sys_call("time");
+		fatal_error("Error getting rawtime", NULL, 1);
 	}
 
 	struct tm* local_time = localtime(&rawtime);
 	if (local_time == NULL)
 	{
-		process_failed_sys_call("localtime");
+		//process_failed_sys_call("Error getting localtime");
+		fatal_error("Error getting rawtime", NULL, 1);
 	}
 
 	if (local_time->tm_hour < 10)
@@ -152,10 +166,12 @@ void generate_temp_report(int temp_pin, char* scale, char* log) {
 	// Sample temperature sensor and convert reading to indicated temperature
 	int temp_analog_value = mraa_aio_read(temp_pin);
 	if (temp_analog_value == -1)
-	{
-		printf("%s\n", "ERROR: mraa_aio_read");
-		printf("%s\n", "There was a problem reading from the temperature sensor.");
-		exit(ERR_CODE);
+	{	
+		// printf("%s\n", "ERROR: mraa_aio_read");
+		// printf("%s\n", "There was a problem reading from the temperature sensor.");
+		// exit(ERR_CODE);
+		//fatal_error("Error reading temperature from temp_sensor", NULL, 1);
+		ferr1("Error reading temperature from temp_sensor");
 	}
 	float temperature = convert_analog_to_temp(temp_analog_value, scale);
 
@@ -242,12 +258,22 @@ void process_command(char* command, char** scale, int* delay, int* report, char*
 	}
 }
 
+void usage(void) {
+	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
+}
+
 int main(int argc, char** argv) {
+	set_program_name(argv[0]);
+
+
 	char* period = NULL;
 	char* scale = NULL;
 	char* log = NULL;
 
 	process_cl_arguments(argc, argv, &period, &scale, &log);
+
+	if(debug_flag) ferr1u("testing debug_flag!!");
+	ferr1u("TESTING");
 
 	// Connect to temperature sensor
 	mraa_aio_context temp_pin = mraa_aio_init(1);

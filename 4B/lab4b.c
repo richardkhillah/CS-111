@@ -98,6 +98,7 @@ int running = 1;
 int logging = 0;
 
 int period = 1;
+char* logfile;
 FILE* logstream;
 char scale = FAHRENHEIT;
 
@@ -173,12 +174,7 @@ void get_options(const int *argc, char* const* argv) {
 			}
 			case LOG: {
 				if(optarg) {
-
-					// USING A LOGSTREAM
-					logstream = fopen((const char*)optarg, "a+");
-					if(logstream == NULL) {
-						fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-					}
+					logfile = optarg;
 					logging = 1;
 				}
 				break;
@@ -245,7 +241,12 @@ int main(int argc, char* argv[]) {
 	#ifndef DUMMY
 	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
 	#endif
-
+	if(logging){
+		logstream = fopen((const char*)logfile, "a+");
+		if(logstream == NULL) {
+			fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
+		}
+	}
 
 	if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
 		fatal_error("error setting stdin to be non-blocking", NULL, 1);

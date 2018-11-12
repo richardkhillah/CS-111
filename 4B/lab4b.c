@@ -126,7 +126,6 @@ float gettemp(mraa_aio_context temp_sensor) {
 
 void shutdown() {
 	struct tm* time = gettime();
-	float temp = gettemp(temp_sensor);
 	/* log to console */
 	printf("SHUTDOWN\n");
 

@@ -2,8 +2,6 @@
 // EMAIL: RKhillah@ucla.edu
 // ID: 604853262
 
-// NTS on 11-10-2018: pick up on line 88 - mraa_result_t mraa_gpio_isr
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,50 +16,16 @@
 #include <math.h>
 #include <ctype.h>
 
-
-//============================================================
-// 							DEFINE
-//============================================================
-#define PERIOD 'p'
-#define LOG 'L'
-#define SCALE 's'
-
-#define FAHRENHEIT 'f'
-#define CELSIUS 'c'
-
-#define R_0 100000
-#define B 4275
-#define REF_TEMP 298.15 // in units Kelvin
-#define KELVIN_OFFSET 273.15
-
-
-// runtime commands
-#define RT_SCALE_F "SCALE=F"
-#define RT_SCALE_C "SCALE=C"
-#define RT_PERIOD "PERIOD="
-#define RT_STOP "STOP"
-#define RT_START "START"
-#define RT_LOG "LOG"
-#define RT_OFF "OFF"
-
-
-#define BUF_SIZE 1024
-
-/* Use DUMMY to test lab4b on local machines versus testing on
- * beaglebone. Note that we can still enable error checking with
- * these dummies in a way that does not conflict with the live
- * implementation of each DUMMY
- */
-//#define DUMMY 1
-
-#ifndef DUMMY
 #include <aio.h>
-#include <mraa/aio.h>
-#include <mraa/gpio.h>
-#endif
+#include <poll.h>
+
+// Global Constants
+long SUCCESS_CODE = 0;
+long ERR_CODE = 1;
+long FAIL_CODE = 2;
 
 #ifdef DUMMY
-#define MRAA_GPIO_EDGE_RISING 0
+// Mock implementations for local dev/test
 typedef int mraa_aio_context;
 int mraa_aio_init(int input) {
 	input++;
@@ -82,290 +46,288 @@ void mraa_gpio_dir(int val, int temp) {
 	val++;
 	temp++;
 }
-int mraa_gpio_read(mraa_gpio_context val) {
-	val++;
-	return val;
+int mraa_gpio_read(int* val) {
+	(*val)++;
+	return *val;
 }
 #endif
 
-
-
-
-//============================================================
-//							MAIN
-//============================================================
-int running = 1;
-int logging = 0;
-
-int period = 1;
-char* logfile;
-FILE* logstream;
-char scale = FAHRENHEIT;
-
-struct tm* gettime() {
-	time_t raw_time;
-	time(&raw_time);
-	struct tm* time = localtime(&raw_time);
-	return time;
-}
-void printtime(const struct tm* time) {
-	printf("%02d:%02d:%02d ", time->tm_hour, time->tm_min, time->tm_sec);
+// INPUT: Name of sys call that threw error
+// Prints reason for error and terminates program
+void process_failed_sys_call(const char syscall[]) {
+	int err = errno;
+	fprintf(stderr, "%s", "An error has occurred.\n");
+	fprintf(stderr, "The system call '%s' failed with error code %d\n", syscall, err);
+	fprintf(stderr, "This error code means: %s\n", strerror(err));
+	exit(ERR_CODE);
 }
 
-float gettemp(mraa_aio_context temp_sensor) {
-	int raw_temp = mraa_aio_read(temp_sensor);
-	float R = 1023.0/raw_temp - 1.0;
-	R *= R_0;
-	float temp = 1.0/(log(R/R_0)/B + 1/REF_TEMP) - KELVIN_OFFSET;
-
-	if(scale == CELSIUS)
-		return temp;
-	else
-		return 1.8*temp + 32.0;
-}
-
-void shutdown() {
-	struct tm* time = gettime();
-	/* log to console */
-	printf("SHUTDOWN\n");
-
-	/* log to logfile */
-	if(logging){
-	if(fprintf(logstream,  "%02d:%02d:%02d SHUTDOWN\n", time->tm_hour, time->tm_min, time->tm_sec) < 0) {
-			fatal_error("there was an issue writing to log file", NULL, 1);
-		}
-	}
-	exit(0);
-}
-
-/* 
- * run cleanup to deallocate globally allocated memory.
- */
-void cleanup() {
-	if (logstream) {
-		if(debug_flag) debug("closing logstream");
-		if((fclose(logstream)) != 0) {
-			fatal_error("error closeing logstream to logfile", NULL, 1);
-		}
-	}
-}
-
-void get_options(const int *argc, char* const* argv) {
-	static struct option const long_opts[] = {
-		{"period", optional_argument, NULL, PERIOD},
-		{"log", optional_argument, NULL, LOG},
-		{"scale", optional_argument, NULL, SCALE},
-		{"debug", no_argument, NULL, DEBUG},
-		{NULL, 0, NULL, 0}
+// INPUT: Info about CL arguments, strings for argument parameters
+// Process CL arguments while checking for invalid options
+void process_cl_arguments(int argc, char** argv,
+						  char** period, char** temp, char** logfile)
+{
+	struct option long_options[] =
+	{
+		{"period", required_argument, NULL, 'p'},
+		{"scale", required_argument, NULL, 's'},
+		{"log", required_argument, NULL, 'l'},
+		{0, 0, 0, 0}
 	};
+	int option_index = 0;
 
-	if(argc == NULL || argv == NULL) {
-		cleanup();
-		fatal_error("Error reading main arguments", NULL, EXIT_ERROR3);
-	}
+	*period = "1";
+	*temp = "F";
 
-	int opt;
-	int optind;
-	while( (opt = getopt_long( *(int*)argc, argv, "", long_opts, &optind)) != -1 ) {
-		switch (opt) {
-			case PERIOD: {
-				if(optarg) {
-					int p = atoi(optarg);
-					if(p < 1) {
-						cleanup();
-						fatal_error("period must be greater than 1", (void*)usage, EXIT_ERROR1);
-					}
-					period = p;
-				} else {
-					cleanup();
-					fatal_error("internal error", NULL, EXIT_ERROR3);
-				}
+	while (1)
+	{
+		int arg = getopt_long(argc, argv, "p:s:l:",
+							  long_options, &option_index);
+
+		if (arg == -1)
+			return;
+
+		switch (arg)
+		{
+			case 'p':
+				*period = optarg;
 				break;
-			}
-			case LOG: {
-				if(optarg) {
-					logfile = optarg;
-					logging = 1;
-				}
+			case 's':
+				*temp = optarg;
 				break;
-			}
-			case SCALE: {
-				if(optarg) {
-					switch(*optarg) {
-						case FAHRENHEIT: {
-							scale = FAHRENHEIT;
-							break;
-						}
-						case CELSIUS: {
-							scale = CELSIUS;
-							break;
-						}
-						default: {
-							cleanup();
-							fatal_error("invalid scale", (void*)usage, EXIT_ERROR1);
-						}
-					}
-				} else {
-					cleanup();
-					fatal_error("internal error reading optarg", NULL, EXIT_ERROR3);
-				}
+			case 'l':
+				*logfile = optarg;
 				break;
-			}
-			case DEBUG: {
-				debug_flag = 1;
-				break;
-			}
 			case '?':
-			default:
-				cleanup();
-				fatal_error("unrecognized argument", (void*)usage, 1);
+				fprintf(stderr, "%s\n", "ERROR: Invalid argument.");
+				fprintf(stderr, "%s\n", "Usage: lab4b [--period=#] [--scale=[C, F]] [--log=filename]");
+				exit(ERR_CODE);
 		}
 	}
 }
 
-void print_options() {
-	fprintf(stderr, "option values for %s:", program_name);
-	fprintf(stderr, " scale=%c", scale);
-	fprintf(stderr, " period=%d", period);
-	//if(logfile) fprintf(stderr, " logfile=%s", logfile);
-	fprintf(stderr, "\n");
-}
-
-void usage(void) {
-	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
-}
-
-int main(int argc, char* argv[]) {
-	set_program_name(argv[0]);
-	get_options((const int*)&argc, argv);
-
-	mraa_aio_context temp_sensor;
-	mraa_gpio_context button;
-	temp_sensor = mraa_aio_init(1);
-	button = mraa_gpio_init(62);
-
-	/* In the event of an interrupt, gpio_isr will call either the
-	 * shutdown routine or it will call a (later defined) sig_handler.
-	 */
-	mraa_gpio_dir(button, MRAA_GPIO_IN);
-	#ifndef DUMMY
-	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
-	#endif
-
-	// if(logging){
-	// 	logstream = fopen((const char*)logfile, "a+");
-	// 	if(logstream == NULL) {
-	// 		fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-	// 	}
-	// }
-
-	if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
-		fatal_error("error setting stdin to be non-blocking", NULL, 1);
+// INPUT: File stream to write to
+// Print out hour:min:sec of current local time
+void print_curr_time(FILE* fd) {
+	time_t rawtime;
+	time(&rawtime);
+	if (rawtime == (time_t)-1)
+	{
+		process_failed_sys_call("time");
 	}
 
-	char stdin_buf[BUF_SIZE];
-	char cmd_check_buf[BUF_SIZE*2];
-	int stdin_buf_index = 0;
-	int cmd_check_buf_index = 0;
-
-	if(debug_flag){
-		fprintf(stderr, "adding something through logstream\n");
-		fprintf(logstream, "adding something here\n");
+	struct tm* local_time = localtime(&rawtime);
+	if (local_time == NULL)
+	{
+		process_failed_sys_call("localtime");
 	}
 
-	while (1) {
-		if(running) {
-			struct tm* time = gettime();
-			float temp = gettemp(temp_sensor);
-			/* log to console */
-			printtime(time);
-			printf("%.1f\n", temp);
+	if (local_time->tm_hour < 10)
+		fprintf(fd, "0");
+	fprintf(fd, "%d:", local_time->tm_hour);
+	if (local_time->tm_min < 10)
+		fprintf(fd, "0");
+	fprintf(fd, "%d:", local_time->tm_min);
+	if (local_time->tm_sec < 10)
+		fprintf(fd, "0");
+	fprintf(fd, "%d ", local_time->tm_sec);
+}
 
-			/* log to logfile */
-			if(logging){
-				logstream = fopen((const char*)logfile, "a+");
-				if(logstream == NULL) {
-					fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-				}
-				if(fprintf(logstream,  "%02d:%02d:%02d %.1f\n", time->tm_hour, time->tm_min, time->tm_sec, temp) < 0) {
-					fatal_error("there was an issue writing to log file", NULL, 1);
-				}
-				fclose(logstream);
+// INPUT: Analog reading from temperature sensor
+// Uses algorithm to convert analog reading to temperature
+float convert_analog_to_temp(int analog, char* temp_unit) {
+	float raw_value = (1023.0 / analog - 1.0) * 100000;
+	float temperature = 1.0 / (log(raw_value / 100000) / 4275 + 1 / 298.15) - 273.15;
+
+	if (*temp_unit == 'F')
+	{
+		return ((temperature * 9) / 5) + 32;
+	}
+	return temperature;
+}
+
+// INPUT: Temperature pin, temperature unit, logfile
+// Create temperature file according to parameters and report it
+void generate_temp_report(int temp_pin, char* scale, char* log) {
+	// Sample temperature sensor and convert reading to indicated temperature
+	int temp_analog_value = mraa_aio_read(temp_pin);
+	if (temp_analog_value == -1)
+	{
+		printf("%s\n", "ERROR: mraa_aio_read");
+		printf("%s\n", "There was a problem reading from the temperature sensor.");
+		exit(ERR_CODE);
+	}
+	float temperature = convert_analog_to_temp(temp_analog_value, scale);
+
+	// Print report to stdout
+	print_curr_time(stdout);
+	fprintf(stdout, "%0.1f\n", temperature);
+
+	// Append report to logfile
+	if (log)
+	{
+		FILE* fd = fopen(log, "a+");
+		if (fd == NULL)
+		{
+			process_failed_sys_call("fopen");
+		}
+
+		print_curr_time(fd);
+		fprintf(fd, "%0.1f\n", temperature);
+
+		fclose(fd);
+	}
+}
+
+// INPUT: Logfile to write to
+// Report shutdown message and exit
+void shutdown(char* log) {
+	print_curr_time(stdout);
+	fprintf(stdout, "%s\n", "SHUTDOWN");
+
+	if (log)
+	{
+		FILE* fd = fopen(log, "a+");
+		if (fd == NULL)
+		{
+			process_failed_sys_call("fopen");
+		}
+
+		print_curr_time(fd);
+		fprintf(fd, "%s\n", "SHUTDOWN");
+
+		fclose(fd);
+	}
+	// mraa_gpio_close(button_pin);
+	// mraa_aio_close(temp_pin);
+	exit(SUCCESS_CODE);
+}
+
+void process_command(char* command, char** scale, int* delay, int* report, char* log) {
+	if (strstr(command, "SCALE") != NULL)
+	{
+		if (strstr(command, "F") != NULL)
+		{
+			char* temp_scale = (char *) malloc(sizeof(char) * 2);
+			temp_scale[0] = 'F';
+			*scale = temp_scale;
+		}
+		else
+		{
+			char* temp_scale = (char *) malloc(sizeof(char) * 2);
+			temp_scale[0] = 'C';
+			*scale = temp_scale;
+		}
+	}
+	else if (strstr(command, "PERIOD") != NULL)
+	{
+		int i = 0;
+		while (command[i] != '=')
+		{
+			i++;
+		}
+		*delay = atoi(command + i + 1);
+	}
+	else if (strstr(command, "STOP") != NULL)
+	{
+		*report = 0;
+	}
+	else if (strstr(command, "START") != NULL)
+	{
+		*report = 1;
+	}
+	else if (strstr(command, "OFF") != NULL)
+	{
+		shutdown(log);
+	}
+}
+
+int main(int argc, char** argv) {
+	char* period = NULL;
+	char* scale = NULL;
+	char* log = NULL;
+
+	process_cl_arguments(argc, argv, &period, &scale, &log);
+
+	// Connect to temperature sensor
+	mraa_aio_context temp_pin = mraa_aio_init(1);
+	if (temp_pin == 0) // Change to NULL
+	{
+		printf("%s\n", "ERROR: mraa_aio_init");
+		printf("%s\n", "There was a problem with initializing the temperature sensor.");
+		exit(ERR_CODE);
+	}
+
+	// Connect to button
+	mraa_gpio_context button_pin = mraa_gpio_init(3);
+	if (button_pin == 0) //  Change to NULL
+	{
+		printf("%s\n", "ERROR: mraa_gpio_init");
+		printf("%s\n", "There was a problem with initializing the button sensor.");
+		exit(ERR_CODE);
+	}
+	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
+
+	// Set up poll
+	struct pollfd fds[1];
+	fds[0].fd = 0;
+	fds[0].events = POLLIN;
+	fds[0].revents = 0;
+
+	int delay = atoi(period);
+	int report = 1;
+
+	char buf[2014];
+	memset((char *) &buf, 0, sizeof(buf));
+	while (1)
+	{
+		if (poll(fds, 1, 0) < 0)
+		{
+			process_failed_sys_call("poll");
+		}
+
+		if (report)
+		{
+			generate_temp_report(temp_pin, scale, log);
+		}
+
+		if (fds[0].revents & POLLIN)
+		{
+			int bytes_read = read(0, buf, sizeof(buf));
+			if (bytes_read < 0)
+			{
+				process_failed_sys_call("read");
 			}
-			sleep(period);
+
+			char* command = strtok(buf, "\n");
+			while (command != NULL && bytes_read > 0)
+			{
+				if (log)
+				{
+					FILE* fd = fopen(log, "a+");
+					if (fd == NULL)
+					{
+						process_failed_sys_call("fopen");
+					}
+
+					fprintf(fd, "%s\n", command);
+				}
+				// i += strlen(command) + 1;
+				process_command(command, &scale, &delay, &report, log);
+				
+				command = strtok(NULL, "\n");
+			}
 		}
 
-		int bytes_read = read(STDIN_FILENO, stdin_buf+stdin_buf_index, sizeof(char)*BUF_SIZE-stdin_buf_index);
-		if(bytes_read < 0) {
-			fatal_error("Error reading from stdin", NULL, 1);
+		// Sample button state and check whether to exit
+		if (mraa_gpio_read(&button_pin) == 1)
+		{
+			shutdown(log);
 		}
 
-		if(bytes_read > 0) {
-			/* check to see whether we have a command */
-			stdin_buf_index += bytes_read;
-			for(int i = 0; i < stdin_buf_index; i++){
-				/* We 'execute' a command once stdin receives a linefeed */
-
-
-
-				if(stdin_buf[i] == '\n') {
-					cmd_check_buf[cmd_check_buf_index] = '\0';
-					char* location = strstr(cmd_check_buf, "PERIOD=");
-					if (strcmp(cmd_check_buf, "SCALE=F") == 0) {
-                        scale = FAHRENHEIT;
-                    } else if (strcmp(cmd_check_buf, "SCALE=C") == 0) {
-                        scale = CELSIUS;
-                    } else if (strcmp(cmd_check_buf, "OFF") == 0) {
-                        if (logging) {
-                        	logstream = fopen((const char*)logfile, "a+");
-							if(logstream == NULL) {
-								fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-							}
-                            if (fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
-                                fatal_error("there was an issue writing to log file", NULL, 1);
-                                exit(1);
-                            }
-                            fclose(logstream);
-                        }
-                        shutdown();
-                    } else if (strcmp(cmd_check_buf, "STOP") == 0) {
-                        running = 0;
-                    } else if (strcmp(cmd_check_buf, "START") == 0) {
-                        running = 1;
-                    } else if (location != NULL && location == cmd_check_buf && strlen(cmd_check_buf) > 7) {
-                        int num = atoi(location+7);
-                        if (num >= 1) {
-                            period = num;
-                        }
-                    }
-
-                    if(logging) {
-                    	logstream = fopen((const char*)logfile, "a+");
-						if(logstream == NULL) {
-							fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-						}
-                    	if(fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
-                    		fatal_error("there was an issue writing to log file", NULL, 1);
-                    	}
-                    	fclose(logstream);
-                    }
-
-				} else { // end execution
-					cmd_check_buf[cmd_check_buf_index++] = stdin_buf[i];
-				} // end if stdin_buf_index else
-			} // end for
-			stdin_buf_index = 0;
-		} // end if(bytes_read > 0)
-		if(mraa_gpio_read(button) == 1) {
-			shutdown();
-		}
+		// Sampling interval
+		sleep(delay);
 	}
-	
-	#ifndef DUMMY
-	mraa_gpio_close(button);
-	#endif
-
-	if(debug_flag) print_options();
-	cleanup();
-	return 0;
 }
+
+

@@ -98,7 +98,7 @@ int running = 1;
 int logging = 0;
 
 int period = 1;
-FILE* logstream = NULL;
+FILE* logstream;
 char scale = FAHRENHEIT;
 
 struct tm* gettime() {
@@ -174,7 +174,7 @@ void get_options(const int *argc, char* const* argv) {
 			case LOG: {
 				if(optarg) {
 					// USING A LOGSTREAM
-					logstream = fopen((const char*)optarg, "w");
+					logstream = fopen((const char*)optarg, "a+");
 					if(logstream == NULL) {
 						fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
 					}

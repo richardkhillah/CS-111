@@ -14,7 +14,8 @@ TEMP=./"tmp"
 
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm
-#CFLAGS= -Wall -Wextra -std=gnu99 -lm -lmraa
+CFLAGS_LMRAA= -lmraa
+DUMMY= -DDUMMY
 
 DEFAULT=Makefile README utils.c utils.h
 
@@ -25,7 +26,11 @@ default: build
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-	$(CC) $(CFLAGS) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	r=uname -r | grep beaglebone
+	if [ $(r) -eq 0 ]; do
+		$(CC) $(CFLAGS) $(DUMMY) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	else
+		$(CC) $(CFLAGS) $(CFLAGS_LMRAA) -o $@ $(EXECUTABLE_SOURCE) utils.c
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS)

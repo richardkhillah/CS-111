@@ -52,7 +52,7 @@
  * these dummies in a way that does not conflict with the live
  * implementation of each DUMMY
  */
-#define DUMMY 1
+//#define DUMMY 1
 
 #ifndef DUMMY
 #include <aio.h>

@@ -82,9 +82,9 @@ void mraa_gpio_dir(int val, int temp) {
 	val++;
 	temp++;
 }
-int mraa_gpio_read(int* val) {
-	(*val)++;
-	return *val;
+int mraa_gpio_read(mraa_gpio_context val) {
+	val++;
+	return val;
 }
 #endif
 
@@ -111,8 +111,8 @@ void printtime(const struct tm* time) {
 	printf("%02d:%02d:%02d ", time->tm_hour, time->tm_min, time->tm_sec);
 }
 
-float gettemp(mraa_aio_context* temp_sensor) {
-	int raw_temp = mraa_gpio_read(*temp_sensor);
+float gettemp(mraa_aio_context temp_sensor) {
+	int raw_temp = mraa_gpio_read(temp_sensor);
 	float R = 1023.0/raw_temp - 1.0;
 	R *= R_0;
 	float temp = 1.0/(log(R/R_0)/B + 1/REF_TEMP) - KELVIN_OFFSET;
@@ -127,7 +127,7 @@ void shutdown() {
 
 }
 
-/* In the event of a fatal error, or upon normal shutdown of main,
+/* 
  * run cleanup to deallocate globally allocated memory.
  */
 void cleanup() {

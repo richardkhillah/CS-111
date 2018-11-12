@@ -113,7 +113,7 @@ void printtime(const struct tm* time) {
 }
 
 float gettemp(mraa_aio_context temp_sensor) {
-	int raw_temp = mraa_gpio_read(temp_sensor);
+	int raw_temp = mraa_aio_read(temp_sensor);
 	float R = 1023.0/raw_temp - 1.0;
 	R *= R_0;
 	float temp = 1.0/(log(R/R_0)/B + 1/REF_TEMP) - KELVIN_OFFSET;
@@ -252,12 +252,12 @@ int main(int argc, char* argv[]) {
 	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
 	#endif
 
-	if(logging){
-		logstream = fopen((const char*)logfile, "a+");
-		if(logstream == NULL) {
-			fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
-		}
-	}
+	// if(logging){
+	// 	logstream = fopen((const char*)logfile, "a+");
+	// 	if(logstream == NULL) {
+	// 		fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
+	// 	}
+	// }
 
 	if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
 		fatal_error("error setting stdin to be non-blocking", NULL, 1);
@@ -283,9 +283,14 @@ int main(int argc, char* argv[]) {
 
 			/* log to logfile */
 			if(logging){
+				logstream = fopen((const char*)logfile, "a+");
+				if(logstream == NULL) {
+					fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
+				}
 				if(fprintf(logstream,  "%02d:%02d:%02d %.1f\n", time->tm_hour, time->tm_min, time->tm_sec, temp) < 0) {
 					fatal_error("there was an issue writing to log file", NULL, 1);
 				}
+				fclose(logstream);
 			}
 			sleep(period);
 		}
@@ -312,10 +317,15 @@ int main(int argc, char* argv[]) {
                         scale = CELSIUS;
                     } else if (strcmp(cmd_check_buf, "OFF") == 0) {
                         if (logging) {
+                        	logstream = fopen((const char*)logfile, "a+");
+							if(logstream == NULL) {
+								fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
+							}
                             if (fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
                                 fatal_error("there was an issue writing to log file", NULL, 1);
                                 exit(1);
-                            } 
+                            }
+                            fclose(logstream);
                         }
                         shutdown();
                     } else if (strcmp(cmd_check_buf, "STOP") == 0) {
@@ -330,9 +340,14 @@ int main(int argc, char* argv[]) {
                     }
 
                     if(logging) {
+                    	logstream = fopen((const char*)logfile, "a+");
+						if(logstream == NULL) {
+							fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
+						}
                     	if(fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
                     		fatal_error("there was an issue writing to log file", NULL, 1);
                     	}
+                    	fclose(logstream);
                     }
 
 				} else { // end execution
@@ -341,6 +356,9 @@ int main(int argc, char* argv[]) {
 			} // end for
 			stdin_buf_index = 0;
 		} // end if(bytes_read > 0)
+		if(mraa_gpio_read(button) == 1) {
+			shutdown();
+		}
 	}
 	
 	#ifndef DUMMY

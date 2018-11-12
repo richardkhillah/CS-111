@@ -86,18 +86,6 @@ int mraa_gpio_read(int* val) {
 	(*val)++;
 	return *val;
 }
-// TODO: pickup here!!
-/* gpio_isr is used to set interrupt pin. fptr is a pointer to the 
- * function to be used when a signal occurs, essentially a sig_handler.
- */
-typedef int mraa_result_t;
-typedef int mraa_gpio_edge_t;
-mraa_result_t mraa_gpio_isr(mraa_gpio_context dev, mraa_gpio_edge_t edge,
-							void(*fptr)(void *), void *args)
-{
-	mraa_result_t result = 1;
-	return result;
-}
 #endif
 
 
@@ -254,7 +242,9 @@ int main(int argc, char* argv[]) {
 	 * shutdown routine or it will call a (later defined) sig_handler.
 	 */
 	mraa_gpio_dir(button, MRAA_GPIO_IN);
+	#ifndef DUMMY
 	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
+	#endif
 
 
 	if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {

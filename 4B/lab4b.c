@@ -125,7 +125,18 @@ float gettemp(mraa_aio_context temp_sensor) {
 }
 
 void shutdown() {
+	struct tm* time = gettime();
+	float temp = gettemp(temp_sensor);
+	/* log to console */
+	printf("SHUTDOWN\n");
 
+	/* log to logfile */
+	if(logging){
+	if(fprintf(logstream,  "%02d:%02d:%02d SHUTDOWN\n", time->tm_hour, time->tm_min, time->tm_sec) < 0) {
+			fatal_error("there was an issue writing to log file", NULL, 1);
+		}
+	}
+	exit(0);
 }
 
 /* 

@@ -55,9 +55,9 @@
 //#define DUMMY 1
 
 #ifndef DUMMY
-//#include <aio.h>
-//#include <mraa/aio.h>
-//#include <mraa/gpio.h>
+#include <aio.h>
+#include <mraa/aio.h>
+#include <mraa/gpio.h>
 #endif
 
 #ifdef DUMMY

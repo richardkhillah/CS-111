@@ -16,7 +16,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <math.h>
-#include <ctype.h>
+//#include <ctype.h>
 
 
 //============================================================
@@ -241,7 +241,6 @@ int main(int argc, char* argv[]) {
 	#ifndef DUMMY
 	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
 	#endif
-
 	if(logging){
 		logstream = fopen((const char*)logfile, "a+");
 		if(logstream == NULL) {
@@ -253,11 +252,8 @@ int main(int argc, char* argv[]) {
 		fatal_error("error setting stdin to be non-blocking", NULL, 1);
 	}
 
-	char stdin_buf[BUF_SIZE];
-	char cmd_check_buf[BUF_SIZE*2];
-	int stdin_buf_index = 0;
-	int cmd_check_buf_index = 0;
-
+	//char buf[BUF_SIZE];
+	//char temp_buf[]
 	if(debug_flag){
 		fprintf(stderr, "adding something through logstream\n");
 		fprintf(logstream, "adding something here\n");
@@ -279,63 +275,9 @@ int main(int argc, char* argv[]) {
 			}
 			sleep(period);
 		}
-
-		int bytes_read = read(STDIN_FILENO, stdin_buf+stdin_buf_index, sizeof(char)*BUF_SIZE-stdin_buf_index);
-		if(bytes_read < 0) {
-			fatal_error("Error reading from stdin", NULL, 1);
-		}
-
-		if(bytes_read > 0) {
-			/* check to see whether we have a command */
-			stdin_buf_index += bytes_read;
-			for(int i = 0; i < stdin_buf_index; i++){
-				/* We 'execute' a command once stdin receives a linefeed */
-
-
-
-				if(stdin_buf[i] == '\n') {
-					cmd_check_buf[cmd_check_buf_index] = '\0';
-					char* location = strstr(cmd_check_buf, "PERIOD=");
-					if (strcmp(cmd_check_buf, "SCALE=F") == 0) {
-                        scale = FAHRENHEIT;
-                    } else if (strcmp(cmd_check_buf, "SCALE=C") == 0) {
-                        scale = CELSIUS;
-                    } else if (strcmp(cmd_check_buf, "OFF") == 0) {
-                        if (logging) {
-                            if (fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
-                                fatal_error("there was an issue writing to log file", NULL, 1);
-                                exit(1);
-                            } 
-                        }
-                        shutdown();
-                    } else if (strcmp(cmd_check_buf, "STOP") == 0) {
-                        running = 0;
-                    } else if (strcmp(cmd_check_buf, "START") == 0) {
-                        running = 1;
-                    } else if (location != NULL && location == cmd_check_buf && strlen(cmd_check_buf) > 7) {
-                        int num = atoi(location+7);
-                        if (num >= 1) {
-                            period = num;
-                        }
-                    }
-
-                    if(logging) {
-                    	if(fprintf(logstream, "%s\n", cmd_check_buf) < 0) {
-                    		fatal_error("there was an issue writing to log file", NULL, 1);
-                    	}
-                    }
-
-				} else { // end execution
-					cmd_check_buf[cmd_check_buf_index++] = stdin_buf[i];
-				} // end if stdin_buf_index else
-			} // end for
-			stdin_buf_index = 0;
-		} // end if(bytes_read > 0)
 	}
 	
-	#ifndef DUMMY
-	mraa_gpio_close(button);
-	#endif
+
 
 	if(debug_flag) print_options();
 	cleanup();

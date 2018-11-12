@@ -110,7 +110,6 @@ int running = 1;
 int logging = 0;
 
 int period = 1;
-char* logfile = NULL;
 FILE* logstream = NULL;
 char scale = FAHRENHEIT;
 
@@ -144,10 +143,6 @@ void shutdown() {
  * run cleanup to deallocate globally allocated memory.
  */
 void cleanup() {
-	if(logfile) {
-		if(debug_flag) debug("cleaning up logfile");
-		free(logfile);
-	}
 	if (logstream) {
 		if(debug_flag) debug("closing logstream");
 		if((fclose(logstream)) != 0) {
@@ -196,27 +191,7 @@ void get_options(const int *argc, char* const* argv) {
 						fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
 					}
 					
-					// USING LOGFILE	
-					int buflen = strlen(optarg);
-					if(buflen < 1) {
-						cleanup();
-						fatal_error("something's not right with the filename you passed in.", (void*)usage, EXIT_ERROR3);
-					}
-
-					logfile = (char*)malloc( (buflen+1)*sizeof(char) );
-					if(logfile == NULL) {
-						cleanup();
-						fatal_error("internal error allocating memory for logfile", NULL, EXIT_ERROR1);
-					}
-
-					int i = 0;
-					while(i < buflen) {
-						logfile[i] = optarg[i];
-						i++;
-					}
-					logfile[i] = '\0';
-					//printf("logfile=%s\n", logfile);
-					
+					logging = 1;
 				}
 				break;
 			}
@@ -258,7 +233,7 @@ void print_options() {
 	fprintf(stderr, "option values for %s:", program_name);
 	fprintf(stderr, " scale=%c", scale);
 	fprintf(stderr, " period=%d", period);
-	if(logfile) fprintf(stderr, " logfile=%s", logfile);
+	//if(logfile) fprintf(stderr, " logfile=%s", logfile);
 	fprintf(stderr, "\n");
 }
 
@@ -282,20 +257,11 @@ int main(int argc, char* argv[]) {
 	mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutdown, NULL);
 
 
-	/*
-	FILE* logstream = NULL;
-	if (logfile) {
-		if((logstream = fopen(logfile, "a+")) == NULL) {
-			fatal_error("error creating logstream from logfile", NULL, 1);
-		}
-	}
-	*/
-
 	if(fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
 		fatal_error("error setting stdin to be non-blocking", NULL, 1);
 	}
 
-	char buf[BUF_SIZE];
+	//char buf[BUF_SIZE];
 	//char temp_buf[]
 
 	

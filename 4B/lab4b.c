@@ -173,12 +173,12 @@ void get_options(const int *argc, char* const* argv) {
 			}
 			case LOG: {
 				if(optarg) {
+
 					// USING A LOGSTREAM
 					logstream = fopen((const char*)optarg, "a+");
 					if(logstream == NULL) {
 						fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
 					}
-					
 					logging = 1;
 				}
 				break;
@@ -253,7 +253,10 @@ int main(int argc, char* argv[]) {
 
 	//char buf[BUF_SIZE];
 	//char temp_buf[]
-
+	if(debug_flag){
+		fprintf(stderr, "adding something through logstream\n");
+		fprintf(logstream, "adding something here\n");
+	}
 	
 
 	if(debug_flag) print_options();

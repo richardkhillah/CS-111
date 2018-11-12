@@ -23,7 +23,7 @@
 // 							DEFINE
 //============================================================
 #define PERIOD 'p'
-#define LOG 'L'
+#define LOG_OPT 'L'
 #define SCALE 's'
 
 #define FAHRENHEIT 'f'
@@ -154,7 +154,7 @@ void cleanup() {
 void get_options(const int *argc, char* const* argv) {
 	static struct option const long_opts[] = {
 		{"period", optional_argument, NULL, PERIOD},
-		{"log", optional_argument, NULL, LOG},
+		{"log", optional_argument, NULL, LOG_OPT},
 		{"scale", optional_argument, NULL, SCALE},
 		{"debug", no_argument, NULL, DEBUG},
 		{NULL, 0, NULL, 0}
@@ -183,10 +183,10 @@ void get_options(const int *argc, char* const* argv) {
 				}
 				break;
 			}
-			case LOG: {
+			case LOG_OPT: {
 				if(optarg) {
 					// USING A LOGSTREAM
-					logstream = fopen(optarg, "w");
+					logstream = fopen((const char*)optarg, "w");
 					if(logstream == NULL) {
 						fatal_error("unable to create logfile", NULL, EXIT_ERROR1);
 					}

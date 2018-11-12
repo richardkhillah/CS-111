@@ -13,7 +13,6 @@ fi
 mkdir $TEMP
 tar -xzvf $TARBALL -C $TEMP
 cd $TEMP
-#make
 
 # begin testing
 echo

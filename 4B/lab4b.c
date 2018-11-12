@@ -19,13 +19,27 @@
 #include <aio.h>
 #include <poll.h>
 
-// Global Constants
-long SUCCESS_CODE = 0;
-long ERR_CODE = 1;
-long FAIL_CODE = 2;
+//============================================================
+// 							DEFINE
+//============================================================
 
 #define ferr1(m) fatal_error(m, NULL, 1);
 #define ferr1u(m) fatal_error(m, (void*)usage, 1);
+
+#define PERIOD 'p'
+#define LOG 'l'
+#define SCALE 's'
+
+#define FAHRENHEIT_C 'F'
+#define CELSIUS_C 'C'
+#define FAHRENHEIT "F"
+#define CELSIUS "C"
+
+// Global Constants
+const int BUF_SIZE = 2048;
+const long SUCCESS_CODE = 0;
+const long ERR_CODE = 1;
+const long FAIL_CODE = 2;
 
 #ifdef DUMMY
 // Mock implementations for local dev/test
@@ -43,7 +57,7 @@ typedef int mraa_gpio_context;
 int MRAA_GPIO_IN = 5;
 int mraa_gpio_init(int val) {
 	val++;
-	return -5;
+	return -60;
 }
 void mraa_gpio_dir(int val, int temp) {
 	val++;
@@ -55,6 +69,10 @@ int mraa_gpio_read(int* val) {
 }
 #endif
 
+
+//======================================================================
+// REMOVE THIS
+//======================================================================
 // INPUT: Name of sys call that threw error
 // Prints reason for error and terminates program
 void process_failed_sys_call(const char syscall[]) {
@@ -64,56 +82,52 @@ void process_failed_sys_call(const char syscall[]) {
 	fprintf(stderr, "This error code means: %s\n", strerror(err));
 	exit(ERR_CODE);
 }
+//======================================================================
+// END REMOVE
+//======================================================================
+
 
 // INPUT: Info about CL arguments, strings for argument parameters
 // Process CL arguments while checking for invalid options
-void process_cl_arguments(int argc, char** argv,
-						  char** period, char** temp, char** logfile)
-{
-	struct option long_options[] =
-	{
+void get_options(int argc, char** argv, char** period, char** temp, char** logfile) {
+	static struct option const long_options[] = {
 		{"period", required_argument, NULL, 'p'},
 		{"scale", required_argument, NULL, 's'},
 		{"log", required_argument, NULL, 'l'},
-#ifdef DEV
+		#ifdef DEV
 		{"debug", no_argument, NULL, DEBUG},
-#endif
+		#endif
 		{0, 0, 0, 0}
 	};
-	int option_index = 0;
+	int optind = 0;
 
 	*period = "1";
-	*temp = "F";
+	*temp = FAHRENHEIT;
 
-	while (1)
-	{
-		int arg = getopt_long(argc, argv, "p:s:l:",
-							  long_options, &option_index);
+	while (1) {
+	  	int arg = getopt_long(argc, argv, "", long_options, &optind);
 
 		if (arg == -1)
 			return;
 
-		switch (arg)
-		{
-			case 'p':
+		switch (arg) {
+			case PERIOD:
 				*period = optarg;
 				break;
-			case 's':
+			case SCALE:
 				*temp = optarg;
 				break;
-			case 'l':
+			case LOG:
 				*logfile = optarg;
 				break;
-#ifdef DEV
-			case 'd':
+			#ifdef DEV
+			case DEBUG:
 				fprintf(stderr, "setting debug_flag\n");
 				debug_flag = 1;
 				break;
-#endif
+			#endif
 			case '?':
-				fprintf(stderr, "%s\n", "ERROR: Invalid argument.");
-				fprintf(stderr, "%s\n", "Usage: lab4b [--period=#] [--scale=[C, F]] [--log=filename]");
-				exit(ERR_CODE);
+				ferr1u("Invalid argument");
 		}
 	}
 }
@@ -123,26 +137,26 @@ void process_cl_arguments(int argc, char** argv,
 void print_curr_time(FILE* fd) {
 	time_t rawtime;
 	time(&rawtime);
-	if (rawtime == (time_t)-1)
-	{
-		fatal_error("Error getting rawtime", NULL, 1);
+	if (rawtime == (time_t)-1) {
+		ferr1("Error getting rawtime");
 	}
 
 	struct tm* local_time = localtime(&rawtime);
-	if (local_time == NULL)
-	{
-		fatal_error("Error getting rawtime", NULL, 1);
+	if (local_time == NULL) {
+		ferr1("Error getting rawtime");
 	}
 
-	if (local_time->tm_hour < 10)
-		fprintf(fd, "0");
-	fprintf(fd, "%d:", local_time->tm_hour);
-	if (local_time->tm_min < 10)
-		fprintf(fd, "0");
-	fprintf(fd, "%d:", local_time->tm_min);
-	if (local_time->tm_sec < 10)
-		fprintf(fd, "0");
-	fprintf(fd, "%d ", local_time->tm_sec);
+	fprintf(fd, "%02d:%02d:%02d ", local_time->tm_hour, local_time->tm_min, local_time->tm_sec);
+
+	// if (local_time->tm_hour < 10)
+	// 	fprintf(fd, "0");
+	// fprintf(fd, "%d:", local_time->tm_hour);
+	// if (local_time->tm_min < 10)
+	// 	fprintf(fd, "0");
+	// fprintf(fd, "%d:", local_time->tm_min);
+	// if (local_time->tm_sec < 10)
+	// 	fprintf(fd, "0");
+	// fprintf(fd, "%d ", local_time->tm_sec);
 }
 
 // INPUT: Analog reading from temperature sensor
@@ -151,8 +165,7 @@ float convert_analog_to_temp(int analog, char* temp_unit) {
 	float raw_value = (1023.0 / analog - 1.0) * 100000;
 	float temperature = 1.0 / (log(raw_value / 100000) / 4275 + 1 / 298.15) - 273.15;
 
-	if (*temp_unit == 'F')
-	{
+	if (*temp_unit == 'F') {
 		return ((temperature * 9) / 5) + 32;
 	}
 	return temperature;
@@ -163,12 +176,7 @@ float convert_analog_to_temp(int analog, char* temp_unit) {
 void generate_temp_report(int temp_pin, char* scale, char* log) {
 	// Sample temperature sensor and convert reading to indicated temperature
 	int temp_analog_value = mraa_aio_read(temp_pin);
-	if (temp_analog_value == -1)
-	{	
-		// printf("%s\n", "ERROR: mraa_aio_read");
-		// printf("%s\n", "There was a problem reading from the temperature sensor.");
-		// exit(ERR_CODE);
-		//fatal_error("Error reading temperature from temp_sensor", NULL, 1);
+	if (temp_analog_value == -1) {	
 		ferr1("Error reading temperature from temp_sensor");
 	}
 	float temperature = convert_analog_to_temp(temp_analog_value, scale);
@@ -178,11 +186,9 @@ void generate_temp_report(int temp_pin, char* scale, char* log) {
 	fprintf(stdout, "%0.1f\n", temperature);
 
 	// Append report to logfile
-	if (log)
-	{
+	if (log) {
 		FILE* fd = fopen(log, "a+");
-		if (fd == NULL)
-		{
+		if (fd == NULL) {
 			ferr1("Failed to open logfile");
 		}
 
@@ -199,11 +205,9 @@ void shutdown(char* log) {
 	print_curr_time(stdout);
 	fprintf(stdout, "%s\n", "SHUTDOWN");
 
-	if (log)
-	{
+	if (log) {
 		FILE* fd = fopen(log, "a+");
-		if (fd == NULL)
-		{
+		if (fd == NULL) {
 			ferr1("Failed to open logfile");
 		}
 
@@ -220,40 +224,26 @@ void shutdown(char* log) {
 void process_command(char* command, char** scale, int* delay, int* report, char* log) {
 	if (strstr(command, "SCALE") != NULL)
 	{
-		if (strstr(command, "F") != NULL)
-		{
-			char* temp_scale = (char *) malloc(sizeof(char) * 2);
-			temp_scale[0] = 'F';
-			*scale = temp_scale;
-		}
-		else
-		{
-			char* temp_scale = (char *) malloc(sizeof(char) * 2);
-			temp_scale[0] = 'C';
-			*scale = temp_scale;
+		if (strstr(command, FAHRENHEIT) != NULL) {
+			//char* temp_scale = (char *) malloc(sizeof(char) * 2);
+			//temp_scale[0] = FAHRENHEIT_C;
+			//*scale = temp_scale;
+			*scale = FAHRENHEIT;
+		} else {
+			//char* temp_scale = (char *) malloc(sizeof(char) * 2);
+			//temp_scale[0] = CELSIUS_C;
+			//*scale = temp_scale;
+			*scale = CELSIUS;
 		}
 	}
-	else if (strstr(command, "PERIOD") != NULL)
-	{
+	else if (strstr(command, "PERIOD") != NULL) {
 		int i = 0;
-		while (command[i] != '=')
-		{
-			i++;
-		}
+		while (command[i++] != '=') ;//{ i++; }
 		*delay = atoi(command + i + 1);
 	}
-	else if (strstr(command, "STOP") != NULL)
-	{
-		*report = 0;
-	}
-	else if (strstr(command, "START") != NULL)
-	{
-		*report = 1;
-	}
-	else if (strstr(command, "OFF") != NULL)
-	{
-		shutdown(log);
-	}
+	else if (strstr(command, "STOP") != NULL) { *report = 0; }
+	else if (strstr(command, "START") != NULL) { *report = 1; }
+	else if (strstr(command, "OFF") != NULL) { shutdown(log); }
 }
 
 void usage(void) {
@@ -268,26 +258,20 @@ int main(int argc, char** argv) {
 	char* scale = NULL;
 	char* log = NULL;
 
-	process_cl_arguments(argc, argv, &period, &scale, &log);
+	get_options(argc, argv, &period, &scale, &log);
 	if(debug_flag) ferr1u("testing debug_flag!!");
 
 
 	// Connect to temperature sensor
 	mraa_aio_context temp_pin = mraa_aio_init(1);
-	if (temp_pin == 0) // Change to NULL
-	{
-		printf("%s\n", "ERROR: mraa_aio_init");
-		printf("%s\n", "There was a problem with initializing the temperature sensor.");
-		exit(ERR_CODE);
+	if (temp_pin == 0) { // Change to NULL
+		ferr1("Error initializing the temperature sensor");
 	}
 
 	// Connect to button
 	mraa_gpio_context button_pin = mraa_gpio_init(3);
-	if (button_pin == 0) //  Change to NULL
-	{
-		printf("%s\n", "ERROR: mraa_gpio_init");
-		printf("%s\n", "There was a problem with initializing the button sensor.");
-		exit(ERR_CODE);
+	if (button_pin == 0) { //  Change to NULL
+		ferr1("Error initializing the button");
 	}
 	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
 
@@ -300,42 +284,36 @@ int main(int argc, char** argv) {
 	int delay = atoi(period);
 	int report = 1;
 
-	char buf[2014];
+	//char buf[2014];
+	char buf[BUF_SIZE];
 	memset((char *) &buf, 0, sizeof(buf));
 	while (1)
 	{
-		if (poll(fds, 1, 0) < 0)
-		{
+		if (poll(fds, 1, 0) < 0) {
 			ferr1("Failed to poll");
 		}
 
-		if (report)
-		{
+		if (report) 
 			generate_temp_report(temp_pin, scale, log);
-		}
 
 		if (fds[0].revents & POLLIN)
 		{
 			int bytes_read = read(0, buf, sizeof(buf));
-			if (bytes_read < 0)
-			{
+			if (bytes_read < 0) {
 				ferr1("Failed to read stdin");
 			}
 
 			char* command = strtok(buf, "\n");
-			while (command != NULL && bytes_read > 0)
-			{
-				if (log)
-				{
+			while (command != NULL && bytes_read > 0) {
+				if (log) {
 					FILE* fd = fopen(log, "a+");
-					if (fd == NULL)
-					{
+					if (fd == NULL) {
 						ferr1("Failed to open logfile");
 					}
 
 					fprintf(fd, "%s\n", command);
 				}
-				// i += strlen(command) + 1;
+
 				process_command(command, &scale, &delay, &report, log);
 				
 				command = strtok(NULL, "\n");
@@ -343,8 +321,7 @@ int main(int argc, char** argv) {
 		}
 
 		// Sample button state and check whether to exit
-		if (mraa_gpio_read(&button_pin) == 1)
-		{
+		if (mraa_gpio_read(&button_pin) == 1) {
 			shutdown(log);
 		}
 

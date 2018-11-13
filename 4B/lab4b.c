@@ -91,9 +91,9 @@ struct l4b_context {
 	char* logfile_name;		/* name of file to open/create in which to write
 							 * temperature report to. */
 	FILE* logfile_stream;	/* */
-	char* rt_cmd[BUF_SIZE];	/* stoarage to hold commands passed in during runtime
-							 * that should be printed to log_file */
 	int rt_cmd_len;			/* length of rt_command_buf */
+	char* rt_cmd[];			/* stoarage to hold commands passed in during runtime
+							 * that should be printed to log_file */
 };
 typedef struct l4b_context l4b_context_t;
 

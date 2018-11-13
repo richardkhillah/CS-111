@@ -19,9 +19,9 @@
 #include <aio.h>
 #include <poll.h>
 
-//============================================================
+//================================================================================
 // 							DEFINE
-//============================================================
+//================================================================================
 
 #define ferr1(m) fatal_error(m, NULL, 1);
 #define ferr1u(m) fatal_error(m, (void*)usage, 1);
@@ -70,22 +70,45 @@ int mraa_gpio_read(int* val) {
 #endif
 
 
-//======================================================================
-// REMOVE THIS
-//======================================================================
-// INPUT: Name of sys call that threw error
-// Prints reason for error and terminates program
-void process_failed_sys_call(const char syscall[]) {
-	int err = errno;
-	fprintf(stderr, "%s", "An error has occurred.\n");
-	fprintf(stderr, "The system call '%s' failed with error code %d\n", syscall, err);
-	fprintf(stderr, "This error code means: %s\n", strerror(err));
-	exit(ERR_CODE);
-}
-//======================================================================
-// END REMOVE
-//======================================================================
+//================================================================================
+//
+//						L4B VARIABLES AND DECLARATIONS
+//
+//================================================================================
+//const int BUF_SIZE = 2048;
+typedef int l4b_state_t;
+typedef char l4b_temp_scale_t;
+typedef float l4b_temp_t;
+typedef int l4b_sample_period_t;
 
+struct l4b_context {
+	l4b_state_t s;			/* s = 1: recording data
+							 * 2 = 0: not recording data   */
+	struct tm* lt;			/* raw time converted to local time */
+	l4b_temp_t t;			/* raw temperature value converted to appropiate scale */
+	l4b_temp_scale_t ts;	/* in either degrees Fahrenheit or degrees Celsius */
+	l4b_sample_period_t sp;	/* interval between temperature sensor readings */
+	char* logfile_name;		/* name of file to open/create in which to write
+							 * temperature report to. */
+	FILE* logfile_stream;	/* */
+	char* rt_cmd[BUF_SIZE];	/* stoarage to hold commands passed in during runtime
+							 * that should be printed to log_file */
+	int rt_cmd_len;			/* length of rt_command_buf */
+};
+typedef struct l4b_context l4b_context_t;
+
+//================================================================================
+//
+//								API
+//
+//================================================================================
+
+
+//================================================================================
+//
+//								HELPER FUNCTIONS
+//
+//================================================================================
 
 
 // INPUT: File stream to write to
@@ -202,11 +225,11 @@ void process_command(char* command, char** scale, int* delay, int* report, char*
 	else if (strstr(command, "OFF") != NULL) { shutdown(log); }
 }
 
-//======================================================================
+//================================================================================
 //
 //							HELPER FUNCTIONS
 //
-//======================================================================
+//================================================================================
 
 // INPUT: Info about CL arguments, strings for argument parameters
 // Process CL arguments while checking for invalid options
@@ -257,6 +280,11 @@ void usage(void) {
 	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
 }
 
+//================================================================================
+//
+//								MAIN
+//
+//================================================================================
 int main(int argc, char** argv) {
 	set_program_name(argv[0]);
 
@@ -336,5 +364,30 @@ int main(int argc, char** argv) {
 		sleep(delay);
 	}
 }
+
+
+
+//================================================================================
+//
+//							CLEANUP
+//
+//================================================================================
+
+
+//================================================================================
+// REMOVE THIS
+//================================================================================
+// INPUT: Name of sys call that threw error
+// Prints reason for error and terminates program
+void process_failed_sys_call(const char syscall[]) {
+	int err = errno;
+	fprintf(stderr, "%s", "An error has occurred.\n");
+	fprintf(stderr, "The system call '%s' failed with error code %d\n", syscall, err);
+	fprintf(stderr, "This error code means: %s\n", strerror(err));
+	exit(ERR_CODE);
+}
+//================================================================================
+// END REMOVE
+//================================================================================
 
 

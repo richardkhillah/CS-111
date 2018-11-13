@@ -38,7 +38,7 @@ ifeq ($(BEAGLEBONE_VERSION),)
 else
 	$(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 endif
-	
+
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS)
@@ -51,4 +51,3 @@ check:
 
 tests: dist
 	./$(MY_CHECK_SCRIPT)
-	

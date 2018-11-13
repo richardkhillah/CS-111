@@ -23,7 +23,7 @@
 // 							DEFINE
 //============================================================
 #define PERIOD 'p'
-#define LOG 'L'
+#define LOG 'l'
 #define SCALE 's'
 
 #define FAHRENHEIT 'f'

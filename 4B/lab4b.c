@@ -102,15 +102,89 @@ typedef struct l4b_context l4b_context_t;
 //								API
 //
 //================================================================================
+/* 
+ *
+ */
+void l4b_init(l4b_context_t** c) {
 
+}
+
+/*
+ * @param c context determining 
+ */
+
+void l4b_conext_update() {
+
+}
+
+/* Takes a pre-linefeed-deliminated command and checks against "legal" run time
+ * commands. If the command is valid, l4b_context c is updated. If command is 
+ * not valid, nothing is done and program continues, silently "ignoring" 
+ * unrecognized commands.
+ * 
+ * @param cmd 		pre-deliminated command
+ */
+void l4b_get_rtcmd(char* cmd, l4b_context_t** c) {
+
+}
+
+/* Reports to stdout temperature readings. If lab4b is started with the 
+ * --log=<filename> option, temperature readings and run-time 
+ * commands are written to a the user-specified file.
+ *
+ * @param c 		Determines what and where to write information.
+ * @param rt_cmd 	'\n' deliminated command terminated with '\0'.
+ */
+void l4b_report(l4b_context_t** c, char* rt_cmd) {
+
+}
+
+void l4b_shutdown(l4b_context_t** c) {
+
+}
 
 //================================================================================
 //
 //								HELPER FUNCTIONS
 //
 //================================================================================
+// void usage(){}
+// void get_options(int argc, char* const* argv, l4b_context** c){}
+
+/* @param rv 		Raw value reading from temperature sensor
+ * @param tscale 	Temperature scale to convert rv into
+ * @return 			The converted temperature value
+ */
+float raw_to_temp(int rv, l4b_temp_scale_t* tscale) {
+	return 0.0;
+}
+
+/* 
+ * @return current localtime
+ */
+struct tm* get_time(void){
+	struct tm* time;
+	return time;
+}
+
+/* @param temp_pin	beaglebone pin the temperature sensor is connected to
+ * @param tscale 	The scale, in F(ahrenheit) or C(elsius) to report
+ * @return			The converted rawvalue temperature read from temperature sensor
+ */
+l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t* tscale){
+	
+
+	l4b_temp_t converted_temp = 0.0;
+	return converted_temp;
+}
 
 
+
+//================================================================================
+//
+//								REFACTOR THE BELOW
+//
+//================================================================================
 // INPUT: File stream to write to
 // Print out hour:min:sec of current local time
 void print_curr_time(FILE* fd) {

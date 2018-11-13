@@ -107,26 +107,28 @@ typedef struct l4b_context l4b_context_t;
 /* 
  *
  */
-void l4b_init(l4b_context_t* c) {
-	c->state = 1;
-	//c->localtime;
-	c->temp = 0.0;
-	c->temp_scale = FAHRENHEIT;
-	c->sample_period = 1;
-	c->logfile_name = NULL;
-	c->logfile_stream = NULL;
-	c->rt_cmd_len = 0;
-	c->rt_cmd = (char)malloc(sizeof(char)*BUF_SIZE);
-	if(c->rt_cmd == NULL) {
+void l4b_init(l4b_context_t** c) {
+	l4b_context_t* context;
+	context->state = 1;
+	//context->localtime;
+	context->temp = 0.0;
+	context->temp_scale = FAHRENHEIT;
+	context->sample_period = 1;
+	context->logfile_name = NULL;
+	context->logfile_stream = NULL;
+	context->rt_cmd_len = 0;
+	context->rt_cmd = (char*)malloc(sizeof(char)*BUF_SIZE);
+	if(context->rt_cmd == NULL) {
 		ferr1("Error initializing rt_cmd buffer");
 	}
+	*c = context;
 }
 
 /*
- * @param c context determining 
+ * @param c context to be 
  */
 
-void l4b_conext_update() {
+void l4b_conext_update(l4b_context_t* c) {
 
 }
 
@@ -137,7 +139,7 @@ void l4b_conext_update() {
  * 
  * @param cmd 		pre-deliminated command
  */
-void l4b_get_rtcmd(char* cmd, l4b_context_t** c) {
+void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
 
 }
 
@@ -148,11 +150,11 @@ void l4b_get_rtcmd(char* cmd, l4b_context_t** c) {
  * @param c 		Determines what and where to write information.
  * @param rt_cmd 	'\n' deliminated command terminated with '\0'.
  */
-void l4b_report(l4b_context_t** c, char* rt_cmd) {
+void l4b_report(l4b_context_t* c, char* rt_cmd) {
 
 }
 
-void l4b_shutdown(l4b_context_t** c) {
+void l4b_shutdown(l4b_context_t* c) {
 
 }
 
@@ -161,8 +163,10 @@ void l4b_shutdown(l4b_context_t** c) {
 //								HELPER FUNCTIONS
 //
 //================================================================================
-// void usage(){}
-// void get_options(int argc, char* const* argv, l4b_context** c){}
+void usage(void) {
+	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
+}
+void get_options(int argc, char* const* argv, struct l4b_context* c){}
 
 /* @param rv 		Raw value reading from temperature sensor
  * @param tscale 	Temperature scale to convert rv into
@@ -184,14 +188,43 @@ struct tm* get_time(void){
  * @param tscale 	The scale, in F(ahrenheit) or C(elsius) to report
  * @return			The converted rawvalue temperature read from temperature sensor
  */
-l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t* tscale){
-	
-
+l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t tscale){
 	l4b_temp_t converted_temp = 0.0;
 	return converted_temp;
 }
 
+
+
+
+//================================================================================
+//
+//									MAIN
+//
+//================================================================================
 int main(int argc, char* argv[]) {
+	set_program_name(argv[0]);
+
+	l4b_context_t* context;
+	l4b_init(&context);
+
+	char* tmp = "Hello, world";
+	int i = 0;
+	while(tmp[i] != '\0') {
+		context->rt_cmd[i] = tmp[i++];
+	}
+	context->rt_cmd[++i] = '\0';
+	context->rt_cmd_len = i;
+
+	int len = context->rt_cmd_len;
+	printf("iteratively printing characters in rt_cmd using percent c:\n");
+	for(int j = 0; j < len; j++) {
+		printf("%c", context->rt_cmd[j]);
+	}
+	printf("\n");
+
+	// printf("printing rt_cmd directly using percent s:\n");
+	// printf("%s\n", context->rt_cmd);
+
 	return 0;
 }
 #endif

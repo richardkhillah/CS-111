@@ -87,50 +87,6 @@ void process_failed_sys_call(const char syscall[]) {
 //======================================================================
 
 
-// INPUT: Info about CL arguments, strings for argument parameters
-// Process CL arguments while checking for invalid options
-void get_options(int argc, char** argv, char** period, char** temp, char** logfile) {
-	static struct option const long_options[] = {
-		{"period", required_argument, NULL, 'p'},
-		{"scale", required_argument, NULL, 's'},
-		{"log", required_argument, NULL, 'l'},
-		#ifdef DEV
-		{"debug", no_argument, NULL, DEBUG},
-		#endif
-		{0, 0, 0, 0}
-	};
-	int optind = 0;
-
-	*period = "1";
-	*temp = FAHRENHEIT;
-
-	while (1) {
-	  	int arg = getopt_long(argc, argv, "", long_options, &optind);
-
-		if (arg == -1)
-			return;
-
-		switch (arg) {
-			case PERIOD:
-				*period = optarg;
-				break;
-			case SCALE:
-				*temp = optarg;
-				break;
-			case LOG:
-				*logfile = optarg;
-				break;
-			#ifdef DEV
-			case DEBUG:
-				fprintf(stderr, "setting debug_flag\n");
-				debug_flag = 1;
-				break;
-			#endif
-			case '?':
-				ferr1u("Invalid argument");
-		}
-	}
-}
 
 // INPUT: File stream to write to
 // Print out hour:min:sec of current local time
@@ -244,6 +200,57 @@ void process_command(char* command, char** scale, int* delay, int* report, char*
 	else if (strstr(command, "STOP") != NULL) { *report = 0; }
 	else if (strstr(command, "START") != NULL) { *report = 1; }
 	else if (strstr(command, "OFF") != NULL) { shutdown(log); }
+}
+
+//======================================================================
+//
+//							HELPER FUNCTIONS
+//
+//======================================================================
+
+// INPUT: Info about CL arguments, strings for argument parameters
+// Process CL arguments while checking for invalid options
+void get_options(int argc, char** argv, char** period, char** temp, char** logfile) {
+	static struct option const long_options[] = {
+		{"period", required_argument, NULL, 'p'},
+		{"scale", required_argument, NULL, 's'},
+		{"log", required_argument, NULL, 'l'},
+		#ifdef DEV
+		{"debug", no_argument, NULL, DEBUG},
+		#endif
+		{0, 0, 0, 0}
+	};
+	int optind = 0;
+
+	*period = "1";
+	*temp = FAHRENHEIT;
+
+	while (1) {
+	  	int arg = getopt_long(argc, argv, "", long_options, &optind);
+
+		if (arg == -1)
+			return;
+
+		switch (arg) {
+			case PERIOD:
+				*period = optarg;
+				break;
+			case SCALE:
+				*temp = optarg;
+				break;
+			case LOG:
+				*logfile = optarg;
+				break;
+			#ifdef DEV
+			case DEBUG:
+				fprintf(stderr, "setting debug_flag\n");
+				debug_flag = 1;
+				break;
+			#endif
+			case '?':
+				ferr1u("Invalid argument");
+		}
+	}
 }
 
 void usage(void) {

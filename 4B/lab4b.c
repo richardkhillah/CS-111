@@ -69,7 +69,7 @@ int mraa_gpio_read(int* val) {
 }
 #endif
 
-
+#ifdef DEV
 //================================================================================
 //
 //						L4B VARIABLES AND DECLARATIONS
@@ -82,18 +82,20 @@ typedef float l4b_temp_t;
 typedef int l4b_sample_period_t;
 
 struct l4b_context {
-	l4b_state_t s;			/* s = 1: recording data
-							 * 2 = 0: not recording data   */
-	struct tm* lt;			/* raw time converted to local time */
-	l4b_temp_t t;			/* raw temperature value converted to appropiate scale */
-	l4b_temp_scale_t ts;	/* in either degrees Fahrenheit or degrees Celsius */
-	l4b_sample_period_t sp;	/* interval between temperature sensor readings */
-	char* logfile_name;		/* name of file to open/create in which to write
-							 * temperature report to. */
-	FILE* logfile_stream;	/* */
-	int rt_cmd_len;			/* length of rt_command_buf */
-	char* rt_cmd[];			/* stoarage to hold commands passed in during runtime
-							 * that should be printed to log_file */
+	l4b_state_t state;			/* s = 1: recording data
+							 	 * 2 = 0: not recording data   */
+	struct tm* localtime;		/* raw time converted to local time */
+	l4b_temp_t temp;			/* raw temperature value converted to appropiate scale */
+	l4b_temp_scale_t temp_scale;/* in either degrees Fahrenheit or degrees Celsius */
+	l4b_sample_period_t sample_period;	/* interval between temperature sensor readings */
+	char* logfile_name;			/* name of file to open/create in which to write
+								 * temperature report to. */
+	FILE* logfile_stream;		/* */
+	int rt_cmd_len;				/* length of rt_command_buf */
+	char* rt_cmd;				/* stoarage to hold commands passed in during runtime
+								 * that should be printed to log_file.
+								 * if a standard command like START, SCALE=, etc, buf
+								 */
 };
 typedef struct l4b_context l4b_context_t;
 
@@ -105,8 +107,19 @@ typedef struct l4b_context l4b_context_t;
 /* 
  *
  */
-void l4b_init(l4b_context_t** c) {
-
+void l4b_init(l4b_context_t* c) {
+	c->state = 1;
+	//c->localtime;
+	c->temp = 0.0;
+	c->temp_scale = FAHRENHEIT;
+	c->sample_period = 1;
+	c->logfile_name = NULL;
+	c->logfile_stream = NULL;
+	c->rt_cmd_len = 0;
+	c->rt_cmd = (char)malloc(sizeof(char)*BUF_SIZE);
+	if(c->rt_cmd == NULL) {
+		ferr1("Error initializing rt_cmd buffer");
+	}
 }
 
 /*
@@ -178,8 +191,15 @@ l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t* tscale){
 	return converted_temp;
 }
 
+int main(int argc, char* argv[]) {
+	return 0;
+}
+#endif
 
 
+
+
+#ifndef DEV
 //================================================================================
 //
 //								REFACTOR THE BELOW
@@ -463,5 +483,5 @@ void process_failed_sys_call(const char syscall[]) {
 //================================================================================
 // END REMOVE
 //================================================================================
-
+#endif
 

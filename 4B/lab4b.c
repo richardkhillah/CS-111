@@ -30,10 +30,10 @@
 #define LOG 'l'
 #define SCALE 's'
 
-#define FAHRENHEIT_C 'F'
-#define CELSIUS_C 'C'
-#define FAHRENHEIT "F"
-#define CELSIUS "C"
+const char FAHRENHEIT_C = 'F';
+const char CELSIUS_C = 'C';
+const char* FAHRENHEIT_S = "F";
+const char* CELSIUS_S = "C";
 
 // Global Constants
 const int BUF_SIZE = 2048;
@@ -81,18 +81,18 @@ int mraa_gpio_read(int* val) {
 //
 //================================================================================
 //const int BUF_SIZE = 2048;
-typedef int l4b_state_t;
-typedef char l4b_temp_scale_t;
-typedef float l4b_temp_t;
-typedef int l4b_sample_period_t;
+// typedef int l4b_state_t;
+// typedef char* l4b_temp_scale_t;
+// typedef float l4b_temp_t;
+// typedef int l4b_sample_period_t;
 
 struct l4b_context {
-	l4b_state_t state;			/* s = 1: recording data
+	int state;			/* s = 1: recording data
 							 	 * 2 = 0: not recording data   */
 	struct tm* localtime;		/* raw time converted to local time */
-	l4b_temp_t temp;			/* raw temperature value converted to appropiate scale */
-	l4b_temp_scale_t temp_scale;/* in either degrees Fahrenheit or degrees Celsius */
-	l4b_sample_period_t sample_period;	/* interval between temperature sensor readings */
+	float temp;			/* raw temperature value converted to appropiate scale */
+	char* temp_scale;/* in either degrees Fahrenheit or degrees Celsius */
+	int sample_period;	/* interval between temperature sensor readings */
 	char* logfile_name;			/* name of file to open/create in which to write
 								 * temperature report to. */
 	FILE* logfile_stream;		/* */
@@ -117,7 +117,7 @@ void l4b_init(l4b_context_t** c) {
 	context->state = 1;
 	//context->localtime;
 	context->temp = 0.0;
-	context->temp_scale = FAHRENHEIT;
+	context->temp_scale = FAHRENHEIT_S;
 	context->sample_period = 1;
 	context->logfile_name = NULL;
 	context->logfile_stream = NULL;
@@ -171,13 +171,52 @@ void l4b_shutdown(l4b_context_t* c) {
 void usage(void) {
 	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
 }
-void get_options(int argc, char* const* argv, struct l4b_context* c){}
+void get_options(int argc, char* const* argv, struct l4b_context* context){
+	static struct option const long_options[] = {
+		{"period", required_argument, NULL, 'p'},
+		{"scale", required_argument, NULL, 's'},
+		{"log", required_argument, NULL, 'l'},
+		#ifdef DEV
+		{"debug", no_argument, NULL, DEBUG},
+		#endif
+		{NULL, 0, NULL, 0}
+	};
+	int optind = 0;
+
+	while (1) {
+	  	int arg = getopt_long(argc, argv, "", long_options, &optind);
+
+		if (arg == -1)
+			return; 
+
+		switch (arg) {
+			case PERIOD:
+				context->sample_period = atoi(optarg);
+				break;
+			case SCALE:
+				fprintf(stderr, "optarg: %s\n", optarg);
+				context->temp_scale = optarg;
+				break;
+			case LOG:
+				context->logfile_name = optarg;
+				break;
+			#ifdef DEV
+			case DEBUG:
+				fprintf(stderr, "setting debug_flag\n");
+				debug_flag = 1;
+				break;
+			#endif
+			case '?':
+				ferr1u("Invalid argument");
+		}
+	}
+}
 
 /* @param rv 		Raw value reading from temperature sensor
  * @param tscale 	Temperature scale to convert rv into
  * @return 			The converted temperature value
  */
-float raw_to_temp(int rv, l4b_temp_scale_t* tscale) {
+float raw_to_temp(int rv, char* tscale) {
 	return 0.0;
 }
 
@@ -193,8 +232,8 @@ struct tm* get_time(void){
  * @param tscale 	The scale, in F(ahrenheit) or C(elsius) to report
  * @return			The converted rawvalue temperature read from temperature sensor
  */
-l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t tscale){
-	l4b_temp_t converted_temp = 0.0;
+float get_temp(int temp_pin, char* tscale){
+	float converted_temp = 0.0;
 	return converted_temp;
 }
 
@@ -220,6 +259,30 @@ void test_rtcmd(l4b_context_t* context) {
 	printf("%s\n", context->rt_cmd);
 }
 
+void print_context(l4b_context_t* context) {
+	fprintf(stderr, "CONTEXT PRINTOUT\n");
+	fprintf(stderr, "========================================\n");
+	fprintf(stderr, "state: %d\n", context->state);
+	fprintf(stderr, "temp: %0.1f\n", context->temp);
+	fprintf(stderr, "temp_scale: %c\n", context->temp_scale);
+	fprintf(stderr, "sample_period: %d\n", context->sample_period);
+	fprintf(stderr, "logfile_name: %s\n", context->logfile_name);
+	fprintf(stderr, "rt_cmd_len: %d\n", context->rt_cmd_len);
+	if(context->rt_cmd != NULL) {
+		fprintf(stderr, "rt_cmd: %s\n", context->rt_cmd);
+	}
+	fprintf(stderr, "========================================\n");
+}
+
+void test_context(l4b_context_t* context) {
+	context->state = 3;
+	context->temp = 100.0;
+	context->temp_scale = CELSIUS_C;
+	context->sample_period = 5;
+	context->logfile_name = "logname";
+	print_context(context);
+}
+
 
 //================================================================================
 //
@@ -232,6 +295,11 @@ int main(int argc, char* argv[]) {
 	l4b_context_t* context;
 	l4b_init(&context);
 
+	#ifdef DEV
+	test_rtcmd(context);
+	print_context(context);
+	test_context(context);
+	#endif
 
 	free(context->rt_cmd);
 	return 0;

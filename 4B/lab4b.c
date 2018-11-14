@@ -37,6 +37,7 @@
 
 // Global Constants
 const int BUF_SIZE = 2048;
+const int FILENAME_SIZE = 50;
 const long SUCCESS_CODE = 0;
 const long ERR_CODE = 1;
 const long FAIL_CODE = 2;
@@ -171,7 +172,72 @@ void l4b_shutdown(l4b_context_t* c) {
 void usage(void) {
 	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
 }
-void get_options(int argc, char* const* argv, struct l4b_context* c){}
+void get_options(int argc, char* const* argv, struct l4b_context* c) {
+	static struct option const long_options[] = {
+		//{"period", required_argument, NULL, 'p'},
+		{"period", required_argument, NULL, 'p'},
+		//{"scale", required_argument, NULL, 's'},
+		{"scale", required_argument, NULL, 's'},
+		//{"log", required_argument, NULL, 'l'},
+		{"log", required_argument, NULL, 'l'},
+		#ifdef DEV
+		{"debug", no_argument, NULL, DEBUG},
+		#endif
+		{0, 0, 0, 0}
+	};
+	int optind = 0;
+
+	while (1) {
+	  	int arg = getopt_long(argc, argv, "p:s:l:", long_options, &optind);
+
+		if (arg == -1)
+			return;
+
+		switch (arg) {
+			case 'p': 
+				fprintf(stderr, "writing sample_period\n");
+				c->sample_period = atoi(optarg);
+				//*period = optarg;
+				break;
+			case 's':
+				c->temp_scale = *optarg;
+				//*temp = optarg;
+				break;
+			case 'l': {
+				if(optarg) {
+					#ifdef DEV
+						fprintf(stderr, "setting log file\n");
+					#endif
+
+					int len = strlen(optarg); 
+						if(len < 0) ferr1("error getting optarg len");
+					c->logfile_name = (char*)malloc(sizeof(char)*len);
+					if(c->logfile_name == NULL) ferr1("Error initializing logfile_name buffer");
+					
+					int i = 0;
+					while (optarg[i] != '\0' && i < len) {
+						c->logfile_name[i] = optarg[i];
+						i++;
+					}
+					#ifdef DEV
+						fprintf(stderr, "optarg: %s\n", optarg);
+						fprintf(stderr, "logfile_name: %s\n", c->logfile_name);
+					#endif
+				}
+				//*logfile = optarg;
+				break;
+			}
+			case DEBUG:
+				fprintf(stderr, "setting debug_flag\n");
+				#ifdef DEV
+				debug_flag = 1;
+				#endif
+				break;
+			case '?':
+				ferr1u("Invalid argument");
+		}
+	}
+}
 
 /* @param rv 		Raw value reading from temperature sensor
  * @param tscale 	Temperature scale to convert rv into
@@ -220,6 +286,20 @@ void test_rtcmd(l4b_context_t* context) {
 	printf("%s\n", context->rt_cmd);
 }
 
+void print_context(l4b_context_t* context) {
+	fprintf(stderr, "\n");
+	fprintf(stderr, "CONTEXT PRINTOUT:\n");
+	fprintf(stderr, "========================================\n");
+	fprintf(stderr, "State: %d\n", context->state);
+	fprintf(stderr, "temp: %0.f\n", context->temp);
+	fprintf(stderr, "temp_scale: %c\n", context->temp_scale);
+	fprintf(stderr, "sample_period: %d\n", context->sample_period);
+	fprintf(stderr, "logfile_name: %s\n", context->logfile_name);
+	fprintf(stderr, "rt_cmd_len: %d\n", context->rt_cmd_len);
+	fprintf(stderr, "rt_cmd: %s\n", context->rt_cmd);
+	fprintf(stderr, "========================================\n");
+	fprintf(stderr, "\n");
+}
 
 //================================================================================
 //
@@ -231,8 +311,20 @@ int main(int argc, char* argv[]) {
 
 	l4b_context_t* context;
 	l4b_init(&context);
+	get_options(argc, argv, context);
 
+	#ifdef DEV
+	if(debug_flag){
+		fprintf(stderr, "Running test_rtcmd:\n");
+		test_rtcmd(context);
+		fprintf(stderr, "running print_context:\n");
+		print_context(context);
+	}
+	#endif
 
+	if(context->logfile_name != NULL) {
+		free(context->logfile_name);
+	}
 	free(context->rt_cmd);
 	return 0;
 }

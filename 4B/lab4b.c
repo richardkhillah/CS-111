@@ -114,9 +114,12 @@ void l4b_conext_update(l4b_context_t* c);
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c); 
 void l4b_report(l4b_context_t* c);
 void l4b_shutdown(l4b_context_t* c);
+void l4b_shutdown(l4b_context_t* c);
 float raw_to_temp(int rv, char* tscale);
 struct tm* get_time(void);
 float get_temp(int temp_pin, char* tscale);
+
+void print_context(l4b_context_t* c);
 
 
 //================================================================================
@@ -159,9 +162,24 @@ void l4b_init(l4b_context_t** c) {
  * 
  * @param cmd 		pre-deliminated command
  */
-// void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
+void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
+	if (strstr(cmd, "SCALE") != NULL) {
+		if (strstr(cmd, FAHRENHEIT_S) != NULL) {
+			c->temp_scale = FAHRENHEIT_S;
+		} else {
+			c->temp_scale = CELSIUS_S;
+		}
+	}
+	else if (strstr(cmd, "PERIOD") != NULL) {
+		int i = 0;
+		while (cmd[i] != '=') { i++; }
+		c->sample_period = atoi(cmd + i + 1);
+	}
+	else if (strstr(cmd, "STOP") != NULL) { c->state = 0; }
+	else if (strstr(cmd, "START") != NULL) { c->state = 1; }
+	else if (strstr(cmd, "OFF") != NULL) { l4b_shutdown(c); }
 
-// }
+}
 
 /* Reports to stdout temperature readings. If lab4b is started with the 
  * --log=<filename> option, temperature readings and run-time 
@@ -170,25 +188,30 @@ void l4b_init(l4b_context_t** c) {
  * @param c 		Determines what and where to write information.
  * @param rt_cmd 	'\n' deliminated command terminated with '\0'.
  */
-void l4b_report(l4b_context_t* context) {
+void l4b_report(l4b_context_t* c) {
 	// print to stdoud
-	printf("%02d:%02d:%02d %0.1f", context->localtime->tm_hour, context->localtime->tm_min, context->localtime->tm_sec, context->temp);
+	printf("%02d:%02d:%02d %0.1f\n", c->localtime->tm_hour, c->localtime->tm_min, c->localtime->tm_sec, c->temp);
 
 	// print to logfile
-	if(context->logfile_stream != NULL){
-		if(context->rt_cmd == NULL) {
-			fprintf(context->logfile_stream, "%02d:%02d:%02d %0.1f\n", 
-				context->localtime->tm_hour, context->localtime->tm_min, 
-				context->localtime->tm_sec, context->temp);
-		} else {
-			fprintf(context->logfile_stream, "%s\n", context->rt_cmd);
-		}
+	if(c->logfile_stream != NULL){
+		fprintf(c->logfile_stream, "%02d:%02d:%02d %0.1f\n", 
+			c->localtime->tm_hour, c->localtime->tm_min, 
+			c->localtime->tm_sec, c->temp);
+		
+		//TODO: figure this out
+		//fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
 	}
 }
 
-// void l4b_shutdown(l4b_context_t* c) {
-
-// }
+void l4b_shutdown(l4b_context_t* c) {
+	//fprintf(stderr, "shutdown\n");
+	//print_context(c);
+	if(c->logfile_stream != NULL) {
+		l4b_report(c);
+		fprintf(c->logfile_stream, "SHUTDOWN\n");
+	}
+	exit(0);
+}
 
 //================================================================================
 //
@@ -298,7 +321,7 @@ float get_temp(int temp_pin, char* tscale){
 	// 	fclose(fd);
 	// }
 
-	return temperature;
+	//return temperature;
 }
 
 void test_rtcmd(l4b_context_t* context) {
@@ -344,12 +367,14 @@ void test_context(l4b_context_t* context) {
 	if (temp_pin == 0) { // Change to NULL
 		ferr1("Error initializing the temperature sensor");
 	}
+	context->localtime = get_time();
 	context->state = 3;
 	context->temp_scale = CELSIUS_S;
 	context->temp = get_temp(temp_pin, context->temp_scale);
 	context->sample_period = 5;
 	if(context->logfile_name == NULL) context->logfile_name = "logname";
-	print_context(context);
+
+	if(debug_flag == 1) print_context(context);
 }
 
 
@@ -382,6 +407,53 @@ int main(int argc, char* argv[]) {
 		ferr1("Error initializing the button");
 	}
 	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
+
+	// polling apparatus
+	struct pollfd fds[1];
+	fds[0].fd = 0;
+	fds[0].events = POLLIN;
+	fds[0].revents = 0;
+
+	char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
+
+
+	while (1)
+	{
+		if (poll(fds, 1, 0) < 0) {
+			ferr1("Error polling");
+		}
+
+		if (context->state) 
+			l4b_report(context);
+
+		if (fds[0].revents & POLLIN)
+		{
+			int bytes_read = read(STDIN_FILENO, buf, sizeof(buf));
+			if (bytes_read < 0) {
+				ferr1("Failed to read stdin");
+			}
+
+			char* command = strtok(buf, "\n");
+			while (command != NULL && bytes_read > 0) {
+				if (context->logfile_stream) {
+					fprintf(context->logfile_stream, "%s\n", command);
+				}
+
+				l4b_get_rtcmd(command, context);
+				
+				command = strtok(NULL, "\n");
+			}
+		}
+
+		// Sample button state and check whether to exit
+		if (mraa_gpio_read(&button_pin) == 1) {
+			shutdown(log);
+		}
+
+		// Sampling interval
+		sleep(context->sample_period);
+	}
+
 
 
 	#ifdef DEV

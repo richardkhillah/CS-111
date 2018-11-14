@@ -112,6 +112,7 @@ typedef struct l4b_context l4b_context_t;
 void l4b_init(l4b_context_t** c);
 void l4b_conext_update(l4b_context_t* c);
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c); 
+// int l4b_get_rtcmd(l4b_context_t* c); 
 void l4b_report(l4b_context_t* c);
 void l4b_shutdown(l4b_context_t* c);
 float raw_to_temp(int rv, char* tscale);
@@ -154,6 +155,10 @@ void l4b_init(l4b_context_t** c) {
  * @param cmd 		pre-deliminated command
  */
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
+//int l4b_get_rtcmd(l4b_context_t* c) {
+	//char* cmd = (char*)malloc(sizeof(char)*(c->rt_cmd_len));
+	// if(cmd==NULL) ferr1("Error mallocing cmd in l4b_get_rtcmd");
+	// strncpy(cmd, c->rt_cmd, c->rt_cmd_len);
 	int match = 1;
 	if (strstr(cmd, "SCALE") != NULL) {
 		if (strstr(cmd, FAHRENHEIT_S) != NULL) {
@@ -189,6 +194,7 @@ void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
 		c->rt_cmd = cmd;
 		//fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
 	}
+	//return match;
 
 }
 
@@ -349,15 +355,17 @@ int main(int argc, char* argv[]) {
 	fds[0].events = POLLIN;
 	fds[0].revents = 0;
 
-	char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
-	char* tmp = (char*)calloc(2*BUF_SIZE, sizeof(char));
+	//char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
+	char* buf = (char*)malloc(BUF_SIZE*sizeof(char));
+	// char* tmp = (char*)calloc(2*BUF_SIZE, sizeof(char));
 	char* end;
 
 	// int bufindex = 0;
 	// int tmpindex = 0;
 
-	while (1)
-	{
+	while (1) {
+		fprintf(stderr, "starting loop\n");
+		fprintf(stderr, "==================================================\n");
 		if (poll(fds, 1, 0) < 0) {
 			ferr1("Error polling");
 		}
@@ -374,16 +382,43 @@ int main(int argc, char* argv[]) {
 			if (bytes_read < 0) {
 				ferr1("Failed to read stdin");
 			}
+			/*
+				// while(bufindex < BUF_SIZE) {
+				// 	//tmp[tmpindex] = buf[bufindex];
+				// 	if(buf[bufindex] == '\n') {
+				// 		// process command 
+				// 		int diff = bufindex-tmpindex;
+				// 		//strncpy(tmp, buf+bufindex, diff);
+				// 		strncpy(context->rt_cmd, buf+diff, diff);
+				// 		context->rt_cmd_len = diff;
+				// 		//l4b_get_rtcmd(tmp, context);
+
+				// 		fprintf(stderr, "%s\n", buf+bufindex);
+				// 		fprintf(stderr, "%s\n", context->rt_cmd);
+				// 		if(l4b_get_rtcmd(context) == 1) {
+				// 			fprintf(context->logfile_stream, "%s\n", context->rt_cmd);
+				// 		}
+
+				// 		// reset tmp index
+				// 		tmpindex = -1;
+				// 	}
+				// 	bufindex++;
+				// 	tmpindex++;
+				// }
+				// bufindex = 0;
+			*/
 
 			char* command = strtok_r(buf, "\n", &end);
-			while (command != NULL && bytes_read > 0) {
-
+			int command_num = 1;
+			fprintf(stderr, "command # %d: %s\n", command_num,command);
+			while (command != NULL) {// && bytes_read > 0) {
+				command_num++;
+				fprintf(stderr, "command # %d: %s\n", command_num, command);
 				// if (context->logfile_stream) {
 				// 	fprintf(context->logfile_stream, "%s\n", command);
 				// }
 
 				l4b_get_rtcmd(command, context);
-
 				fprintf(context->logfile_stream, "%s\n", context->rt_cmd);
 				
 				command = strtok_r(NULL, "\n", &end);
@@ -394,12 +429,12 @@ int main(int argc, char* argv[]) {
 		if (mraa_gpio_read(button_pin) == 1) {
 			l4b_shutdown(context);
 		}
+		fprintf(stderr, "about to go to sleep\n");
 		sleep(context->sample_period);
+		fprintf(stderr, "just wokeup\n");
 	}
 
-
-
-	free(tmp);
+	//free(tmp);
 	free(buf);
 	if(context->logfile_stream != NULL) {
 		fprintf(stderr, "closing stream\n");
@@ -691,7 +726,7 @@ int main(int argc, char** argv) {
 
 	// Set up poll
 	struct pollfd fds[1];
-	fds[0].fd = 0;
+	fds[0].fd = STDIN_FILENO;
 	fds[0].events = POLLIN;
 	fds[0].revents = 0;
 

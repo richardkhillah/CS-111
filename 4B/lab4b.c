@@ -364,7 +364,9 @@ int main(int argc, char* argv[]) {
 
 	if(context->logfile_name != NULL) {
 		context->logfile_stream = fopen(context->logfile_name, "a+");
-		fprintf(context->logfile_stream, "printing a message to logfile\n");
+		if(debug_flag == 1){
+			fprintf(context->logfile_stream, "printing a message to logfile\n");
+		}
 	}
 
 	// Connect to temperature sensor
@@ -381,7 +383,7 @@ int main(int argc, char* argv[]) {
 	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
 
 
-	#ifdef DEV
+	#ifdef TEST
 	test_rtcmd(context);
 	print_context(context);
 

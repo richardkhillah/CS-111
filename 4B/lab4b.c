@@ -423,8 +423,11 @@ int main(int argc, char* argv[]) {
 			ferr1("Error polling");
 		}
 
-		if (context->state) 
+		if (context->state) {
+			context->localtime = get_time();
+			context->temp = get_temp(temp_pin, context->temp_scale);
 			l4b_report(context);
+		}
 
 		if (fds[0].revents & POLLIN)
 		{
@@ -447,7 +450,7 @@ int main(int argc, char* argv[]) {
 
 		// Sample button state and check whether to exit
 		if (mraa_gpio_read(&button_pin) == 1) {
-			shutdown(log);
+			l4b_shutdown(context);
 		}
 
 		// Sampling interval

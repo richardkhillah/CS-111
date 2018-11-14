@@ -37,6 +37,7 @@ const char* CELSIUS_S = "C";
 
 // Global Constants
 const int BUF_SIZE = 2048;
+const int FILENAME_SIZE = 50;
 const long SUCCESS_CODE = 0;
 const long ERR_CODE = 1;
 const long FAIL_CODE = 2;
@@ -171,6 +172,7 @@ void l4b_shutdown(l4b_context_t* c) {
 void usage(void) {
 	fprintf(stderr, "Usage: ./%s --period=<seconds> --log=<filename> --scale=<[f, c]>\n", program_name);
 }
+
 void get_options(int argc, char* const* argv, struct l4b_context* context){
 	static struct option const long_options[] = {
 		{"period", required_argument, NULL, 'p'},
@@ -294,6 +296,16 @@ int main(int argc, char* argv[]) {
 
 	l4b_context_t* context;
 	l4b_init(&context);
+	get_options(argc, argv, context);
+
+	#ifdef DEV
+	if(debug_flag){
+		fprintf(stderr, "Running test_rtcmd:\n");
+		test_rtcmd(context);
+		fprintf(stderr, "running print_context:\n");
+		print_context(context);
+	}
+	#endif
 
 	#ifdef DEV
 	test_rtcmd(context);

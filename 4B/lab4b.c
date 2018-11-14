@@ -65,9 +65,9 @@ void mraa_gpio_dir(int val, int temp) {
 	val++;
 	temp++;
 }
-int mraa_gpio_read(int* val) {
-	(*val)++;
-	return *val;
+int mraa_gpio_read(int val) {
+	val++;
+	return val;
 }
 #endif
 
@@ -114,7 +114,6 @@ void l4b_conext_update(l4b_context_t* c);
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c); 
 void l4b_report(l4b_context_t* c);
 void l4b_shutdown(l4b_context_t* c);
-void l4b_shutdown(l4b_context_t* c);
 float raw_to_temp(int rv, char* tscale);
 struct tm* get_time(void);
 float get_temp(int temp_pin, char* tscale);
@@ -147,14 +146,6 @@ void l4b_init(l4b_context_t** c) {
 	*c = context;
 }
 
-/*
- * @param c context to be 
- */
-
-// void l4b_conext_update(l4b_context_t* c) {
-
-// }
-
 /* Takes a pre-linefeed-deliminated command and checks against "legal" run time
  * commands. If the command is valid, l4b_context c is updated. If command is 
  * not valid, nothing is done and program continues, silently "ignoring" 
@@ -175,6 +166,14 @@ void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
 		while (cmd[i] != '=') { i++; }
 		c->sample_period = atoi(cmd + i + 1);
 	}
+	else if (strstr(cmd, "LOG") != NULL) {
+		int len = strlen(cmd);
+		int adjusted_len = len - 4; // strlen("LOG ")
+
+		strncpy(c->rt_cmd, cmd+4, adjusted_len);
+		fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
+
+	}
 	else if (strstr(cmd, "STOP") != NULL) { c->state = 0; }
 	else if (strstr(cmd, "START") != NULL) { c->state = 1; }
 	else if (strstr(cmd, "OFF") != NULL) { l4b_shutdown(c); }
@@ -194,18 +193,11 @@ void l4b_report(l4b_context_t* c) {
 
 	// print to logfile
 	if(c->logfile_stream != NULL){
-		fprintf(c->logfile_stream, "%02d:%02d:%02d %0.1f\n", 
-			c->localtime->tm_hour, c->localtime->tm_min, 
-			c->localtime->tm_sec, c->temp);
-		
-		//TODO: figure this out
-		//fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
+		fprintf(c->logfile_stream, "%02d:%02d:%02d %0.1f\n", c->localtime->tm_hour, c->localtime->tm_min, c->localtime->tm_sec, c->temp);
 	}
 }
 
 void l4b_shutdown(l4b_context_t* c) {
-	//fprintf(stderr, "shutdown\n");
-	//print_context(c);
 	if(c->logfile_stream != NULL) {
 		l4b_report(c);
 		fprintf(c->logfile_stream, "SHUTDOWN\n");
@@ -241,7 +233,6 @@ void get_options(int argc, char* const* argv, l4b_context_t* context){
 				context->sample_period = atoi(optarg);
 				break;
 			case SCALE:
-				fprintf(stderr, "optarg: %s\n", optarg);
 				context->temp_scale = optarg;
 				break;
 			case LOG:
@@ -249,7 +240,6 @@ void get_options(int argc, char* const* argv, l4b_context_t* context){
 				break;
 			#ifdef DEV
 			case DEBUG:
-				fprintf(stderr, "setting debug_flag\n");
 				debug_flag = 1;
 				break;
 			#endif
@@ -257,20 +247,6 @@ void get_options(int argc, char* const* argv, l4b_context_t* context){
 				ferr1u("Invalid argument");
 		}
 	}
-}
-
-/* @param rv 		Raw value reading from temperature sensor
- * @param tscale 	Temperature scale to convert rv into
- * @return 			The converted temperature value
- */
-float raw_to_temp(int pin_reading, char* tscale) {
-	float raw_value = (1023.0 / pin_reading - 1.0) * 100000;
-	float converted_temp = 1.0 / (log(raw_value / 100000) / 4275 + 1 / 298.15) - 273.15;
-
-	if (strstr("F", tscale) != NULL) {
-		return ((converted_temp * 9) / 5) + 32;
-	}
-	return converted_temp;
 }
 
 /* 
@@ -300,28 +276,15 @@ float get_temp(int temp_pin, char* tscale){
 	if (pin_reading == -1) {	
 		ferr1("Error reading temperature from temp_sensor");
 	}
-	float temperature = raw_to_temp(pin_reading, tscale);
+
+	float raw_value = (1023.0 / pin_reading - 1.0) * 100000;
+	float temperature = 1.0 / (log(raw_value / 100000) / 4275 + 1 / 298.15) - 273.15;
+
+	if (strstr("F", tscale) != NULL) {
+		return ((temperature * 9) / 5) + 32;
+	}
 
 	return temperature;
-
-	// Print report to stdout
-	//print_curr_time(stdout);
-	//fprintf(stdout, "%0.1f\n", temperature);
-
-	// Append report to logfile
-	// if (log) {
-	// 	FILE* fd = fopen(log, "a+");
-	// 	if (fd == NULL) {
-	// 		ferr1("Failed to open logfile");
-	// 	}
-
-	// 	print_curr_time(fd);
-	// 	fprintf(fd, "%0.1f\n", temperature);
-
-	// 	fclose(fd);
-	// }
-
-	//return temperature;
 }
 
 void test_rtcmd(l4b_context_t* context) {
@@ -334,6 +297,9 @@ void test_rtcmd(l4b_context_t* context) {
 	i++;
 	context->rt_cmd[i] = '\0';
 	context->rt_cmd_len = i;
+
+	int l = strlen(tmp);
+	fprintf(stderr, "strlen(tmp) = %d\n", l);
 
 	// int len = context->rt_cmd_len;
 	// printf("iteratively printing characters in rt_cmd using percent c:\n");
@@ -368,10 +334,10 @@ void test_context(l4b_context_t* context) {
 		ferr1("Error initializing the temperature sensor");
 	}
 	context->localtime = get_time();
-	context->state = 3;
+	context->state = 1;
 	context->temp_scale = CELSIUS_S;
 	context->temp = get_temp(temp_pin, context->temp_scale);
-	context->sample_period = 5;
+	context->sample_period = 2;
 	if(context->logfile_name == NULL) context->logfile_name = "logname";
 
 	if(debug_flag == 1) print_context(context);
@@ -408,6 +374,37 @@ int main(int argc, char* argv[]) {
 	}
 	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
 
+
+	#ifdef DEV
+	char test[80], blah[80];
+     char *sep = "\\/:;=-";
+     char *word, *phrase, *brkt, *brkb;
+
+     strcpy(test, "This;is.a:test:of=the/string\\tokenizer-function.");
+
+     for (word = strtok_r(test, sep, &brkt);
+          word;
+          word = strtok_r(NULL, sep, &brkt))
+     {
+         strcpy(blah, "blah:blat:blab:blag");
+
+         for (phrase = strtok_r(blah, sep, &brkb);
+              phrase;
+              phrase = strtok_r(NULL, sep, &brkb))
+         {
+             printf("So far we're at %s:%s\n", word, phrase);
+         }
+     }
+
+
+	test_rtcmd(context);
+	print_context(context);
+
+	test_context(context);
+	l4b_report(context);
+	#endif
+
+
 	// polling apparatus
 	struct pollfd fds[1];
 	fds[0].fd = 0;
@@ -415,7 +412,7 @@ int main(int argc, char* argv[]) {
 	fds[0].revents = 0;
 
 	char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
-
+	char* end;
 
 	while (1)
 	{
@@ -423,10 +420,11 @@ int main(int argc, char* argv[]) {
 			ferr1("Error polling");
 		}
 
-		if (context->state) {
+		if (context->state == 1) {
 			context->localtime = get_time();
 			context->temp = get_temp(temp_pin, context->temp_scale);
 			l4b_report(context);
+			sleep(context->sample_period);
 		}
 
 		if (fds[0].revents & POLLIN)
@@ -436,36 +434,25 @@ int main(int argc, char* argv[]) {
 				ferr1("Failed to read stdin");
 			}
 
-			char* command = strtok(buf, "\n");
+			char* command = strtok_r(buf, "\n", &end);
 			while (command != NULL && bytes_read > 0) {
+				
 				if (context->logfile_stream) {
 					fprintf(context->logfile_stream, "%s\n", command);
 				}
 
 				l4b_get_rtcmd(command, context);
 				
-				command = strtok(NULL, "\n");
+				command = strtok_r(NULL, "\n", &end);
 			}
 		}
 
 		// Sample button state and check whether to exit
-		if (mraa_gpio_read(&button_pin) == 1) {
+		if (mraa_gpio_read(button_pin) == 1) {
 			l4b_shutdown(context);
 		}
-
-		// Sampling interval
-		sleep(context->sample_period);
 	}
 
-
-
-	#ifdef DEV
-	test_rtcmd(context);
-	print_context(context);
-
-	test_context(context);
-	l4b_report(context);
-	#endif
 
 	if(context->logfile_stream != NULL) {
 		fprintf(stderr, "closing stream\n");
@@ -590,16 +577,16 @@ void shutdown(char* log) {
 void process_command(char* command, char** scale, int* delay, int* report, char* log) {
 	if (strstr(command, "SCALE") != NULL)
 	{
-		if (strstr(command, FAHRENHEIT) != NULL) {
+		if (strstr(command, FAHRENHEIT_S) != NULL) {
 			//char* temp_scale = (char *) malloc(sizeof(char) * 2);
 			//temp_scale[0] = FAHRENHEIT_C;
 			//*scale = temp_scale;
-			*scale = FAHRENHEIT;
+			*scale = FAHRENHEIT_S;
 		} else {
 			//char* temp_scale = (char *) malloc(sizeof(char) * 2);
 			//temp_scale[0] = CELSIUS_C;
 			//*scale = temp_scale;
-			*scale = CELSIUS;
+			*scale = CELSIUS_S;
 		}
 	}
 	else if (strstr(command, "PERIOD") != NULL) {
@@ -633,7 +620,7 @@ void get_options(int argc, char** argv, char** period, char** temp, char** logfi
 	int optind = 0;
 
 	*period = "1";
-	*temp = FAHRENHEIT;
+	*temp = FAHRENHEIT_S;
 
 	while (1) {
 	  	int arg = getopt_long(argc, argv, "", long_options, &optind);

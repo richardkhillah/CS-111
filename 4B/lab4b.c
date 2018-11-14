@@ -198,20 +198,7 @@ l4b_temp_t get_temp(int temp_pin, l4b_temp_scale_t tscale){
 	return converted_temp;
 }
 
-
-
-
-//================================================================================
-//
-//									MAIN
-//
-//================================================================================
-int main(int argc, char* argv[]) {
-	set_program_name(argv[0]);
-
-	l4b_context_t* context;
-	l4b_init(&context);
-
+void test_rtcmd(l4b_context_t* context) {
 	char* tmp = "Hello, world";
 	int i = 0;
 	while(tmp[i] != '\0') {
@@ -229,12 +216,39 @@ int main(int argc, char* argv[]) {
 	}
 	printf("\n");
 
-	// printf("printing rt_cmd directly using percent s:\n");
-	// printf("%s\n", context->rt_cmd);
+	printf("printing rt_cmd directly using percent s:\n");
+	printf("%s\n", context->rt_cmd);
+}
 
+
+//================================================================================
+//
+//									MAIN
+//
+//================================================================================
+int main(int argc, char* argv[]) {
+	set_program_name(argv[0]);
+
+	l4b_context_t* context;
+	l4b_init(&context);
+
+
+	free(context->rt_cmd);
 	return 0;
 }
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

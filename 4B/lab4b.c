@@ -158,29 +158,36 @@ void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
 	if (strstr(cmd, "SCALE") != NULL) {
 		if (strstr(cmd, FAHRENHEIT_S) != NULL) {
 			c->temp_scale = FAHRENHEIT_S;
+			//fprintf(c->logfile_stream, "%s\n", "SCALE=F");
 		} else {
 			c->temp_scale = CELSIUS_S;
+			//fprintf(c->logfile_stream, "%s\n", "SCALE=C");
 		}
 	}
 	else if (strstr(cmd, "PERIOD") != NULL) {
 		int i = 0;
 		while (cmd[i] != '=') { i++; }
 		c->sample_period = atoi(cmd + i + 1);
+		//fprintf(c->logfile_stream, "PERIOD=%d\n", c->sample_period);
 	}
-	else if (strstr(cmd, "LOG ") != NULL) {
-		int len = strlen(cmd);
-		int adjusted_len = len - 4; // strlen("LOG ")
+	else if (strstr(cmd, "LOG") != NULL) {
+		// int len = strlen(cmd);
+		// int adjusted_len = len - 3; // strlen("LOG")
 
-		strncpy(c->rt_cmd, cmd+4, adjusted_len);
+		// strncpy(c->rt_cmd, cmd+3, adjusted_len);
+		//fprintf(c->logfile_stream, "%s\n", cmd);
+	} 
+	else if (strstr(cmd, "STOP") != NULL) { 
+		c->state = 0; 
+		// PICK UP HERE
 	}
-	else if (strstr(cmd, "STOP") != NULL) { c->state = 0; }
 	else if (strstr(cmd, "START") != NULL) { c->state = 1; }
 	else if (strstr(cmd, "OFF") != NULL) { l4b_shutdown(c); }
 	else { match = 0; }
 
 	if(match == 1) {
 		c->rt_cmd = cmd;
-		fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
+		//fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
 	}
 
 }
@@ -293,6 +300,116 @@ float get_temp(int temp_pin, char* tscale){
 	return temperature;
 }
 
+
+
+//================================================================================
+//
+//									MAIN
+//
+//================================================================================
+int main(int argc, char* argv[]) {
+	set_program_name(argv[0]);
+
+	l4b_context_t* context;
+	l4b_init(&context);
+	get_options(argc, argv, context);
+
+	if(context->logfile_name != NULL) {
+		context->logfile_stream = fopen(context->logfile_name, "a+");
+		if(debug_flag == 1){
+			fprintf(context->logfile_stream, "printing a message to logfile\n");
+		}
+	}
+
+	// Connect to temperature sensor
+	mraa_aio_context temp_pin = mraa_aio_init(1);
+	if (temp_pin == 0)
+		ferr1("Error initializing the temperature sensor");
+
+	// Connect to button
+	mraa_gpio_context button_pin = mraa_gpio_init(60);
+	if (button_pin == 0)
+		ferr1("Error initializing the button");
+
+	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
+
+
+	#ifdef TEST
+	test_rtcmd(context);
+	print_context(context);
+
+	test_context(context);
+	l4b_report(context);
+	#endif
+
+
+	// polling apparatus
+	struct pollfd fds[1];
+	fds[0].fd = 0;
+	fds[0].events = POLLIN;
+	fds[0].revents = 0;
+
+	char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
+	char* tmp = (char*)calloc(2*BUF_SIZE, sizeof(char));
+	char* end;
+
+	// int bufindex = 0;
+	// int tmpindex = 0;
+
+	while (1)
+	{
+		if (poll(fds, 1, 0) < 0) {
+			ferr1("Error polling");
+		}
+
+		if (context->state == 1) {
+			context->localtime = get_time();
+			context->temp = get_temp(temp_pin, context->temp_scale);
+			l4b_report(context);
+		}
+
+		if (fds[0].revents & POLLIN)
+		{
+			int bytes_read = read(STDIN_FILENO, buf, sizeof(buf));
+			if (bytes_read < 0) {
+				ferr1("Failed to read stdin");
+			}
+
+			char* command = strtok_r(buf, "\n", &end);
+			while (command != NULL && bytes_read > 0) {
+
+				// if (context->logfile_stream) {
+				// 	fprintf(context->logfile_stream, "%s\n", command);
+				// }
+
+				l4b_get_rtcmd(command, context);
+
+				fprintf(context->logfile_stream, "%s\n", context->rt_cmd);
+				
+				command = strtok_r(NULL, "\n", &end);
+			}
+		}
+
+		// Sample button state and check whether to exit
+		if (mraa_gpio_read(button_pin) == 1) {
+			l4b_shutdown(context);
+		}
+		sleep(context->sample_period);
+	}
+
+
+
+	free(tmp);
+	free(buf);
+	if(context->logfile_stream != NULL) {
+		fprintf(stderr, "closing stream\n");
+		fclose(context->logfile_stream);
+	}
+	free(context->rt_cmd);
+	free(context);
+	return 0;
+}
+
 void test_rtcmd(l4b_context_t* context) {
 	char* tmp = "Hello, world";
 	int i = 0;
@@ -350,105 +467,6 @@ void test_context(l4b_context_t* context) {
 }
 
 
-//================================================================================
-//
-//									MAIN
-//
-//================================================================================
-int main(int argc, char* argv[]) {
-	set_program_name(argv[0]);
-
-	l4b_context_t* context;
-	l4b_init(&context);
-	get_options(argc, argv, context);
-
-	if(context->logfile_name != NULL) {
-		context->logfile_stream = fopen(context->logfile_name, "a+");
-		if(debug_flag == 1){
-			fprintf(context->logfile_stream, "printing a message to logfile\n");
-		}
-	}
-
-	// Connect to temperature sensor
-	mraa_aio_context temp_pin = mraa_aio_init(1);
-	if (temp_pin == 0) { // Change to NULL
-		ferr1("Error initializing the temperature sensor");
-	}
-
-	// Connect to button
-	mraa_gpio_context button_pin = mraa_gpio_init(60);
-	if (button_pin == 0) { //  Change to NULL
-		ferr1("Error initializing the button");
-	}
-	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
-
-
-	#ifdef TEST
-	test_rtcmd(context);
-	print_context(context);
-
-	test_context(context);
-	l4b_report(context);
-	#endif
-
-
-	// polling apparatus
-	struct pollfd fds[1];
-	fds[0].fd = 0;
-	fds[0].events = POLLIN;
-	fds[0].revents = 0;
-
-	char* buf = (char*)calloc(BUF_SIZE, sizeof(char));
-	char* end;
-
-	while (1)
-	{
-		if (poll(fds, 1, 0) < 0) {
-			ferr1("Error polling");
-		}
-
-		if (context->state == 1) {
-			context->localtime = get_time();
-			context->temp = get_temp(temp_pin, context->temp_scale);
-			l4b_report(context);
-			sleep(context->sample_period);
-		}
-
-		if (fds[0].revents & POLLIN)
-		{
-			int bytes_read = read(STDIN_FILENO, buf, sizeof(buf));
-			if (bytes_read < 0) {
-				ferr1("Failed to read stdin");
-			}
-
-			char* command = strtok_r(buf, "\n", &end);
-			while (command != NULL && bytes_read > 0) {
-
-				// if (context->logfile_stream) {
-				// 	fprintf(context->logfile_stream, "%s\n", command);
-				// }
-
-				l4b_get_rtcmd(command, context);
-				
-				command = strtok_r(NULL, "\n", &end);
-			}
-		}
-
-		// Sample button state and check whether to exit
-		if (mraa_gpio_read(button_pin) == 1) {
-			l4b_shutdown(context);
-		}
-	}
-
-
-	if(context->logfile_stream != NULL) {
-		fprintf(stderr, "closing stream\n");
-		fclose(context->logfile_stream);
-	}
-	free(context->rt_cmd);
-	free(context);
-	return 0;
-}
 #endif
 
 

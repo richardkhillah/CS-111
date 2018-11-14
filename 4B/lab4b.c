@@ -154,6 +154,7 @@ void l4b_init(l4b_context_t** c) {
  * @param cmd 		pre-deliminated command
  */
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
+	int match = 1;
 	if (strstr(cmd, "SCALE") != NULL) {
 		if (strstr(cmd, FAHRENHEIT_S) != NULL) {
 			c->temp_scale = FAHRENHEIT_S;
@@ -166,17 +167,21 @@ void l4b_get_rtcmd(char* cmd, l4b_context_t* c) {
 		while (cmd[i] != '=') { i++; }
 		c->sample_period = atoi(cmd + i + 1);
 	}
-	else if (strstr(cmd, "LOG") != NULL) {
+	else if (strstr(cmd, "LOG ") != NULL) {
 		int len = strlen(cmd);
 		int adjusted_len = len - 4; // strlen("LOG ")
 
 		strncpy(c->rt_cmd, cmd+4, adjusted_len);
-		fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
-
 	}
 	else if (strstr(cmd, "STOP") != NULL) { c->state = 0; }
 	else if (strstr(cmd, "START") != NULL) { c->state = 1; }
 	else if (strstr(cmd, "OFF") != NULL) { l4b_shutdown(c); }
+	else { match = 0; }
+
+	if(match == 1) {
+		c->rt_cmd = cmd;
+		fprintf(c->logfile_stream, "%s\n", c->rt_cmd);
+	}
 
 }
 
@@ -199,8 +204,9 @@ void l4b_report(l4b_context_t* c) {
 
 void l4b_shutdown(l4b_context_t* c) {
 	if(c->logfile_stream != NULL) {
-		l4b_report(c);
-		fprintf(c->logfile_stream, "SHUTDOWN\n");
+		//l4b_report(c);
+		struct tm* t = get_time();
+		fprintf(c->logfile_stream, "%02d:%02d:%02d SHUTDOWN\n", t->tm_hour, t->tm_min, t->tm_sec);
 	}
 	exit(0);
 }
@@ -436,10 +442,10 @@ int main(int argc, char* argv[]) {
 
 			char* command = strtok_r(buf, "\n", &end);
 			while (command != NULL && bytes_read > 0) {
-				
-				if (context->logfile_stream) {
-					fprintf(context->logfile_stream, "%s\n", command);
-				}
+
+				// if (context->logfile_stream) {
+				// 	fprintf(context->logfile_stream, "%s\n", command);
+				// }
 
 				l4b_get_rtcmd(command, context);
 				

@@ -19,6 +19,7 @@
 #include <aio.h>
 #include <poll.h>
 
+
 //================================================================================
 // 							DEFINE
 //================================================================================
@@ -76,6 +77,8 @@ int mraa_gpio_read(int* val) {
 #endif
 
 #ifdef DEV
+
+
 //================================================================================
 //
 //						L4B VARIABLES AND DECLARATIONS
@@ -105,6 +108,17 @@ struct l4b_context {
 };
 typedef struct l4b_context l4b_context_t;
 
+// FUNCTION PROTOTYPES
+void l4b_init(l4b_context_t** c);
+void l4b_conext_update(l4b_context_t* c);
+void l4b_get_rtcmd(char* cmd, l4b_context_t* c); 
+void l4b_report(l4b_context_t* c, char* rt_cmd);
+void l4b_shutdown(l4b_context_t* c);
+float raw_to_temp(int rv, char* tscale);
+struct tm* get_time(void);
+float get_temp(int temp_pin, char* tscale);
+
+
 //================================================================================
 //
 //								API
@@ -116,7 +130,7 @@ typedef struct l4b_context l4b_context_t;
 void l4b_init(l4b_context_t** c) {
 	l4b_context_t* context = (l4b_context_t*)malloc(sizeof(l4b_context_t));
 	context->state = 1;
-	//context->localtime;
+	context->localtime = get_time();
 	context->temp = 0.0;
 	context->temp_scale = FAHRENHEIT_S;
 	context->sample_period = 1;
@@ -214,26 +228,66 @@ void get_options(int argc, char* const* argv, l4b_context_t* context){
  * @param tscale 	Temperature scale to convert rv into
  * @return 			The converted temperature value
  */
-// float raw_to_temp(int rv, char* tscale) {
-// 	return 0.0;
-// }
+float raw_to_temp(int pin_reading, char* tscale) {
+	float raw_value = (1023.0 / pin_reading - 1.0) * 100000;
+	float converted_temp = 1.0 / (log(raw_value / 100000) / 4275 + 1 / 298.15) - 273.15;
+
+	if (strstr("F", tscale) != NULL) {
+		return ((converted_temp * 9) / 5) + 32;
+	}
+	return converted_temp;
+}
 
 /* 
  * @return current localtime
  */
-// struct tm* get_time(void){
-// 	struct tm* time;
-// 	return time;
-// }
+struct tm* get_time(void) {
+	time_t rawtime;
+	time(&rawtime);
+	if (rawtime == (time_t)-1) {
+		ferr1("Error getting rawtime");
+	}
+
+	struct tm* local_time = localtime(&rawtime);
+	if (local_time == NULL) {
+		ferr1("Error getting rawtime");
+	}
+	return (struct tm*)local_time;
+}
 
 /* @param temp_pin	beaglebone pin the temperature sensor is connected to
  * @param tscale 	The scale, in F(ahrenheit) or C(elsius) to report
  * @return			The converted rawvalue temperature read from temperature sensor
  */
-// float get_temp(int temp_pin, char* tscale){
-// 	float converted_temp = 0.0;
-// 	return converted_temp;
-// }
+float get_temp(int temp_pin, char* tscale){
+
+	int pin_reading = mraa_aio_read(temp_pin);
+	if (pin_reading == -1) {	
+		ferr1("Error reading temperature from temp_sensor");
+	}
+	float temperature = raw_to_temp(pin_reading, tscale);
+
+	return temperature;
+
+	// Print report to stdout
+	//print_curr_time(stdout);
+	//fprintf(stdout, "%0.1f\n", temperature);
+
+	// Append report to logfile
+	// if (log) {
+	// 	FILE* fd = fopen(log, "a+");
+	// 	if (fd == NULL) {
+	// 		ferr1("Failed to open logfile");
+	// 	}
+
+	// 	print_curr_time(fd);
+	// 	fprintf(fd, "%0.1f\n", temperature);
+
+	// 	fclose(fd);
+	// }
+
+	return temperature;
+}
 
 void test_rtcmd(l4b_context_t* context) {
 	char* tmp = "Hello, world";
@@ -246,21 +300,22 @@ void test_rtcmd(l4b_context_t* context) {
 	context->rt_cmd[i] = '\0';
 	context->rt_cmd_len = i;
 
-	int len = context->rt_cmd_len;
-	printf("iteratively printing characters in rt_cmd using percent c:\n");
-	for(int j = 0; j < len; j++) {
-		printf("%c", context->rt_cmd[j]);
-	}
-	printf("\n");
+	// int len = context->rt_cmd_len;
+	// printf("iteratively printing characters in rt_cmd using percent c:\n");
+	// for(int j = 0; j < len; j++) {
+	// 	printf("%c", context->rt_cmd[j]);
+	// }
+	// printf("\n");
 
-	printf("printing rt_cmd directly using percent s:\n");
-	printf("%s\n", context->rt_cmd);
+	// printf("printing rt_cmd directly using percent s:\n");
+	// printf("%s\n", context->rt_cmd);
 }
 
 void print_context(l4b_context_t* context) {
 	fprintf(stderr, "CONTEXT PRINTOUT\n");
 	fprintf(stderr, "========================================\n");
 	fprintf(stderr, "state: %d\n", context->state);
+	fprintf(stderr, "localtime: %02d:%02d:%02d\n", context->localtime->tm_hour, context->localtime->tm_min, context->localtime->tm_sec);
 	fprintf(stderr, "temp: %0.1f\n", context->temp);
 	fprintf(stderr, "temp_scale: %s\n", context->temp_scale);
 	fprintf(stderr, "sample_period: %d\n", context->sample_period);
@@ -273,9 +328,13 @@ void print_context(l4b_context_t* context) {
 }
 
 void test_context(l4b_context_t* context) {
+	mraa_aio_context temp_pin = mraa_aio_init(1);
+	if (temp_pin == 0) { // Change to NULL
+		ferr1("Error initializing the temperature sensor");
+	}
 	context->state = 3;
-	context->temp = 100.0;
 	context->temp_scale = CELSIUS_S;
+	context->temp = get_temp(temp_pin, context->temp_scale);
 	context->sample_period = 5;
 	context->logfile_name = "logname";
 	print_context(context);
@@ -293,6 +352,19 @@ int main(int argc, char* argv[]) {
 	l4b_context_t* context;
 	l4b_init(&context);
 	get_options(argc, argv, context);
+
+	// Connect to temperature sensor
+	mraa_aio_context temp_pin = mraa_aio_init(1);
+	if (temp_pin == 0) { // Change to NULL
+		ferr1("Error initializing the temperature sensor");
+	}
+
+	// Connect to button
+	mraa_gpio_context button_pin = mraa_gpio_init(60);
+	if (button_pin == 0) { //  Change to NULL
+		ferr1("Error initializing the button");
+	}
+	mraa_gpio_dir(button_pin, MRAA_GPIO_IN);
 
 
 	#ifdef DEV

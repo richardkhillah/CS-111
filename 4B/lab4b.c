@@ -210,9 +210,11 @@ int main(int argc, char* argv[]) {
 	char* tmp = "Hello, world";
 	int i = 0;
 	while(tmp[i] != '\0') {
-		context->rt_cmd[i] = tmp[i++];
+		context->rt_cmd[i] = tmp[i];
+		i++;
 	}
-	context->rt_cmd[++i] = '\0';
+	i++;
+	context->rt_cmd[i] = '\0';
 	context->rt_cmd_len = i;
 
 	int len = context->rt_cmd_len;

@@ -69,6 +69,11 @@ int mraa_gpio_read(int* val) {
 }
 #endif
 
+#ifndef DUMMY
+#include <mraa/aio.h>
+#include <mraa/gpio.h>
+#endif
+
 #ifdef DEV
 //================================================================================
 //
@@ -433,7 +438,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Connect to button
-	mraa_gpio_context button_pin = mraa_gpio_init(3);
+	mraa_gpio_context button_pin = mraa_gpio_init(60);
 	if (button_pin == 0) { //  Change to NULL
 		ferr1("Error initializing the button");
 	}
@@ -476,6 +481,7 @@ int main(int argc, char** argv) {
 					}
 
 					fprintf(fd, "%s\n", command);
+
 				}
 
 				process_command(command, &scale, &delay, &report, log);

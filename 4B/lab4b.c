@@ -112,7 +112,7 @@ typedef struct l4b_context l4b_context_t;
 void l4b_init(l4b_context_t** c);
 void l4b_conext_update(l4b_context_t* c);
 void l4b_get_rtcmd(char* cmd, l4b_context_t* c); 
-void l4b_report(l4b_context_t* c, char* rt_cmd);
+void l4b_report(l4b_context_t* c);
 void l4b_shutdown(l4b_context_t* c);
 float raw_to_temp(int rv, char* tscale);
 struct tm* get_time(void);
@@ -170,9 +170,21 @@ void l4b_init(l4b_context_t** c) {
  * @param c 		Determines what and where to write information.
  * @param rt_cmd 	'\n' deliminated command terminated with '\0'.
  */
-// void l4b_report(l4b_context_t* c, char* rt_cmd) {
+void l4b_report(l4b_context_t* context) {
+	// print to stdoud
+	printf("%02d:%02d:%02d %0.1f", context->localtime->tm_hour, context->localtime->tm_min, context->localtime->tm_sec, context->temp);
 
-// }
+	// print to logfile
+	if(context->logfile_stream != NULL){
+		if(context->rt_cmd == NULL) {
+			fprintf(context->logfile_stream, "%02d:%02d:%02d %0.1f\n", 
+				context->localtime->tm_hour, context->localtime->tm_min, 
+				context->localtime->tm_sec, context->temp);
+		} else {
+			fprintf(context->logfile_stream, "%s\n", context->rt_cmd);
+		}
+	}
+}
 
 // void l4b_shutdown(l4b_context_t* c) {
 
@@ -336,7 +348,7 @@ void test_context(l4b_context_t* context) {
 	context->temp_scale = CELSIUS_S;
 	context->temp = get_temp(temp_pin, context->temp_scale);
 	context->sample_period = 5;
-	context->logfile_name = "logname";
+	if(context->logfile_name == NULL) context->logfile_name = "logname";
 	print_context(context);
 }
 
@@ -352,6 +364,11 @@ int main(int argc, char* argv[]) {
 	l4b_context_t* context;
 	l4b_init(&context);
 	get_options(argc, argv, context);
+
+	if(context->logfile_name != NULL) {
+		context->logfile_stream = fopen(context->logfile_name, "a+");
+		fprintf(context->logfile_stream, "printing a message to logfile\n");
+	}
 
 	// Connect to temperature sensor
 	mraa_aio_context temp_pin = mraa_aio_init(1);
@@ -372,8 +389,13 @@ int main(int argc, char* argv[]) {
 	print_context(context);
 
 	test_context(context);
+	l4b_report(context);
 	#endif
 
+	if(context->logfile_stream != NULL) {
+		fprintf(stderr, "closing stream\n");
+		fclose(context->logfile_stream);
+	}
 	free(context->rt_cmd);
 	free(context);
 	return 0;

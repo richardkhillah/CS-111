@@ -14,8 +14,7 @@ TEMP=./"tmp"
 
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm
-local_flags= $(CFLAGS) -D DUMMY -D AAA #-D DEV
-dev_flags=$(local_flags) -D DEV
+local_flags= $(CFLAGS) -D DUMMY 
 beagle_flags= $(CFLAGS) -lmraa 
 
 DEFAULT=Makefile README utils.c utils.h
@@ -30,9 +29,6 @@ default: build
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-# ifeq ($(DEV_VERSION), "Linux")
-# 	$(CC) $(dev_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-# else 
 ifeq ($(BEAGLEBONE_VERSION),)
 	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 else

@@ -21,8 +21,8 @@ DEFAULT=Makefile README utils.c utils.h
 
 EXTRAS=
 
-BEAGLEBONE_VERSION=$(uname -r | grep 'beaglebone')
-DEV_VERSION=$(uname | grep 'Linux')
+BEAGLEBONE_VERSION=$(uname -a | grep '.lasr.cs.ucla.edu')
+#DEV_VERSION=$(uname | grep 'Linux')
 
 default: build
 

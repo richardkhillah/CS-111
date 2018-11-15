@@ -81,7 +81,7 @@ float getTemperature(int reading) {
     }
 }
 
-struct tm *printTime() {
+struct tm* printTime() {
     time_t rawTime;
     time(&rawTime);
     struct tm *t = localtime(&rawTime);

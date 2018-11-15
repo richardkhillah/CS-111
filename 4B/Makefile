@@ -7,13 +7,13 @@ LAB_NUMBER=lab4
 LAB_PART=b
 EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
 EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).c
-CHECK_SCRIPT=P4B_check.sh
-MY_CHECK_SCRIPT=my_check.sh
-TEMP=./"tmp"
+#CHECK_SCRIPT=P4B_check.sh
+CHECK_SCRIPT=my_check.sh
 
 
 CC=gcc
-CFLAGS= -Wall -Wextra -std=gnu99 -lm
+
+CFLAGS= -Wall -Wextra -std=gnu99 -lm 
 local_flags= $(CFLAGS) -DDUMMY 
 beagle_flags= $(CFLAGS) -lmraa 
 
@@ -36,13 +36,11 @@ endif
 
 
 dist: build
-	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS)
+	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
 
 clean:
-	rm -rf $(EXECUTABLE_NAME) *tar.gz
+	#rm -rf $(EXECUTABLE_NAME) *tar.gz
+	rm -rf *tar.gz
 
 check:
-	./$(CHECK_SCRIPT) $(UID)
-
-tests: dist
-	./$(MY_CHECK_SCRIPT)
+	./$(CHECK_SCRIPT)

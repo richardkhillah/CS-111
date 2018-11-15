@@ -3,16 +3,24 @@ EMAIL: RKhillah@ucla.edu
 ID: 604853262
 
 Limitations:
+This project has been tested on lnxsrv07 and lnxsrv09 as well as on my beaglebone.
+Everything works fine. I have had issues getting `uname -r | grep beaglebone - `
+to work. If you are testing on a beaglebone, and this Makefile doesn't build 
+correctly, Comment out lines pertaining to speculative making, i.e., 
+comment out lines31, 33, 34, 35.
+
+This should do the trick
 
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
 
-utils.h: the header file for standard commonly used utilies
+utils.h/c: the header and source files for commonly used utilies
 
-utils.c: the implementation of utils.h
+lab4b.c: the required source file for the lab
 
-deliverable1: 
+lab4b: the required executable, built to be tested with the .sh script
 
-deliverable2: 
+my_check.sh: a quick smoke test to ensure lab4b takes all required arguments and 
+logs to a logfile.
 
-deliverable3:
+P4B_check.sh: the check script provided as a sanity check measure.

@@ -14,7 +14,7 @@ TEMP=./"tmp"
 
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm
-local_flags= $(CFLAGS) -D DUMMY -D DEV
+local_flags= $(CFLAGS) -D DUMMY -D AAA #-D DEV
 dev_flags=$(local_flags) -D DEV
 beagle_flags= $(CFLAGS) -lmraa 
 

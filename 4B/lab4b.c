@@ -527,21 +527,21 @@ int mraa_gpio_read(int val) {
 #endif
 
 
-
-#include <math.h>
-#include <time.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 #include <string.h>
 #include <getopt.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <aio.h>
-
 #include "utils.h"
+
+// include more headers here:
+#include <stdbool.h>
+#include <time.h>
+#include <fcntl.h>
+#include <math.h>
+#include <ctype.h>
+#include <aio.h>
 
 
 #define B 4275

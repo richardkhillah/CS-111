@@ -4,6 +4,7 @@ PGM="lab4b"
 TARBALL="$PGM-604853262.tar.gz"
 TEMP=./tmp
 
+
 # make a testing directory and move a copy of executable there
 if [ -d $TEMP ]
 then

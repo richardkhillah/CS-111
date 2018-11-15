@@ -14,25 +14,24 @@ TEMP=./"tmp"
 
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm
-local_flags= $(CFLAGS) -D DUMMY 
+local_flags= $(CFLAGS) -DDUMMY 
 beagle_flags= $(CFLAGS) -lmraa 
 
 DEFAULT=Makefile README utils.c utils.h
 
 EXTRAS=
 
-BEAGLEBONE_VERSION=$(uname -a | grep '.lasr.cs.ucla.edu')
-#DEV_VERSION=$(uname | grep 'Linux')
+BEAGLEBONE_VERSION=$(uname -a | grep 'lasr.cs.ucla.edu')
 
 default: build
 
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-ifeq ($(BEAGLEBONE_VERSION),)
-	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-else
+ifeq ($(BEAGLEBONE_VERSION), 1)
 	$(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
+else
+	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 endif
 
 

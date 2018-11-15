@@ -28,18 +28,17 @@ default: build
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-ifeq ($(BEAGLEBONE_VERSION), 1)
+#ifeq ($(BEAGLEBONE_VERSION), 1)
 	$(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-else
-	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-endif
+#else
+#	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
+#endif
 
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
 
 clean:
-	#rm -rf $(EXECUTABLE_NAME) *tar.gz
 	rm -rf *tar.gz
 
 check:

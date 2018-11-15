@@ -3,13 +3,15 @@ EMAIL: RKhillah@ucla.edu
 ID: 604853262
 
 Limitations:
+
+THIS BUILD IS INTENEDED TO BE RUN ON A BEAGLEBONE.
+
 This project has been tested on lnxsrv07 and lnxsrv09 as well as on my beaglebone.
 Everything works fine. I have had issues getting `uname -r | grep beaglebone - `
-to work. If you are testing on a beaglebone, and this Makefile doesn't build 
-correctly, Comment out lines pertaining to speculative making, i.e., 
-comment out lines31, 33, 34, 35.
+to work.
 
-This should do the trick
+If you are testing on a beaglebone, uncomment lines 31, 33, 34, 35... That should do the trick
+
 
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.

@@ -31,20 +31,6 @@ typedef struct fs {
 	
 } fs_t;
 
-int destroy_fs(fs_t* file_system) {
-	close(file_system->fd);
-
-	free(file_system->su_block);
-	free(file_system->group);
-	if(file_system-> iNodes != NULL) free(file_system->iNodes);
-	if(file_system->dNodes != NULL) free(file_system->dNodes);
-	if(file_system->valid_nodes != NULL) free(file_system->valid_nodes);
-	if(file_system->valid_dNodes != NULL) free(file_system->valid_dNodes);
-
-	free(file_system);
-	return 0;
-}
-
 void init_fs(fs_t** file_system, char const* fs_img){
 	// Allocate memory for file system (superblock and group)
 	fs_t* tmp = (fs_t *)malloc(sizeof(fs_t));
@@ -79,6 +65,23 @@ void init_fs(fs_t** file_system, char const* fs_img){
 
 	*file_system = tmp;
 }
+
+int destroy_fs(fs_t* file_system) {
+	close(file_system->fd);
+
+	free(file_system->su_block);
+	free(file_system->group);
+	if(file_system-> iNodes != NULL) free(file_system->iNodes);
+	if(file_system->dNodes != NULL) free(file_system->dNodes);
+	if(file_system->valid_nodes != NULL) free(file_system->valid_nodes);
+	if(file_system->valid_dNodes != NULL) free(file_system->valid_dNodes);
+
+	free(file_system);
+	return 0;
+}
+
+const char* SUPERBLOCK = "SUPERBLOCK";
+const char* GROUP = "GROUP";
 
 void scan_directory(fs_t* fs, int offset, int i) {
 	unsigned int byte_count = fs->block_size * offset;
@@ -141,9 +144,6 @@ void scan_indirect_block(fs_t* fs, int offset, int count, int i, int logic){
 		}
 	}
 }
-
-const char* SUPERBLOCK = "SUPERBLOCK";
-const char* GROUP = "GROUP";
 
 void print_summary(fs_t* fs, const char* stype) {
 	if(stype == SUPERBLOCK){
@@ -273,8 +273,7 @@ void usage() {
 	fprintf(stderr, "usage: %s file_system.img\n", program_name);
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]) {
 	set_program_name(argv[0]);
 
 	if(argc != 2) fatal_error("Wrong number of arguments", (void *)usage, 1);

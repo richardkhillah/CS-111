@@ -11,7 +11,6 @@
 #include "ext2_fs.h"
 #include "utils.h"
 
-#ifdef DEV
 /* file system struct, containing all the necessary information about 
  * the file_system to be read
  */
@@ -306,4 +305,3 @@ int main(int argc, char const *argv[]) {
 	destroy_fs(fs);
 	return 0;
 }
-#endif

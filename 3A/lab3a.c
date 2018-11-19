@@ -75,14 +75,17 @@ typedef struct fs {
 } fs_t;
 
 
-void init_fs(fs_t** file_system){
+void init_fs(fs_t** file_system, char const* fs_img){
 	fs_t* tmp = (fs_t *)malloc(sizeof(fs_t));
 	if(tmp == NULL){
 		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
 	}
-	// add_ref((void*)tmp);
 
-	tmp->fd = 0;
+	if((tmp->fd = open(fs_img, O_RDONLY)) < 0){
+		fatal_error("Error opening filesystem... Ensure correct filesystem image", (void *)usage, 1);
+	}
+
+	//tmp->fd = 0;
 	tmp->block_size = 1024;
 	tmp->iNodes = NULL;
 	tmp->dNodes = NULL;
@@ -167,12 +170,8 @@ int main(int argc, char const *argv[])
 	if(argc != 2) fatal_error("Wrong number of arguments", (void *)usage, 1);
 
 	fs_t* fs;
-	init_fs(&fs);
-
-	// open read file descriptor
-	if((fs->fd = open(argv[1], O_RDONLY)) < 0){
-		fatal_error("Error opening filesystem... Ensure correct filesystem image", (void *)usage, 1);
-	}
+	//init_fs(&fs);
+	init_fs(&fs, argv[1]);
 
 	// get superblock information and print it to stdout:
 	struct ext2_super_block* su_block = (struct ext2_super_block*)malloc(sizeof(struct ext2_super_block));

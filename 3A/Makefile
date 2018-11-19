@@ -3,17 +3,19 @@
 # ID: 604853262
 
 UID=604853262
-LAB_NUMBER=lab4
-LAB_PART=b
+LAB_NUMBER=lab3
+LAB_PART=a
 EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
 EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).c
-TEST_SCRIPT=
+TEST_SCRIPT=test.sh
 CHECK_SCRIPT=P4B_check.sh
 
 
 CC=gcc
 
-CFLAGS= -Wall -Wextra -std=gnu99
+CFLAGS= -Wall -Wextra -std=gnu99 -g
+DEVFLAGS = $(CFLAGS) -DDEV 
+MFLAGS= -lm
 
 DEFAULT=Makefile README utils.c utils.h
 
@@ -25,16 +27,18 @@ default: build
 build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
-	$(CC) $(CFLAGS) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	$(CC) $(CFLAGS) -o $@ $(EXECUTABLE_SOURCE) utils.c $(MFLAGS)
 
+dev: 
+	$(CC) $(DEVFLAGS) -o $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) utils.c $(MFLAGS)
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(TEST_SCRIPT)
 
 clean:
-	rm -rf *tar.gz
+	rm -rf *tar.gz $(EXECUTABLE_NAME)
 
-test:
+test: 
 	./$(TEST_SCRIPT)
 
 check:

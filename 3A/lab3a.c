@@ -69,56 +69,57 @@ typedef struct fs {
 	struct ext2_super_block* su_block;
 	struct ext2_group_desc* group;
 
+	int node_count;
+	int dir_count;
 	struct ext2_inode* iNodes;
 	struct ext2_inode* dNodes;
 	int* valid_nodes;
 	int* valid_dNodes;
-	int node_count;
-	int dir_count;
+	
 } fs_t;
 
+int destroy_fs(fs_t* file_system) {
+	close(file_system->fd);
+
+	free(file_system->su_block);
+	free(file_system->group);
+	if(file_system-> iNodes != NULL) free(file_system->iNodes);
+	if(file_system->dNodes != NULL) free(file_system->dNodes);
+	if(file_system->valid_nodes != NULL) free(file_system->valid_nodes);
+	if(file_system->valid_dNodes != NULL) free(file_system->valid_dNodes);
+
+	free(file_system);
+	return 0;
+}
 
 void init_fs(fs_t** file_system, char const* fs_img){
+	// Allocate memory for file system (superblock and group)
 	fs_t* tmp = (fs_t *)malloc(sizeof(fs_t));
-	if(tmp == NULL){
+	if(tmp != NULL){
+		tmp->su_block = (struct ext2_super_block*)malloc(sizeof(struct ext2_super_block));
+		tmp->group = (struct ext2_group_desc*)malloc(sizeof(struct ext2_group_desc));
+		if(tmp->su_block == NULL || tmp->group == NULL) {
+			fatal_error("Error initiailzizing filesystem fs", NULL, 1);
+		}
+	} else {
 		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
 	}
 
-	//tmp->fd = 0;
-	if((tmp->fd = open(fs_img, O_RDONLY)) < 0){
+	if((tmp->fd = open(fs_img, O_RDONLY)) < 0) {
 		fatal_error("Error opening filesystem... Ensure correct filesystem image", (void *)usage, 1);
 	}
 
-	tmp->su_block = (struct ext2_super_block*)malloc(sizeof(struct ext2_super_block));
-	if(tmp->su_block == NULL) {
-		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
-	}
-
 	/* setup file system super block */
+	tmp->block_size = 1024;
 	pread(tmp->fd, tmp->su_block, 1024, 1024);
 	tmp->block_size <<= tmp->su_block->s_log_block_size; // convert to base 10
 
-	tmp->group = (struct ext2_group_desc*)malloc(sizeof(struct ext2_group_desc));
-	if(tmp->group == NULL) {
-		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
-	}
-
-	
-	tmp->block_size = 1024;
-	tmp->iNodes = NULL;
-	tmp->dNodes = NULL;
-	
-	// tmp->valid_nodes = NULL;
-	tmp->valid_nodes = (int *)malloc(tmp->su_block->s_inodes_count * sizeof(int));
-	if(tmp->valid_nodes == NULL) {
-		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
-	}
-
-
-	
-	tmp->valid_dNodes = NULL;
 	tmp->node_count = 0;
 	tmp->dir_count = 0;
+	tmp->iNodes = NULL;
+	tmp->dNodes = NULL;
+	tmp->valid_nodes = NULL;
+	tmp->valid_dNodes = NULL;
 
 	*file_system = tmp;
 }
@@ -226,7 +227,7 @@ int main(int argc, char const *argv[])
 
 
 	/* get free block and I-node entries and print them to stdout */
-	//fs->valid_nodes = (int *)malloc(fs->su_block->s_inodes_count * sizeof(int));
+	fs->valid_nodes = (int *)malloc(fs->su_block->s_inodes_count * sizeof(int));
    	for(unsigned int i = 0; i < fs->block_size; i++) {
 	   	int tempB = 0, tempI = 0, ones = 1;
 	   	pread(fs->fd, &tempB, 1, fs->group->bg_block_bitmap*fs->block_size+i); 
@@ -251,6 +252,12 @@ int main(int argc, char const *argv[])
 	fs->iNodes = (struct ext2_inode *)	malloc(fs->su_block->s_inodes_count * sizeof(struct ext2_inode));
 	fs->dNodes = (struct ext2_inode *)	malloc(fs->node_count * sizeof(struct ext2_inode));
 	fs->valid_dNodes = (int *)			malloc(fs->node_count * sizeof(int));
+
+	if( fs->iNodes == NULL ||
+		fs->dNodes == NULL ||
+		fs->valid_dNodes == NULL)
+		fatal_error("Internal error allocating memory", NULL, 1);
+
 	for(int i = 0; i < fs->node_count; i++){
 		int k = fs->valid_nodes[i];
 		pread(fs->fd, &fs->iNodes[i], 128, fs->group->bg_inode_table*fs->block_size + k*128);
@@ -295,8 +302,7 @@ int main(int argc, char const *argv[])
 		dprintf(STDOUT_FILENO, "%s,", 					mbuff);
 		dprintf(STDOUT_FILENO, "%s,", 					abuff);
 		dprintf(STDOUT_FILENO, "%ld,", 					tempSize);
-		dprintf(STDOUT_FILENO, "%d", fs->iNodes[i].	i_blocks);
-
+		dprintf(STDOUT_FILENO, "%d", fs->iNodes[i].		i_blocks);
 
 		for (int j = 0; j < 15; j++)
 			dprintf(STDOUT_FILENO,",%d",fs->iNodes[i].	i_block[j]);
@@ -323,12 +329,9 @@ int main(int argc, char const *argv[])
 		indirect(fs, fs->iNodes[i].i_block[14],3,i,65804);
 	}
 	
-	// destroy();
-	//free(group);
-	//free(su_block);
-	close(fs->fd);
-	free(fs);
-
+	
+	destroy_fs(fs);
+	
 	return 0;
 }
 #endif

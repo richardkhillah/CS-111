@@ -1,15 +1,20 @@
-#include <stdlib.h>
+// NAME: Richard Khillah
+// EMAIL: RKhillah@ucla.edu
+// ID: 604853262
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
+#include "utils.h"
+
+// include more headers below
+#include <fcntl.h>
 #include <math.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include "ext2_fs.h"
-#include "utils.h"
 
 /* file system struct, containing all the necessary information about 
  * the file_system to be read

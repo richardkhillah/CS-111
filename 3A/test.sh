@@ -14,4 +14,4 @@ sort $CHECKFILE >$S_CF
 echo sorted outfile sorted checkfile
 diff $S_OF $S_CF
 
-rm -rf $S_OF $S_CF
+rm -rf $S_OF $S_CF $OUTFILE

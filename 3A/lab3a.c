@@ -66,6 +66,9 @@
 typedef struct fs {
 	int fd;
 	unsigned int block_size;
+	struct ext2_super_block* su_block;
+	struct ext2_group_desc* group;
+
 	struct ext2_inode* iNodes;
 	struct ext2_inode* dNodes;
 	int* valid_nodes;
@@ -81,15 +84,38 @@ void init_fs(fs_t** file_system, char const* fs_img){
 		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
 	}
 
+	//tmp->fd = 0;
 	if((tmp->fd = open(fs_img, O_RDONLY)) < 0){
 		fatal_error("Error opening filesystem... Ensure correct filesystem image", (void *)usage, 1);
 	}
 
-	//tmp->fd = 0;
+	tmp->su_block = (struct ext2_super_block*)malloc(sizeof(struct ext2_super_block));
+	if(tmp->su_block == NULL) {
+		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
+	}
+
+	/* setup file system super block */
+	pread(tmp->fd, tmp->su_block, 1024, 1024);
+	tmp->block_size <<= tmp->su_block->s_log_block_size; // convert to base 10
+
+	tmp->group = (struct ext2_group_desc*)malloc(sizeof(struct ext2_group_desc));
+	if(tmp->group == NULL) {
+		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
+	}
+
+	
 	tmp->block_size = 1024;
 	tmp->iNodes = NULL;
 	tmp->dNodes = NULL;
-	tmp->valid_nodes = NULL;
+	
+	// tmp->valid_nodes = NULL;
+	tmp->valid_nodes = (int *)malloc(tmp->su_block->s_inodes_count * sizeof(int));
+	if(tmp->valid_nodes == NULL) {
+		fatal_error("Error initiailzizing filesystem fs", NULL, 1);
+	}
+
+
+	
 	tmp->valid_dNodes = NULL;
 	tmp->node_count = 0;
 	tmp->dir_count = 0;
@@ -174,41 +200,37 @@ int main(int argc, char const *argv[])
 	init_fs(&fs, argv[1]);
 
 	// get superblock information and print it to stdout:
-	struct ext2_super_block* su_block = (struct ext2_super_block*)malloc(sizeof(struct ext2_super_block));
-	// ERROR CHECK HERE
-	pread(fs->fd, su_block, 1024, 1024);
-	fs->block_size <<= su_block->s_log_block_size; // convert to base 10
+	// pread(fs->fd, fs->su_block, 1024, 1024);
+	// fs->block_size <<= fs->su_block->s_log_block_size; // convert to base 10
 	dprintf(STDOUT_FILENO, "SUPERBLOCK,");
-	dprintf(STDOUT_FILENO, "%d,", su_block->	s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", su_block->	s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->			block_size);
-	dprintf(STDOUT_FILENO, "%d,", su_block->	s_inode_size);
-	dprintf(STDOUT_FILENO, "%d,", su_block->	s_blocks_per_group);
-	dprintf(STDOUT_FILENO, "%d,", su_block->	s_inodes_per_group);
-	dprintf(STDOUT_FILENO, "%d", su_block->		s_first_ino);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->				block_size);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inode_size);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_per_group);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_per_group);
+	dprintf(STDOUT_FILENO, "%d", fs->su_block->		s_first_ino);
 	dprintf(STDOUT_FILENO, "\n");
 
 	// get group summary information and print it to stdout
-	struct ext2_group_desc* group = (struct ext2_group_desc*)malloc(sizeof(struct ext2_group_desc));
-	// ERROR CHECK HERE
-	pread(fs->fd, group, 32, 2048);
+	pread(fs->fd, fs->group, 32, 2048);
 	dprintf(STDOUT_FILENO, "GROUP,0,");
-	dprintf(STDOUT_FILENO, "%d,", su_block->		s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", su_block->		s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", group->			bg_free_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", group->			bg_free_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", group->			bg_block_bitmap);
-	dprintf(STDOUT_FILENO, "%d,", group->			bg_inode_bitmap);
-	dprintf(STDOUT_FILENO, "%d", group->			bg_inode_table);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_block_bitmap);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_inode_bitmap);
+	dprintf(STDOUT_FILENO, "%d", fs->group->			bg_inode_table);
 	dprintf(STDOUT_FILENO, "\n");
 
 
 	/* get free block and I-node entries and print them to stdout */
-	fs->valid_nodes = (int *)malloc(su_block->s_inodes_count * sizeof(int));
+	//fs->valid_nodes = (int *)malloc(fs->su_block->s_inodes_count * sizeof(int));
    	for(unsigned int i = 0; i < fs->block_size; i++) {
 	   	int tempB = 0, tempI = 0, ones = 1;
-	   	pread(fs->fd, &tempB, 1, group->bg_block_bitmap*fs->block_size+i); 
-	   	pread(fs->fd, &tempI, 1, group->bg_inode_bitmap*fs->block_size+i); 
+	   	pread(fs->fd, &tempB, 1, fs->group->bg_block_bitmap*fs->block_size+i); 
+	   	pread(fs->fd, &tempI, 1, fs->group->bg_inode_bitmap*fs->block_size+i); 
 	   	for (unsigned int j = 0; j < 8; j++) {
 	   		// free blocks
 	   		if ((tempB & ones) == 0) {
@@ -216,7 +238,7 @@ int main(int argc, char const *argv[])
 	   		}
 	   		if ((tempI & ones) == 0) {
 	   			dprintf(STDOUT_FILENO,"IFREE,%d\n", i*8 + j+1);
-	   		} else if(((tempI & ones) != 0) && (i*8 + j < su_block->s_inodes_per_group)){
+	   		} else if(((tempI & ones) != 0) && (i*8 + j < fs->su_block->s_inodes_per_group)){
 	   			fs->valid_nodes[fs->node_count] = i*8 + j+1;
 	   			fs->node_count++;
 	   		}
@@ -226,12 +248,12 @@ int main(int argc, char const *argv[])
 	
 	// get I-node summary and print to stdout
 	// INODE
-	fs->iNodes = (struct ext2_inode *)	malloc(su_block->s_inodes_count * sizeof(struct ext2_inode));
+	fs->iNodes = (struct ext2_inode *)	malloc(fs->su_block->s_inodes_count * sizeof(struct ext2_inode));
 	fs->dNodes = (struct ext2_inode *)	malloc(fs->node_count * sizeof(struct ext2_inode));
 	fs->valid_dNodes = (int *)			malloc(fs->node_count * sizeof(int));
 	for(int i = 0; i < fs->node_count; i++){
 		int k = fs->valid_nodes[i];
-		pread(fs->fd,&fs->iNodes[i], 128, group->bg_inode_table*fs->block_size + k*128);
+		pread(fs->fd, &fs->iNodes[i], 128, fs->group->bg_inode_table*fs->block_size + k*128);
 
 		if(fs->iNodes[i].i_mode == 0 && fs->iNodes[i].i_links_count == 0)
 			continue;
@@ -253,7 +275,7 @@ int main(int argc, char const *argv[])
 		char c;
 		if(fs->iNodes[i].i_mode&0x4000) {
 			c = 'd';
-			pread(fs->fd,&fs->dNodes[fs->dir_count], 128, group->bg_inode_table*fs->block_size + k*128);
+			pread(fs->fd,&fs->dNodes[fs->dir_count], 128, fs->group->bg_inode_table*fs->block_size + k*128);
 			fs->valid_dNodes[fs->dir_count] = k;
 			fs->dir_count++;
 		}
@@ -302,8 +324,8 @@ int main(int argc, char const *argv[])
 	}
 	
 	// destroy();
-	free(group);
-	free(su_block);
+	//free(group);
+	//free(su_block);
 	close(fs->fd);
 	free(fs);
 

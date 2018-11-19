@@ -18,7 +18,7 @@ MFLAGS= -lm
 
 DEFAULT=Makefile README utils.c utils.h
 
-EXTRAS=
+EXTRAS=ext2_fs.h
 
 
 default: build

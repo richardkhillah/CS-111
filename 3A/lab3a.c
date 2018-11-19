@@ -171,30 +171,6 @@ void print_summary(fs_t* fs, const char* stype) {
 	}
 }
 
-void print_superblock_summary(fs_t* fs) {
-	dprintf(STDOUT_FILENO, "SUPERBLOCK,");
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->				block_size);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inode_size);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_per_group);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_per_group);
-	dprintf(STDOUT_FILENO, "%d", fs->su_block->		s_first_ino);
-	dprintf(STDOUT_FILENO, "\n");
-}
-
-void print_group_summary(fs_t* fs) {
-	dprintf(STDOUT_FILENO, "GROUP,0,");
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_block_bitmap);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_inode_bitmap);
-	dprintf(STDOUT_FILENO, "%d", fs->group->			bg_inode_table);
-	dprintf(STDOUT_FILENO, "\n");
-}
-
 void get_free_entries(fs_t* fs) {
 	for(unsigned int i = 0; i < fs->block_size; i++) {
 	   	int tempB = 0,

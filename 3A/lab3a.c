@@ -80,7 +80,7 @@ void init_fs(fs_t** file_system, char const* fs_img){
 	*file_system = tmp;
 }
 
-void directory(fs_t* fs, int offset, int i) {
+void scan_directory(fs_t* fs, int offset, int i) {
 	unsigned int byte_count = fs->block_size * offset;
 	int count = 0;
 
@@ -114,21 +114,21 @@ void directory(fs_t* fs, int offset, int i) {
 	}
 }
 
-void indDirectory(fs_t* fs, int offset, int count, int i){
+void scan_indirect_directory(fs_t* fs, int offset, int count, int i){
 	int temp;
 	if (offset != 0){
 		for(unsigned int j = 0; j < fs->block_size/4; j++){
 			pread(fs->fd, &temp, 4, offset*fs->block_size + j*4);
 			if(count == 0){
-				if(temp != 0) directory(fs, offset, i);
+				if(temp != 0) scan_directory(fs, offset, i);
 			}
 			else
-				indDirectory(fs, temp, count-1, i);
+				scan_indirect_directory(fs, temp, count-1, i);
 		}
 	}
 }
 
-void indirect(fs_t* fs, int offset, int count, int i, int logic){
+void scan_indirect_block(fs_t* fs, int offset, int count, int i, int logic){
 	int temp;
 	if (offset != 0){
 		for(unsigned int j = 0; j < fs->block_size/4; j++){
@@ -136,7 +136,7 @@ void indirect(fs_t* fs, int offset, int count, int i, int logic){
 			if (temp != 0){
 				dprintf(STDOUT_FILENO,"INDIRECT,%d,%d,%d,%d,%d\n", fs->valid_nodes[i]+1, count, logic + (int)(j*pow(256,count-1)), offset, temp);
 				if (count != 1)
-					indirect(fs, temp, count-1, i, logic + (int)(j*pow(256,count-1)));
+					scan_indirect_block(fs, temp, count-1, i, logic + (int)(j*pow(256,count-1)));
 			}
 		}
 	}
@@ -253,19 +253,19 @@ void get_directory_entries(fs_t* fs) {
 	for(int i = 0; i < fs->dir_count; i++){
 		for(int j = 0; j < 12; j++){
 			int offset = fs->dNodes[i].i_block[j];
-			if(offset != 0) directory(fs, offset, i);
+			if(offset != 0) scan_directory(fs, offset, i);
 		}
-		indDirectory(fs, fs->dNodes[i].i_block[12], 0, i);
-		indDirectory(fs,fs->dNodes[i].i_block[13], 1, i);
-		indDirectory(fs,fs->dNodes[i].i_block[14], 2, i);
+		scan_indirect_directory(fs, fs->dNodes[i].i_block[12], 0, i);
+		scan_indirect_directory(fs,fs->dNodes[i].i_block[13], 1, i);
+		scan_indirect_directory(fs,fs->dNodes[i].i_block[14], 2, i);
 	}
 }
 
 void get_indirect_block_refs(fs_t* fs) {
 	for(int i = 0; i < fs->node_count; i++){
-		indirect(fs, fs->iNodes[i].i_block[12],1,i,12);
-		indirect(fs, fs->iNodes[i].i_block[13],2,i,268);
-		indirect(fs, fs->iNodes[i].i_block[14],3,i,65804);
+		scan_indirect_block(fs, fs->iNodes[i].i_block[12],1,i,12);
+		scan_indirect_block(fs, fs->iNodes[i].i_block[13],2,i,268);
+		scan_indirect_block(fs, fs->iNodes[i].i_block[14],3,i,65804);
 	}
 }
 
@@ -282,40 +282,29 @@ int main(int argc, char const *argv[])
 	fs_t* fs;
 	init_fs(&fs, argv[1]);
 
-	/* superblock summary */
+	/* superblock and group summaries */
 	print_summary(fs, SUPERBLOCK);
-
-	/* group summary */
 	print_summary(fs, GROUP);
 
-	/* get free block and I-node entries and print them to stdout */
+	/* get free block and free I-node entries */
 	fs->valid_nodes = (int *)malloc(fs->su_block->s_inodes_count * sizeof(int));
    	if (fs->valid_nodes == NULL) fatal_error("Internal error allocating memory", NULL, 1);
    	
    	get_free_entries(fs);
-	
-
+		
+	/* get I-node summary, directory entries, and indirect blcok references */
 	fs->iNodes = (struct ext2_inode *)	malloc(fs->su_block->s_inodes_count * sizeof(struct ext2_inode));
 	fs->dNodes = (struct ext2_inode *)	malloc(fs->node_count * sizeof(struct ext2_inode));
 	fs->valid_dNodes = (int *)			malloc(fs->node_count * sizeof(int));
-
-	if( fs->iNodes == NULL ||
-		fs->dNodes == NULL ||
-		fs->valid_dNodes == NULL)
+	if( fs->iNodes == NULL || fs->dNodes == NULL || fs->valid_dNodes == NULL)
 		fatal_error("Internal error allocating memory", NULL, 1);
 
-	/* I-node summary */
 	get_Inode_summary(fs);
-	
-	/* directory entries */
 	get_directory_entries(fs);
-
-	/* indirect block references */
 	get_indirect_block_refs(fs);
 	
-	
+	/* free all memory allocated for file system fs */
 	destroy_fs(fs);
-	
 	return 0;
 }
 #endif

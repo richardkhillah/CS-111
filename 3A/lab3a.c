@@ -16,53 +16,6 @@
  * the file_system to be read
  */
 
-/*
-	typedef struct ref_tracker {
-		void** ptrs;
-		int num_ptrs;
-	} rt_t;
-
-	rt_t* references = NULL;
-
-	int inti_ref_tracker(void) {
-		if(references == NULL) {
-			rt_t* tmp = (rt_t *)malloc(sizeof(rt_t));
-			if(tmp == NULL) {
-				fatal_error("internal error while initiailzizing reference tracker", NULL, 1);
-			}
-			tmp->num_ptrs = 0;
-			references = tmp;
-
-			if(references == NULL) {
-				fatal_error("internal error while initiailzizing reference tracker", NULL, 1);
-			}
-			return 0;
-		} else {
-			return -1;
-		}
-	}
-
-	int destroy(void) {
-		if( references != NULL && references->num_ptrs < 1) {
-			// there are resouces to destroy, err.. return to the OS...
-			int i = 0;
-			while( i < references->num_ptrs) {
-				free(references->ptrs[i]);
-				i++;
-			}
-		} else if ( !1 ) {
-			// there are no resources to destroy
-			exit(1);
-		} else {
-			// some other weird thing happened...
-			fprintf(stderr, "some weird shiiiit happening\n");
-			exit(1);
-		}
-		free(references);
-		exit(0);
-	}
-*/
-
 typedef struct fs {
 	int fd;
 	unsigned int block_size;
@@ -109,10 +62,13 @@ void init_fs(fs_t** file_system, char const* fs_img){
 		fatal_error("Error opening filesystem... Ensure correct filesystem image", (void *)usage, 1);
 	}
 
-	/* setup file system super block */
+	/* get file system superblock information */
 	tmp->block_size = 1024;
 	pread(tmp->fd, tmp->su_block, 1024, 1024);
 	tmp->block_size <<= tmp->su_block->s_log_block_size; // convert to base 10
+
+	/* get file system group information */
+	pread(tmp->fd, tmp->group, 32, 2048);
 
 	tmp->node_count = 0;
 	tmp->dir_count = 0;
@@ -186,6 +142,84 @@ void indirect(fs_t* fs, int offset, int count, int i, int logic){
 	}
 }
 
+const char* SUPERBLOCK = "SUPERBLOCK";
+const char* GROUP = "GROUP";
+
+void print_summary(fs_t* fs, const char* stype) {
+	if(stype == SUPERBLOCK){
+		dprintf(STDOUT_FILENO, "SUPERBLOCK,");
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->				block_size);
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inode_size);
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_per_group);
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_per_group);
+		dprintf(STDOUT_FILENO, "%d", fs->su_block->		s_first_ino);
+		dprintf(STDOUT_FILENO, "\n");
+	}
+
+	if(stype == GROUP) {
+		dprintf(STDOUT_FILENO, "GROUP,0,");
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_blocks_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_inodes_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_blocks_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_inodes_count);
+		dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_block_bitmap);
+		dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_inode_bitmap);
+		dprintf(STDOUT_FILENO, "%d", fs->group->			bg_inode_table);
+		dprintf(STDOUT_FILENO, "\n");
+	}
+}
+
+void print_superblock_summary(fs_t* fs) {
+	dprintf(STDOUT_FILENO, "SUPERBLOCK,");
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->				block_size);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inode_size);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_per_group);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_per_group);
+	dprintf(STDOUT_FILENO, "%d", fs->su_block->		s_first_ino);
+	dprintf(STDOUT_FILENO, "\n");
+}
+
+void print_group_summary(fs_t* fs) {
+	dprintf(STDOUT_FILENO, "GROUP,0,");
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_blocks_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_inodes_count);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_block_bitmap);
+	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_inode_bitmap);
+	dprintf(STDOUT_FILENO, "%d", fs->group->			bg_inode_table);
+	dprintf(STDOUT_FILENO, "\n");
+}
+
+void get_free_entries(fs_t* fs) {
+	for(unsigned int i = 0; i < fs->block_size; i++) {
+	   	int tempB = 0,
+	   		tempI = 0,
+	   		ones = 1;
+	   	pread(fs->fd, &tempB, 1, fs->group->bg_block_bitmap*fs->block_size+i); 
+	   	pread(fs->fd, &tempI, 1, fs->group->bg_inode_bitmap*fs->block_size+i); 
+	   	
+	   	for (unsigned int j = 0; j < 8; j++) {
+	   		// free blocks
+	   		if ((tempB & ones) == 0) {
+	   			dprintf(STDOUT_FILENO,"BFREE,%d\n", i*8 + j+1);
+	   		}
+	   		if ((tempI & ones) == 0) {
+	   			dprintf(STDOUT_FILENO,"IFREE,%d\n", i*8 + j+1);
+	   		} else if(((tempI & ones) != 0) && (i*8 + j < fs->su_block->s_inodes_per_group)){
+	   			fs->valid_nodes[fs->node_count] = i*8 + j+1;
+	   			fs->node_count++;
+	   		}
+
+	   		ones <<= 1;
+	   	}
+	}
+}
+
 void get_Inode_summary(fs_t* fs) {
 	for(int i = 0; i < fs->node_count; i++){
 		int k = fs->valid_nodes[i];
@@ -239,6 +273,26 @@ void get_Inode_summary(fs_t* fs) {
 	}
 }
 
+void get_directory_entries(fs_t* fs) {
+	for(int i = 0; i < fs->dir_count; i++){
+		for(int j = 0; j < 12; j++){
+			int offset = fs->dNodes[i].i_block[j];
+			if(offset != 0) directory(fs, offset, i);
+		}
+		indDirectory(fs, fs->dNodes[i].i_block[12], 0, i);
+		indDirectory(fs,fs->dNodes[i].i_block[13], 1, i);
+		indDirectory(fs,fs->dNodes[i].i_block[14], 2, i);
+	}
+}
+
+void get_indirect_block_refs(fs_t* fs) {
+	for(int i = 0; i < fs->node_count; i++){
+		indirect(fs, fs->iNodes[i].i_block[12],1,i,12);
+		indirect(fs, fs->iNodes[i].i_block[13],2,i,268);
+		indirect(fs, fs->iNodes[i].i_block[14],3,i,65804);
+	}
+}
+
 void usage() {
 	fprintf(stderr, "usage: %s file_system.img\n", program_name);
 }
@@ -252,55 +306,19 @@ int main(int argc, char const *argv[])
 	fs_t* fs;
 	init_fs(&fs, argv[1]);
 
-	// print information to stdout:
-	dprintf(STDOUT_FILENO, "SUPERBLOCK,");
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->				block_size);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inode_size);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_blocks_per_group);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->	s_inodes_per_group);
-	dprintf(STDOUT_FILENO, "%d", fs->su_block->		s_first_ino);
-	dprintf(STDOUT_FILENO, "\n");
+	/* superblock summary */
+	print_summary(fs, SUPERBLOCK);
 
-	// get group summary information and print it to stdout
-	pread(fs->fd, fs->group, 32, 2048);
-	dprintf(STDOUT_FILENO, "GROUP,0,");
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->su_block->		s_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_blocks_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_free_inodes_count);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_block_bitmap);
-	dprintf(STDOUT_FILENO, "%d,", fs->group->			bg_inode_bitmap);
-	dprintf(STDOUT_FILENO, "%d", fs->group->			bg_inode_table);
-	dprintf(STDOUT_FILENO, "\n");
+	/* group summary */
+	print_summary(fs, GROUP);
 
 	/* get free block and I-node entries and print them to stdout */
 	fs->valid_nodes = (int *)malloc(fs->su_block->s_inodes_count * sizeof(int));
-   	for(unsigned int i = 0; i < fs->block_size; i++) {
-	   	int tempB = 0,
-	   		tempI = 0,
-	   		ones = 1;
-	   	pread(fs->fd, &tempB, 1, fs->group->bg_block_bitmap*fs->block_size+i); 
-	   	pread(fs->fd, &tempI, 1, fs->group->bg_inode_bitmap*fs->block_size+i); 
-	   	
-	   	for (unsigned int j = 0; j < 8; j++) {
-	   		// free blocks
-	   		if ((tempB & ones) == 0) {
-	   			dprintf(STDOUT_FILENO,"BFREE,%d\n", i*8 + j+1);
-	   		}
-	   		if ((tempI & ones) == 0) {
-	   			dprintf(STDOUT_FILENO,"IFREE,%d\n", i*8 + j+1);
-	   		} else if(((tempI & ones) != 0) && (i*8 + j < fs->su_block->s_inodes_per_group)){
-	   			fs->valid_nodes[fs->node_count] = i*8 + j+1;
-	   			fs->node_count++;
-	   		}
-
-	   		ones <<= 1;
-	   	}
-	}
+   	if (fs->valid_nodes == NULL) fatal_error("Internal error allocating memory", NULL, 1);
+   	
+   	get_free_entries(fs);
 	
-	// get I-node summary and print to stdout
+
 	fs->iNodes = (struct ext2_inode *)	malloc(fs->su_block->s_inodes_count * sizeof(struct ext2_inode));
 	fs->dNodes = (struct ext2_inode *)	malloc(fs->node_count * sizeof(struct ext2_inode));
 	fs->valid_dNodes = (int *)			malloc(fs->node_count * sizeof(int));
@@ -312,76 +330,12 @@ int main(int argc, char const *argv[])
 
 	/* I-node summary */
 	get_Inode_summary(fs);
-	// for(int i = 0; i < fs->node_count; i++){
-	// 	int k = fs->valid_nodes[i];
-	// 	pread(fs->fd, &fs->iNodes[i], 128, fs->group->bg_inode_table*fs->block_size + k*128);
+	
+	/* directory entries */
+	get_directory_entries(fs);
 
-	// 	if(fs->iNodes[i].i_mode == 0 && fs->iNodes[i].i_links_count == 0)
-	// 		continue;
-
-	// 	char cbuff[20],mbuff[20],abuff[20];
-		
-	// 	time_t temp = fs->iNodes[i].i_ctime;
-	// 	struct tm* ctime = gmtime(&temp);
-	// 	strftime(cbuff,18,"%D %H:%M:%S",ctime);
-
-	// 	temp = fs->iNodes[i].i_mtime;
-	// 	struct tm* mtime = gmtime(&temp);
-	// 	strftime(mbuff,18,"%D %H:%M:%S",mtime);
-
-	// 	temp = fs->iNodes[i].i_atime;
-	// 	struct tm* atime = gmtime(&temp);
-	// 	strftime(abuff,18,"%D %H:%M:%S",atime);
-		
-	// 	char c;
-	// 	if(fs->iNodes[i].i_mode&0x4000) {
-	// 		c = 'd';
-	// 		pread(fs->fd, &fs->dNodes[fs->dir_count], 128, fs->group->bg_inode_table*fs->block_size + k*128);
-	// 		fs->valid_dNodes[fs->dir_count] = k;
-	// 		fs->dir_count++;
-	// 	}
-	// 	else if(fs->iNodes[i].i_mode&0x8000) c = 'f';
-	// 	else if(fs->iNodes[i].i_mode&0xA000) c = 's';
-	// 	else c = '?';
-
-	// 	long tempSize = (((long)fs->iNodes[i].i_dir_acl) << 32) | fs->iNodes[i].i_size;
-	// 	dprintf(STDOUT_FILENO,"INODE,");
-	// 	dprintf(STDOUT_FILENO, "%d,", k+1);
-	// 	dprintf(STDOUT_FILENO, "%c,", c);
-	// 	dprintf(STDOUT_FILENO, "%o,", fs->iNodes[i].	i_mode & 0x0FFF);
-	// 	dprintf(STDOUT_FILENO, "%d,", fs->iNodes[i].	i_uid);
-	// 	dprintf(STDOUT_FILENO, "%d,", fs->iNodes[i].	i_gid);
-	// 	dprintf(STDOUT_FILENO, "%d,", fs->iNodes[i].	i_links_count);
-	// 	dprintf(STDOUT_FILENO, "%s,", 					cbuff);
-	// 	dprintf(STDOUT_FILENO, "%s,", 					mbuff);
-	// 	dprintf(STDOUT_FILENO, "%s,", 					abuff);
-	// 	dprintf(STDOUT_FILENO, "%ld,", 					tempSize);
-	// 	dprintf(STDOUT_FILENO, "%d", fs->iNodes[i].		i_blocks);
-
-	// 	for (int j = 0; j < 15; j++)
-	// 		dprintf(STDOUT_FILENO,",%d",fs->iNodes[i].	i_block[j]);
-	// 	dprintf(STDOUT_FILENO,"\n");
-	// }
-
-	// get directory entries and print to stdout
-	// DIRENT
-	for(int i = 0; i < fs->dir_count; i++){
-		for(int j = 0; j < 12; j++){
-			int offset = fs->dNodes[i].i_block[j];
-			if(offset != 0) directory(fs, offset, i);
-		}
-		indDirectory(fs, fs->dNodes[i].i_block[12], 0, i);
-		indDirectory(fs,fs->dNodes[i].i_block[13], 1, i);
-		indDirectory(fs,fs->dNodes[i].i_block[14], 2, i);
-	}
-
-	// get indeirect block references and print to stdout
-	// INDIRECT
-	for(int i = 0; i < fs->node_count; i++){
-		indirect(fs, fs->iNodes[i].i_block[12],1,i,12);
-		indirect(fs, fs->iNodes[i].i_block[13],2,i,268);
-		indirect(fs, fs->iNodes[i].i_block[14],3,i,65804);
-	}
+	/* indirect block references */
+	get_indirect_block_refs(fs);
 	
 	
 	destroy_fs(fs);

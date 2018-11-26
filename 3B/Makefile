@@ -1,0 +1,37 @@
+# NAME: Richard Khillah
+# EMAIL: RKhillah@ucla.edu
+# ID: 604853262
+
+UID=604853262
+LAB_NUMBER=lab3
+LAB_PART=b
+EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
+EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).py
+TEST_SCRIPT=
+CHECK_SCRIPT=P3B_check.sh
+
+DEFAULT=Makefile README
+
+EXTRAS=
+
+
+default: build
+
+build: $(EXECUTABLE_NAME)
+
+$(EXECUTABLE_NAME):
+	chmod 777 $(EXECUTABLE_SOURCE)
+	ln $(EXECUTABLE_SOURCE) $(EXECUTABLE_NAME)
+	chmod 777 $(EXECUTABLE_NAME)
+
+dist: build
+	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_SOURCE)
+
+clean:
+	rm -rf *tar.gz
+
+test: 
+	./$(TEST_SCRIPT)
+
+check:
+	./$(CHECK_SCRIPT) $(UID)

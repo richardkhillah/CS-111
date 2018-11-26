@@ -12,7 +12,6 @@ to work.
 
 If you are testing on a beaglebone, uncomment lines 31, 33, 34, 35... That should do the trick
 
-
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
 

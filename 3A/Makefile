@@ -32,7 +32,7 @@ dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(TEST_SCRIPT)
 
 clean:
-	rm -rf *tar.gz
+	rm -rf *tar.gz *.dSYM
 
 test: 
 	./$(TEST_SCRIPT)

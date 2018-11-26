@@ -8,10 +8,6 @@ Limitations:
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
 
-utils.h/c: the header and source files for commonly used utilies
+lab3a.py: the required source file for the lab
 
-lab3a.c: the required source file for the lab
-
-lab3a: the required executable, built to be tested with the .sh script
-
-P3A_check.sh: the check script provided as a sanity check measure.
+P3B_check.sh: the check script provided as a sanity check measure.

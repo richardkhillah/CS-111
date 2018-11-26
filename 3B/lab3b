@@ -68,5 +68,34 @@ def main():
 		print('Error: Invalid number of arguments')
 		print('Usage: ./{} <filename>'.format(program_name))
 
+	filename = sys.argv[1]
+	file = open(filename, 'r')
+
+	superblock 			= None
+	group 				= None
+	free_blocks 		= set()
+	free_inodes 		= set()
+	inodes 				= []
+	directory_entries	= []
+	indrect_references	= []
+
+	for line in file: 
+		line = rstrip()
+		elements = line.split(',')
+		if(elements[0] == 'SUPERBLOCK'):
+			superblock = SuperBlock(elements)
+		elif(elements[0] == 'GROUP'):
+			group = Group(elements)
+		elif(elements[0] == 'BFREE'):
+			free_blocks.add(int(elements[1]))
+		elif(elements[0] == 'IFREE'):
+			free_inodes.add(int(elements[1]))
+		elif(elements[0] == 'DIRENT'):
+			directory_entries.append(DirectoryEntry(elements))
+		elif(elements[0] == 'INODE'):
+			inodes.append(Inode(elements))
+		elif(elements[0] == 'INDIRECT'):
+			indrect_references.append(IndirectReference(elements))
+
 if __name__ == '__main__':
 	main()

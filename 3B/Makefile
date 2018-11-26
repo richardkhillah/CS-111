@@ -28,7 +28,7 @@ dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_SOURCE)
 
 clean:
-	rm -rf *tar.gz
+	rm -rf *tar.gz $(EXECUTABLE_NAME)
 
 test: 
 	./$(TEST_SCRIPT)

@@ -108,12 +108,13 @@ def main():
     for entry in directory_entries:
         # check for invalid inode num
         file_inumber = entry.file_inode_num
+        parent_inumber = entry.parent_num
         if file_inumber < 1 or file_inumber > super_block.num_inodes:
-            print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_num, entry.name, file_inumber))
+            print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(parent_inumber, entry.name, file_inumber))
         
         # check if inode in free inodes
         if file_inumber in free_inodes and file_inumber not in inodes_seen:
-            print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(entry.parent_num, entry.name, file_inumber))
+            print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(parent_inumber, entry.name, file_inumber))
         
         # increment inode count
         if file_inumber in inode_link_counts:
@@ -122,20 +123,20 @@ def main():
             inode_link_counts[file_inumber] = 1
 
         if entry.name == "'.'":
-            if file_inumber != entry.parent_num:
-                print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(entry.parent_num, file_inumber))
+            if file_inumber != parent_inumber:
+                print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(parent_inumber, file_inumber))
         if entry.name == "'..'":
-            if entry.parent_num == 2:
+            if parent_inumber == 2:
                 if file_inumber != 2:
                     print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file_inumber))
             else:
                 for parent in directory_entries:
                     if parent.parent_num == file_inumber:
-                        if parent.file_inode_num == entry.parent_num:
+                        if parent.file_inode_num == parent_inumber:
                             break
                     else:
-                        if parent.file_inode_num == entry.parent_num:
-                           print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, entry.parent_num, parent.parent_num))
+                        if parent.file_inode_num == parent_inumber:
+                           print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, parent_inumber, parent.parent_num))
                            break
 
     # check blocks

@@ -6,7 +6,7 @@ USAGE = 'Usage: ./lab3b file'
 
 class SuperBlock():
     def __init__(self, csv):
-        self.num_blocks = int(csv[1])
+        self.block_count = int(csv[1])
         self.num_inodes = int(csv[2])
         self.block_size = int(csv[3])
         self.inode_size = int(csv[4])
@@ -17,7 +17,7 @@ class SuperBlock():
 class Group():
     def __init__(self, csv):
         self.group_num = int(csv[1])
-        self.num_blocks = int(csv[2])
+        self.block_count = int(csv[2])
         self.num_inodes = int(csv[3])
         self.num_free_blocks = int(csv[4])
         self.num_free_inodes = int(csv[5])
@@ -37,7 +37,7 @@ class Inode():
         self.mod_time = csv[8]
         self.acc_time = csv[9]
         self.file_size = int(csv[10])
-        self.num_blocks = int(csv[11])
+        self.block_count = int(csv[11])
         self.block_pointers = [int(x) for x in csv[12:]]
 
 class DirEntry():
@@ -97,7 +97,7 @@ def main():
 
     # map block number to list of duplicate messages
     blocks = {}
-    blocks_not_seen = set([i for i in range(8, super_block.num_blocks)])
+    blocks_not_seen = set([i for i in range(8, super_block.block_count)])
     inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.num_inodes+1)])
     inode_link_counts = {}
     inodes_seen = set()
@@ -171,7 +171,7 @@ def main():
                 block_type = 'TRIPLE INDIRECT BLOCK'
             
             block_number = inode.block_pointers[i]
-            if block_number > super_block.num_blocks or block_number < 0:
+            if block_number > super_block.block_count or block_number < 0:
                 print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
             if block_number < 5 and block_number > 0:
                 print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))

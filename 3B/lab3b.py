@@ -142,19 +142,20 @@ def main():
     # check blocks
     for inode in inodes:
         # ensure right link count
-        if inode.inode_num in inode_link_counts:
-            if inode_link_counts[inode.inode_num] != inode.link_count:
-                print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inode.inode_num, inode_link_counts[inode.inode_num], inode.link_count))
+        inumber = inode.inode_num
+        if inumber in inode_link_counts:
+            if inode_link_counts[inumber] != inode.link_count:
+                print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inumber, inode_link_counts[inumber], inode.link_count))
         elif inode.link_count != 0:
-            print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inode.inode_num, inode.link_count))
+            print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inumber, inode.link_count))
 
         # check if inode was listed as free
-        if inode.inode_num in free_inodes:
-            print("ALLOCATED INODE {0} ON FREELIST".format(inode.inode_num))
+        if inumber in free_inodes:
+            print("ALLOCATED INODE {0} ON FREELIST".format(inumber))
 
         # attempt to mark the inode as seen
-        if inode.inode_num in inodes_not_seen:
-            inodes_not_seen.remove(inode.inode_num)
+        if inumber in inodes_not_seen:
+            inodes_not_seen.remove(inumber)
         
         for i in range(15):
             t = 'BLOCK'
@@ -171,17 +172,17 @@ def main():
             
             b_num = inode.block_pointers[i]
             if b_num > super_block.num_blocks or b_num < 0:
-                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
             if b_num < 5 and b_num > 0:
-                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
             if b_num in free_blocks:
                 print('ALLOCATED BLOCK {0} ON FREELIST'.format(b_num))
 
             if b_num != 0:
                 if b_num in blocks:
-                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
                 else:
-                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset)]
+                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset)]
                 if b_num in blocks_not_seen:
                     blocks_not_seen.remove(b_num)
     

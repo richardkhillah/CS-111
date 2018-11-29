@@ -7,7 +7,7 @@ USAGE = 'Usage: ./lab3b file'
 class SuperBlock():
     def __init__(self, csv):
         self.block_count = int(csv[1])
-        self.num_inodes = int(csv[2])
+        self.inode_count = int(csv[2])
         self.block_size = int(csv[3])
         self.inode_size = int(csv[4])
         self.blocks_group = int(csv[5])
@@ -18,7 +18,7 @@ class Group():
     def __init__(self, csv):
         self.group_num = int(csv[1])
         self.block_count = int(csv[2])
-        self.num_inodes = int(csv[3])
+        self.inode_count = int(csv[3])
         self.num_free_blocks = int(csv[4])
         self.num_free_inodes = int(csv[5])
         self.block_bmp_block = int(csv[6])
@@ -98,7 +98,7 @@ def main():
     # map block number to list of duplicate messages
     blocks = {}
     blocks_not_seen = set([i for i in range(8, super_block.block_count)])
-    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.num_inodes+1)])
+    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
     inode_link_counts = {}
     inodes_seen = set()
 
@@ -109,7 +109,7 @@ def main():
         # check for invalid inode num
         file_inumber = entry.file_inode_num
         parent_inumber = entry.parent_num
-        if file_inumber < 1 or file_inumber > super_block.num_inodes:
+        if file_inumber < 1 or file_inumber > super_block.inode_count:
             print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(parent_inumber, entry.name, file_inumber))
         
         # check if inode in free inodes

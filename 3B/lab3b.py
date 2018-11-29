@@ -158,31 +158,31 @@ def main():
             inodes_not_seen.remove(inumber)
         
         for i in range(15):
-            t = 'BLOCK'
+            block_type = 'BLOCK'
             offset = i
             if i == 12:
                 offset = 12
-                t = 'INDIRECT BLOCK'
+                block_type = 'INDIRECT BLOCK'
             elif i == 13:
                 offset = 256 + 12
-                t = 'DOUBLE INDIRECT BLOCK'
+                block_type = 'DOUBLE INDIRECT BLOCK'
             elif i == 14:
                 offset = 256 * 256 + 256 + 12
-                t = 'TRIPLE INDIRECT BLOCK'
+                block_type = 'TRIPLE INDIRECT BLOCK'
             
             b_num = inode.block_pointers[i]
             if b_num > super_block.num_blocks or b_num < 0:
-                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
+                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
             if b_num < 5 and b_num > 0:
-                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
+                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
             if b_num in free_blocks:
                 print('ALLOCATED BLOCK {0} ON FREELIST'.format(b_num))
 
             if b_num != 0:
                 if b_num in blocks:
-                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset))
+                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
                 else:
-                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inumber, offset)]
+                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset)]
                 if b_num in blocks_not_seen:
                     blocks_not_seen.remove(b_num)
     

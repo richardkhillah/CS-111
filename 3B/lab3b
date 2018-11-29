@@ -97,11 +97,49 @@ def main():
 		elif(elements[0] == 'INDIRECT'):
 			indirect_references.append(IndirectReference(elements))
 
-	# acknowledged_inodes = set()
-	# # Acknowledge each Inode by adding it's number to inodes[]
-	# for node in inodes:
-	# 	acknowledged_inodes.add(node.inumber)
-	# processed_inodes = set()
+	# The set of "known" Inodes
+	allocated_inodes = set()
+	# Take stock of what allocations are "known about" prior to conducting audit
+	for node in inodes:
+		allocated_inodes.add(node.inumber)
+
+	# As we process each file, keep track of how many links are associated with it.
+	inode_link_count = {} # indexed by file inumber
+"""
+INODE_LINK_COUNTS SHOULD BE INITIALIZED TO 0!!!
+"""
+
+	# DIRECTORY CONSISTENCY AUDITS (part I)
+	for file in directory_entries:
+		# Increment inode link count
+		if file.inumber in inode_link_count:
+			inode_link_count[file.inumber] += 1
+		else
+			inode_link_count[file.inumber] = 1
+
+		# check whether inode is valid
+		if file.inumber < 1 or file.inumber > superblock.s_inodes_count:
+			print('DIRECTORY INODE {0} NAME {1} INVALID INODE {2}'.format(file.parent_inumber, file.name, file.inumber))
+
+		# check allocation status
+		if file.inumber in free_inodes and file.inumber not in allocated_inodes:
+			print('DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}'.format(file.inumber, file.name, file.inumber))
+
+		# Check for correctness of directory structure
+		if file.name == "'.'" and file.inumber != file.parent_inumber:
+			print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(file.parent_inumber, file.inumber, file.inumber))
+		if file.name == "'..'":
+			if file.parent_inumber == 2 and file.inumber != 2:
+				print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file.inumber))
+			else:
+				# Ensure consistnency among other directory files found on initial readin.
+				for other_file in directory_entries:
+					if other_file.parent_inumber == file.inumber and other_file.inumber == file.parent_inumber:
+						break
+					else:
+						if other.inumber == parent_inumber:
+							print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(file.parent_inumber, file.inumber, other_file.inumber))
+
 
 	"""
 	create a list of all the blocks and inodes we know about and have not 
@@ -111,7 +149,12 @@ def main():
 	"""
 	blocks_not_seen = set([i for i in range(8, superblock.s_blocks_count)])
 	inodes_not_seen = set([i for i in range(superblock.s_first_ino, superblock.s_inodes_count+1)])
-	# Block Consistency Audits
+
+	""" 
+	BLOCK CONSISTENCY AUDITS
+	Note: Since we added all elements of inodes to allocated_inodes, we can rest assured
+	that each `inode` is allocated
+	"""	
 	for inode in inodes:
 		# If any block pointer is not valid, print an error message
 		for i in range(15):
@@ -155,9 +198,15 @@ def main():
 		if inode.inumber in free_inodes:
 			inodes_not_seen.remove(inode.inumber)
 
-	# DIRECTORY CONSISTENCY AUDITS
+	# DIRECTORY CONSISTENCY AUDITS (part II)
+		# Ensure allocated inode reference count matches link count
+		if inode.inumber in inode_link_count and inode_link_count[inode.inumber] != inode.link_count:
+			print('INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}'.format(inode.inumber, inode_link_count[inode.inumber], inode.link_count))
+		elif inode.inumber != 0:
+			print('INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}'.format(inode.inumber, inode.link_count))
 
-	
+
+
 	# Print duplicate block findings
 	for dup in blocks:
 		if len(blocks[dup] > 1):

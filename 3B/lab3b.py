@@ -170,21 +170,21 @@ def main():
                 offset = 256 * 256 + 256 + 12
                 block_type = 'TRIPLE INDIRECT BLOCK'
             
-            b_num = inode.block_pointers[i]
-            if b_num > super_block.num_blocks or b_num < 0:
-                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
-            if b_num < 5 and b_num > 0:
-                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
-            if b_num in free_blocks:
-                print('ALLOCATED BLOCK {0} ON FREELIST'.format(b_num))
+            block_number = inode.block_pointers[i]
+            if block_number > super_block.num_blocks or block_number < 0:
+                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+            if block_number < 5 and block_number > 0:
+                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+            if block_number in free_blocks:
+                print('ALLOCATED BLOCK {0} ON FREELIST'.format(block_number))
 
-            if b_num != 0:
-                if b_num in blocks:
-                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset))
+            if block_number != 0:
+                if block_number in blocks:
+                    blocks[block_number].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
                 else:
-                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, b_num, inumber, offset)]
-                if b_num in blocks_not_seen:
-                    blocks_not_seen.remove(b_num)
+                    blocks[block_number]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset)]
+                if block_number in blocks_not_seen:
+                    blocks_not_seen.remove(block_number)
     
     for ref in indirects:
         if ref.block_num in blocks_not_seen:

@@ -6,24 +6,24 @@ USAGE = 'Usage: ./lab3b file'
 
 class SuperBlock():
     def __init__(self, csv):
-        self.num_blocks = int(csv[1])
-        self.num_inodes = int(csv[2])
+        self.block_count = int(csv[1])
+        self.inode_count = int(csv[2])
         self.block_size = int(csv[3])
         self.inode_size = int(csv[4])
-        self.blocks_group = int(csv[5])
-        self.inodes_group = int(csv[6])
+        self.groups_per_block = int(csv[5])
+        self.inodes_per_group = int(csv[6])
         self.first_free_inode = int(csv[7])
 
 class Group():
     def __init__(self, csv):
-        self.group_num = int(csv[1])
-        self.num_blocks = int(csv[2])
-        self.num_inodes = int(csv[3])
-        self.num_free_blocks = int(csv[4])
-        self.num_free_inodes = int(csv[5])
-        self.block_bmp_block = int(csv[6])
-        self.inode_bmp_block = int(csv[7])
-        self.first_inodes_block = int(csv[8])
+        self.group_number = int(csv[1])
+        self.block_count = int(csv[2])
+        self.inode_count = int(csv[3])
+        self.free_blocks_count = int(csv[4])
+        self.free_inodes_count = int(csv[5])
+        self.block_bitmap = int(csv[6])
+        self.inode_bitmap = int(csv[7])
+        self.inode_table = int(csv[8])
 
 class Inode():
     def __init__(self, csv):
@@ -37,7 +37,7 @@ class Inode():
         self.mod_time = csv[8]
         self.acc_time = csv[9]
         self.file_size = int(csv[10])
-        self.num_blocks = int(csv[11])
+        self.block_count = int(csv[11])
         self.block_pointers = [int(x) for x in csv[12:]]
 
 class DirEntry():
@@ -96,8 +96,8 @@ def main():
 
     # map block number to list of duplicate messages
     blocks = {}
-    blocks_not_seen = set([i for i in range(8, super_block.num_blocks)])
-    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.num_inodes+1)])
+    blocks_not_seen = set([i for i in range(8, super_block.block_count)])
+    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
     inode_link_counts = {}
     inodes_seen = set()
 
@@ -106,7 +106,7 @@ def main():
 
     for entry in dir_entries:
         # check for invalid inode num
-        if entry.file_inode_num < 1 or entry.file_inode_num > super_block.num_inodes:
+        if entry.file_inode_num < 1 or entry.file_inode_num > super_block.inode_count:
             print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_num, entry.name, entry.file_inode_num))
         
         # check if inode in free inodes
@@ -167,7 +167,7 @@ def main():
                 t = 'TRIPLE INDIRECT BLOCK'
             
             b_num = inode.block_pointers[i]
-            if b_num > super_block.num_blocks or b_num < 0:
+            if b_num > super_block.block_count or b_num < 0:
                 print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
             if b_num < 5 and b_num > 0:
                 print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))

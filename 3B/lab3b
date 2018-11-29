@@ -27,131 +27,139 @@ class Group():
 
 class Inode():
     def __init__(self, csv):
-        self.inode_num = int(csv[1])
-        self.type = csv[2]
+        self.inumber = int(csv[1])
+        self.filetype = csv[2]
         self.mode = int(csv[3])
         self.owner = int(csv[4])
         self.group = int(csv[5])
         self.link_count = int(csv[6])
-        self.last_change = csv[7]
-        self.mod_time = csv[8]
-        self.acc_time = csv[9]
+        self.time_last_inode_change = csv[7]
+        self.modification_time = csv[8]
+        self.last_access_time = csv[9]
         self.file_size = int(csv[10])
-        self.block_count = int(csv[11])
+        self.num_blocks_on_disk = int(csv[11])
         self.block_pointers = [int(x) for x in csv[12:]]
 
-class DirEntry():
+class DirectoryEntry():
     def __init__(self, csv):
-        self.parent_num = int(csv[1])
-        self.offset = int(csv[2])
-        self.file_inode_num = int(csv[3])
-        self.entry_len = int(csv[4])
-        self.name_len = int(csv[5])
+        self.parent_inumber = int(csv[1])
+        self.local_offset = int(csv[2])
+        self.file_inumber = int(csv[3])
+        self.entry_length = int(csv[4])
+        self.name_length = int(csv[5])
         self.name = csv[6]
 
-class IndirectRef():
+class IndirectReference():
     def __init__(self, csv):
-        self.parent_num = int(csv[1])
-        self.indir_lvl = int(csv[2])
-        self.offset = int(csv[3])
-        self.block_num = int(csv[4])
-        self.ref_block_num = int(csv[5])
+        self.parent_inumber = int(csv[1])
+        self.level_of_indirection = int(csv[2])
+        self.local_offset = int(csv[3])
+        self.block_number = int(csv[4])
+        self.reference_block_number = int(csv[5])
 
 def main():
+	parser = argparse.ArgumentParser()
+	program_name = parser.prog # get program name
+
+	if len(sys.argv) != 2:
+		print('Error: Invalid number of arguments')
+		print('Usage: ./{} <filename>'.format(program_name))
+		sys.exit(1)
+
+	superblock = None
+    group = None
     free_blocks = set()
     free_inodes = set()
     inodes = []
-    dir_entries = []
-    indirects = []
-    super_block = None
-    group = None
-
-    if len(sys.argv) != 2:
-        print('lab3b: Invalid arguments passed')
-        print(USAGE)
-        sys.exit(1)
+    directory_entries = []
+    indirect_references = []
+    
+    # if len(sys.argv) != 2:
+    #     print('lab3b: Invalid arguments passed')
+    #     print(USAGE)
+    #     sys.exit(1)
 
     file_name = sys.argv[1]
-
-    f = open(file_name, 'r')
+    file = open(file_name, 'r')
 
     # parse the csv
-    for line in f:
+    for line in file:
         line = line.rstrip()
-        vals = line.split(',')
-        if vals[0] == 'SUPERBLOCK':
-            super_block = SuperBlock(vals)
-        elif vals[0] == 'GROUP':
-            group = Group(vals)
-        elif vals[0] == 'BFREE':
-            free_blocks.add(int(vals[1]))
-        elif vals[0] == 'IFREE':
-            free_inodes.add(int(vals[1]))
-        elif vals[0] == 'DIRENT':
-            dir_entries.append(DirEntry(vals))
-        elif vals[0] == 'INODE':
-            inodes.append(Inode(vals))
-        elif vals[0] == 'INDIRECT':
-            indirects.append(IndirectRef(vals))
+        split_line = line.split(',')
+        if split_line[0] == 'SUPERBLOCK':
+            superblock = SuperBlock(split_line)
+        elif split_line[0] == 'GROUP':
+            group = Group(split_line)
+        elif split_line[0] == 'BFREE':
+            free_blocks.add(int(split_line[1]))
+        elif split_line[0] == 'IFREE':
+            free_inodes.add(int(split_line[1]))
+        elif split_line[0] == 'DIRENT':
+            directory_entries.append(DirectoryEntry(split_line))
+        elif split_line[0] == 'INODE':
+            inodes.append(Inode(split_line))
+        elif split_line[0] == 'INDIRECT':
+            indirect_references.append(IndirectReference(split_line))
 
     # map block number to list of duplicate messages
     blocks = {}
-    blocks_not_seen = set([i for i in range(8, super_block.block_count)])
-    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
+    blocks_not_seen = set([i for i in range(8, superblock.block_count)])
+    inodes_not_seen = set([i for i in range(superblock.first_free_inode, superblock.inode_count+1)])
     inode_link_counts = {}
     inodes_seen = set()
 
     for inode in inodes:
-        inodes_seen.add(inode.inode_num)
+        inodes_seen.add(inode.inumber)
 
-    for entry in dir_entries:
+    for entry in directory_entries:
+    	file_inumber = file_inumber
         # check for invalid inode num
-        if entry.file_inode_num < 1 or entry.file_inode_num > super_block.inode_count:
-            print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_num, entry.name, entry.file_inode_num))
+        if file_inumber < 1 or file_inumber > superblock.inode_count:
+            print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_inumber, entry.name, file_inumber))
         
         # check if inode in free inodes
-        if entry.file_inode_num in free_inodes and entry.file_inode_num not in inodes_seen:
-            print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(entry.parent_num, entry.name, entry.file_inode_num))
+        if file_inumber in free_inodes and file_inumber not in inodes_seen:
+            print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(entry.parent_inumber, entry.name, file_inumber))
         
         # increment inode count
-        if entry.file_inode_num in inode_link_counts:
-            inode_link_counts[entry.file_inode_num] += 1
+        if file_inumber in inode_link_counts:
+            inode_link_counts[file_inumber] += 1
         else:
-            inode_link_counts[entry.file_inode_num] = 1
+            inode_link_counts[file_inumber] = 1
 
         if entry.name == "'.'":
-            if entry.file_inode_num != entry.parent_num:
-                print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(entry.parent_num, entry.file_inode_num))
+            if file_inumber != entry.parent_inumber:
+                print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(entry.parent_inumber, file_inumber))
         if entry.name == "'..'":
-            if entry.parent_num == 2:
-                if entry.file_inode_num != 2:
-                    print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(entry.file_inode_num))
+            if entry.parent_inumber == 2:
+                if file_inumber != 2:
+                    print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file_inumber))
             else:
-                for parent in dir_entries:
-                    if parent.parent_num == entry.file_inode_num:
-                        if parent.file_inode_num == entry.parent_num:
+                for parent in directory_entries:
+                    if parent.parent_inumber == file_inumber:
+                        if parent.file_inumber == entry.parent_inumber:
                             break
                     else:
-                        if parent.file_inode_num == entry.parent_num:
-                           print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(entry.file_inode_num, entry.parent_num, parent.parent_num))
+                        if parent.file_inumber == entry.parent_inumber:
+                           print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, entry.parent_inumber, parent.parent_inumber))
                            break
 
     # check blocks
     for inode in inodes:
         # ensure right link count
-        if inode.inode_num in inode_link_counts:
-            if inode_link_counts[inode.inode_num] != inode.link_count:
-                print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inode.inode_num, inode_link_counts[inode.inode_num], inode.link_count))
+        if inode.inumber in inode_link_counts:
+            if inode_link_counts[inode.inumber] != inode.link_count:
+                print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inode.inumber, inode_link_counts[inode.inumber], inode.link_count))
         elif inode.link_count != 0:
-            print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inode.inode_num, inode.link_count))
+            print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inode.inumber, inode.link_count))
 
         # check if inode was listed as free
-        if inode.inode_num in free_inodes:
-            print("ALLOCATED INODE {0} ON FREELIST".format(inode.inode_num))
+        if inode.inumber in free_inodes:
+            print("ALLOCATED INODE {0} ON FREELIST".format(inode.inumber))
 
         # attempt to mark the inode as seen
-        if inode.inode_num in inodes_not_seen:
-            inodes_not_seen.remove(inode.inode_num)
+        if inode.inumber in inodes_not_seen:
+            inodes_not_seen.remove(inode.inumber)
         
         for i in range(15):
             t = 'BLOCK'
@@ -167,26 +175,26 @@ def main():
                 t = 'TRIPLE INDIRECT BLOCK'
             
             b_num = inode.block_pointers[i]
-            if b_num > super_block.block_count or b_num < 0:
-                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+            if b_num > superblock.block_count or b_num < 0:
+                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inumber, offset))
             if b_num < 5 and b_num > 0:
-                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inumber, offset))
             if b_num in free_blocks:
                 print('ALLOCATED BLOCK {0} ON FREELIST'.format(b_num))
 
             if b_num != 0:
                 if b_num in blocks:
-                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset))
+                    blocks[b_num].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inumber, offset))
                 else:
-                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inode_num, offset)]
+                    blocks[b_num]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(t, b_num, inode.inumber, offset)]
                 if b_num in blocks_not_seen:
                     blocks_not_seen.remove(b_num)
     
-    for ref in indirects:
-        if ref.block_num in blocks_not_seen:
-            blocks_not_seen.remove(ref.block_num)
-        if ref.ref_block_num in blocks_not_seen:
-            blocks_not_seen.remove(ref.ref_block_num)
+    for ref in indirect_references:
+        if ref.block_number in blocks_not_seen:
+            blocks_not_seen.remove(ref.block_number)
+        if ref.reference_block_number in blocks_not_seen:
+            blocks_not_seen.remove(ref.reference_block_number)
 
     # see if any block has multiple associations
     for l in blocks:

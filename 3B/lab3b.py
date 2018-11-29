@@ -58,41 +58,42 @@ class IndirectRef():
         self.ref_block_num = int(csv[5])
 
 def main():
+    super_block = None
+    group = None
     free_blocks = set()
     free_inodes = set()
     inodes = []
-    dir_entries = []
+    directory_entries = []
     indirects = []
-    super_block = None
-    group = None
 
     if len(sys.argv) != 2:
         print('lab3b: Invalid arguments passed')
         print(USAGE)
         sys.exit(1)
 
-    file_name = sys.argv[1]
+    filename = sys.argv[1]
 
-    f = open(file_name, 'r')
+    file = open(filename, 'r')
 
     # parse the csv
-    for line in f:
+    for line in file:
         line = line.rstrip()
-        vals = line.split(',')
-        if vals[0] == 'SUPERBLOCK':
-            super_block = SuperBlock(vals)
-        elif vals[0] == 'GROUP':
-            group = Group(vals)
-        elif vals[0] == 'BFREE':
-            free_blocks.add(int(vals[1]))
-        elif vals[0] == 'IFREE':
-            free_inodes.add(int(vals[1]))
-        elif vals[0] == 'DIRENT':
-            dir_entries.append(DirEntry(vals))
-        elif vals[0] == 'INODE':
-            inodes.append(Inode(vals))
-        elif vals[0] == 'INDIRECT':
-            indirects.append(IndirectRef(vals))
+        split_vals = line.split(',')
+        sval0 = split_vals[0]
+        if sval0 == 'SUPERBLOCK':
+            super_block = SuperBlock(split_vals)
+        elif sval0 == 'GROUP':
+            group = Group(split_vals)
+        elif sval0 == 'BFREE':
+            free_blocks.add(int(split_vals[1]))
+        elif sval0 == 'IFREE':
+            free_inodes.add(int(split_vals[1]))
+        elif sval0 == 'DIRENT':
+            directory_entries.append(DirEntry(split_vals))
+        elif sval0 == 'INODE':
+            inodes.append(Inode(split_vals))
+        elif sval0 == 'INDIRECT':
+            indirects.append(IndirectRef(split_vals))
 
     # map block number to list of duplicate messages
     blocks = {}
@@ -104,7 +105,7 @@ def main():
     for inode in inodes:
         inodes_seen.add(inode.inode_num)
 
-    for entry in dir_entries:
+    for entry in directory_entries:
         # check for invalid inode num
         if entry.file_inode_num < 1 or entry.file_inode_num > super_block.num_inodes:
             print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_num, entry.name, entry.file_inode_num))
@@ -127,7 +128,7 @@ def main():
                 if entry.file_inode_num != 2:
                     print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(entry.file_inode_num))
             else:
-                for parent in dir_entries:
+                for parent in directory_entries:
                     if parent.parent_num == entry.file_inode_num:
                         if parent.file_inode_num == entry.parent_num:
                             break

@@ -113,6 +113,9 @@ def main():
 
     for entry in directory_entries:
     	file_inumber = file_inumber
+"""
+PICK UP HERE!!!!
+"""
         # check for invalid inode num
         if file_inumber < 1 or file_inumber > superblock.inode_count:
             print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(entry.parent_inumber, entry.name, file_inumber))

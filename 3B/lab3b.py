@@ -195,8 +195,8 @@ def main():
     # see if any block has multiple associations
     for l in blocks:
         if len(blocks[l]) > 1:
-            for msg in blocks[l]:
-                print(msg)
+            for m in blocks[l]:
+                print(m)
     
     # check for missing inodes
     missing_inodes = inodes_not_seen - free_inodes

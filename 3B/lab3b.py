@@ -8,10 +8,10 @@ class SuperBlock():
     def __init__(self, split_vals):
         self.block_count = int(split_vals[1])
         self.inode_count = int(split_vals[2])
-        self.block_size = int(split_vals[3])
-        self.inode_size = int(split_vals[4])
-        self.blocks_group = int(split_vals[5])
-        self.inodes_group = int(split_vals[6])
+        #self.block_size = int(split_vals[3])
+        #self.inode_size = int(split_vals[4])
+        #self.blocks_group = int(split_vals[5])
+        #self.inodes_group = int(split_vals[6])
         self.first_free_inode = int(split_vals[7])
 
 class Group():

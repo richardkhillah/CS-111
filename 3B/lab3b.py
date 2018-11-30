@@ -5,57 +5,57 @@ import sys
 USAGE = 'Usage: ./lab3b file'
 
 class SuperBlock():
-    def __init__(self, csv):
-        self.block_count = int(csv[1])
-        self.inode_count = int(csv[2])
-        self.block_size = int(csv[3])
-        self.inode_size = int(csv[4])
-        self.blocks_group = int(csv[5])
-        self.inodes_group = int(csv[6])
-        self.first_free_inode = int(csv[7])
+    def __init__(self, split_vals):
+        self.block_count = int(split_vals[1])
+        self.inode_count = int(split_vals[2])
+        self.block_size = int(split_vals[3])
+        self.inode_size = int(split_vals[4])
+        self.blocks_group = int(split_vals[5])
+        self.inodes_group = int(split_vals[6])
+        self.first_free_inode = int(split_vals[7])
 
 class Group():
-    def __init__(self, csv):
-        self.group_num = int(csv[1])
-        self.block_count = int(csv[2])
-        self.inode_count = int(csv[3])
-        self.num_free_blocks = int(csv[4])
-        self.num_free_inodes = int(csv[5])
-        self.block_bmp_block = int(csv[6])
-        self.inode_bmp_block = int(csv[7])
-        self.first_inodes_block = int(csv[8])
+    def __init__(self, split_vals):
+        self.group_num = int(split_vals[1])
+        self.block_count = int(split_vals[2])
+        self.inode_count = int(split_vals[3])
+        self.num_free_blocks = int(split_vals[4])
+        self.num_free_inodes = int(split_vals[5])
+        self.block_bmp_block = int(split_vals[6])
+        self.inode_bmp_block = int(split_vals[7])
+        self.first_inodes_block = int(split_vals[8])
 
 class Inode():
-    def __init__(self, csv):
-        self.inode_num = int(csv[1])
-        self.type = csv[2]
-        self.mode = int(csv[3])
-        self.owner = int(csv[4])
-        self.group = int(csv[5])
-        self.link_count = int(csv[6])
-        self.last_change = csv[7]
-        self.mod_time = csv[8]
-        self.acc_time = csv[9]
-        self.file_size = int(csv[10])
-        self.block_count = int(csv[11])
-        self.block_pointers = [int(x) for x in csv[12:]]
+    def __init__(self, split_vals):
+        self.inode_num = int(split_vals[1])
+        self.type = split_vals[2]
+        self.mode = int(split_vals[3])
+        self.owner = int(split_vals[4])
+        self.group = int(split_vals[5])
+        self.link_count = int(split_vals[6])
+        self.last_change = split_vals[7]
+        self.mod_time = split_vals[8]
+        self.acc_time = split_vals[9]
+        self.file_size = int(split_vals[10])
+        self.block_count = int(split_vals[11])
+        self.block_pointers = [int(x) for x in split_vals[12:]]
 
 class DirEntry():
-    def __init__(self, csv):
-        self.parent_num = int(csv[1])
-        self.offset = int(csv[2])
-        self.file_inode_num = int(csv[3])
-        self.entry_len = int(csv[4])
-        self.name_len = int(csv[5])
-        self.name = csv[6]
+    def __init__(self, split_vals):
+        self.parent_num = int(split_vals[1])
+        self.offset = int(split_vals[2])
+        self.file_inode_num = int(split_vals[3])
+        self.entry_len = int(split_vals[4])
+        self.name_len = int(split_vals[5])
+        self.name = split_vals[6]
 
 class IndirectRef():
-    def __init__(self, csv):
-        self.parent_num = int(csv[1])
-        self.indir_lvl = int(csv[2])
-        self.offset = int(csv[3])
-        self.block_num = int(csv[4])
-        self.ref_block_num = int(csv[5])
+    def __init__(self, split_vals):
+        self.parent_num = int(split_vals[1])
+        self.indir_lvl = int(split_vals[2])
+        self.offset = int(split_vals[3])
+        self.block_num = int(split_vals[4])
+        self.ref_block_num = int(split_vals[5])
 
 def main():
     super_block = None

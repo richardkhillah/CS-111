@@ -16,14 +16,14 @@ class SuperBlock():
 
 class Group():
     def __init__(self, split_vals):
-        self.group_num = int(split_vals[1])
+        #self.group_num = int(split_vals[1])
         self.block_count = int(split_vals[2])
         self.inode_count = int(split_vals[3])
         self.num_free_blocks = int(split_vals[4])
         self.num_free_inodes = int(split_vals[5])
-        self.block_bmp_block = int(split_vals[6])
-        self.inode_bmp_block = int(split_vals[7])
-        self.first_inodes_block = int(split_vals[8])
+        #self.block_bmp_block = int(split_vals[6])
+        #self.inode_bmp_block = int(split_vals[7])
+        #self.first_inodes_block = int(split_vals[8])
 
 class Inode():
     def __init__(self, split_vals):

@@ -58,9 +58,8 @@ class IndirectRef():
         self.ref_block_num = int(split_vals[5])
 
 def main():
-    parser = argparse.ArgumentParser()
-    program_name = parser.prog # get program name
-    
+    program_name = sys.argv[0]
+
     super_block = None
     group = None
     free_blocks = set()
@@ -70,8 +69,10 @@ def main():
     indirects = []
 
     if len(sys.argv) != 2:
-        print('lab3b: Invalid arguments passed')
-        print(USAGE)
+        # print('lab3b: Invalid arguments passed')
+        # print(USAGE)
+        print('Error: error getting input file')
+        print('Usage: {} filename'.format(filename))
         sys.exit(1)
 
     filename = sys.argv[1]

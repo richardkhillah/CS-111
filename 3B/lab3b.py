@@ -80,8 +80,8 @@ class IndirectRef():
 if __name__ == '__main__':
     program_name = sys.argv[0]
     if len(sys.argv) != 2:
-        print('Error: error getting input file')
-        print('Usage: {} filename'.format(filename))
+        print('Error: error getting input file', file=sys.stderr)
+        print('Usage: {} filename'.format(filename), file=sys.stderr)
         #sys.exit(1)
         exit(1)
 
@@ -118,11 +118,10 @@ if __name__ == '__main__':
                         indirects.append(IndirectRef(split_vals))
                 pass
             except Exception as e:
-                print('Uh oh, looks like there was an error reading contents of {}.'.format(filename))
-                print('Usage: {} filename.csv'.format(program_name))
+                print('Uh oh, looks like there was an error reading contents of {}.'.format(filename), file=sys.stderr)
+                print('Usage: {} filename.csv'.format(program_name), file=sys.stderr)
                 exit(1)
 
-                #raise e
 
 
 

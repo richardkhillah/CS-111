@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
 
-    if exists(filename):
+    if os.path.exists(filename):
         with open(filename, 'r') as file:
             try:
                 for line in file:
@@ -126,27 +126,27 @@ if __name__ == '__main__':
 
 
 
-    file = open(filename, 'r')
+    # file = open(filename, 'r')
 
-    # read in csv value. Here we are assuming correct .csv format
-    for line in file:
-        line = line.rstrip()
-        split_vals = line.split(',')
-        l0 = split_vals[0]
-        if l0 == 'SUPERBLOCK':
-            super_block = SuperBlock(split_vals)
-        elif l0 == 'GROUP':
-            group = Group(split_vals)
-        elif l0 == 'BFREE':
-            free_blocks.add(int(split_vals[1]))
-        elif l0 == 'IFREE':
-            free_inodes.add(int(split_vals[1]))
-        elif l0 == 'DIRENT':
-            directory_entries.append(DirEntry(split_vals))
-        elif l0 == 'INODE':
-            inodes.append(Inode(split_vals))
-        elif l0 == 'INDIRECT':
-            indirects.append(IndirectRef(split_vals))
+    # # read in csv value. Here we are assuming correct .csv format
+    # for line in file:
+    #     line = line.rstrip()
+    #     split_vals = line.split(',')
+    #     l0 = split_vals[0]
+    #     if l0 == 'SUPERBLOCK':
+    #         super_block = SuperBlock(split_vals)
+    #     elif l0 == 'GROUP':
+    #         group = Group(split_vals)
+    #     elif l0 == 'BFREE':
+    #         free_blocks.add(int(split_vals[1]))
+    #     elif l0 == 'IFREE':
+    #         free_inodes.add(int(split_vals[1]))
+    #     elif l0 == 'DIRENT':
+    #         directory_entries.append(DirEntry(split_vals))
+    #     elif l0 == 'INODE':
+    #         inodes.append(Inode(split_vals))
+    #     elif l0 == 'INDIRECT':
+    #         indirects.append(IndirectRef(split_vals))
 
     # map block number to list of duplicate messages
     blocks = {}

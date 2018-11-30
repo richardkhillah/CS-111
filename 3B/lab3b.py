@@ -80,8 +80,8 @@ class IndirectRef():
 if __name__ == '__main__':
     program_name = sys.argv[0]
     if len(sys.argv) != 2:
-        sys.stderr.write('Error: error getting input file')
-        sys.stderr.write('Usage: %s filename\n' % (filename))
+        sys.stderr.write('Error getting input file\n')
+        sys.stderr.write('Usage: %s filename\n' % (program_name))
         #sys.exit(1)
         exit(1)
 

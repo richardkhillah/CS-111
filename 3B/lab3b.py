@@ -5,9 +5,12 @@ NAME: Richard Khillah
 EMAIL: RKhillah@ucla.edu
 ID: 604853262
 
-lab3b performs a file system audit by analyzing a csv summary of the
-file system. The csv summary must adhear to the formatting convetions
-described in P3A.html, despite not storing all data read in.
+lab3b analyzes a file system summary (a .csv file generated from lab3a)
+and reports on all found inconsistencies. It generates
+    Block Consistency Audits
+    I-node Allocation Audits
+    Directory Consistency Audits
+and reports findings to stdout.
 
 Exit Codes:
 0 ... successful execution, no inconsistencies found.
@@ -22,58 +25,37 @@ import os.path
 exitCode = 0
 
 # There's no need to keep things we don't need, so for each
-# line in a filesystem
-# .csv for each object, store only the data we are auditing
+# line in the split csv file, store only the data we are auditing
 class SuperBlock():
     def __init__(self, split_vals):
         self.block_count = int(split_vals[1])
         self.inode_count = int(split_vals[2])
-        #self.block_size = int(split_vals[3])
-        #self.inode_size = int(split_vals[4])
-        #self.blocks_group = int(split_vals[5])
-        #self.inodes_group = int(split_vals[6])
         self.first_free_inode = int(split_vals[7])
 
 class Group():
     def __init__(self, split_vals):
-        #self.group_num = int(split_vals[1])
         self.block_count = int(split_vals[2])
         self.inode_count = int(split_vals[3])
         self.num_free_blocks = int(split_vals[4])
         self.num_free_inodes = int(split_vals[5])
-        #self.block_bmp_block = int(split_vals[6])
-        #self.inode_bmp_block = int(split_vals[7])
-        #self.first_inodes_block = int(split_vals[8])
 
 class Inode():
     def __init__(self, split_vals):
         self.inumber = int(split_vals[1])
         self.type = split_vals[2]
-        #self.mode = int(split_vals[3])
-        #self.owner = int(split_vals[4])
-        #self.group = int(split_vals[5])
         self.link_count = int(split_vals[6])
-        #self.last_change = split_vals[7]
-        #self.mod_time = split_vals[8]
-        #self.acc_time = split_vals[9]
-        #self.file_size = int(split_vals[10])
         self.block_count = int(split_vals[11])
         self.block_pointers = [int(x) for x in split_vals[12:]]
 
 class DirEntry():
     def __init__(self, split_vals):
         self.parent_num = int(split_vals[1])
-        #self.offset = int(split_vals[2])
         self.file_inode_num = int(split_vals[3])
-        #self.entry_len = int(split_vals[4])
-        #self.name_len = int(split_vals[5])
         self.name = split_vals[6]
 
 class IndirectRef():
     def __init__(self, split_vals):
         self.parent_num = int(split_vals[1])
-        #self.indir_lvl = int(split_vals[2])
-        #self.offset = int(split_vals[3])
         self.block_num = int(split_vals[4])
         self.ref_block_num = int(split_vals[5])
 
@@ -254,21 +236,3 @@ if __name__ == '__main__':
         exitCode = 2
 
     exit(exitCode)
-
-
-
-
-#print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(parent_inumber, entry.name, file_inumber))
-#print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(parent_inumber, entry.name, file_inumber))
-#print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(parent_inumber, file_inumber))
-#print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file_inumber))
-#print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, parent_inumber, parent.parent_num))
-#print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inumber, inode_link_counts[inumber], inode.link_count))
-#print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inumber, inode.link_count))
-#print("ALLOCATED INODE {0} ON FREELIST".format(inumber))
-#print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
-#print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
-#print('ALLOCATED BLOCK {0} ON FREELIST'.format(block_number))
-#print(m)
-#print("UNALLOCATED INODE {0} NOT ON FREELIST".format(n))
-#print("UNREFERENCED BLOCK {0}".format(n))

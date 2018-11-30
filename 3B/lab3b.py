@@ -79,20 +79,20 @@ def main():
     for line in file:
         line = line.rstrip()
         split_vals = line.split(',')
-        sval0 = split_vals[0]
-        if sval0 == 'SUPERBLOCK':
+        l0 = split_vals[0]
+        if l0 == 'SUPERBLOCK':
             super_block = SuperBlock(split_vals)
-        elif sval0 == 'GROUP':
+        elif l0 == 'GROUP':
             group = Group(split_vals)
-        elif sval0 == 'BFREE':
+        elif l0 == 'BFREE':
             free_blocks.add(int(split_vals[1]))
-        elif sval0 == 'IFREE':
+        elif l0 == 'IFREE':
             free_inodes.add(int(split_vals[1]))
-        elif sval0 == 'DIRENT':
+        elif l0 == 'DIRENT':
             directory_entries.append(DirEntry(split_vals))
-        elif sval0 == 'INODE':
+        elif l0 == 'INODE':
             inodes.append(Inode(split_vals))
-        elif sval0 == 'INDIRECT':
+        elif l0 == 'INDIRECT':
             indirects.append(IndirectRef(split_vals))
 
     # map block number to list of duplicate messages

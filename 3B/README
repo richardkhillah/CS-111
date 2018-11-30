@@ -2,12 +2,20 @@ NAME: Richard Khillah
 EMAIL: RKhillah@ucla.edu
 ID: 604853262
 
-Limitations:
+Limitations: Python3 is required to run this program. Makefile creates a symlink
 
 
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
 
-lab3a.py: the required source file for the lab
+lab3b.py: required source code implementing P3B.html specs.
 
-P3B_check.sh: the check script provided as a sanity check measure.
+lab3b: 	executable that analyze a file system summary (a .csv file generated from lab3a)
+		and reports on all found inconsistencies. It generates
+		    Block Consistency Audits
+		    I-node Allocation Audits
+		    Directory Consistency Audits
+		and reports findings to stdout.
+
+P3B_check.sh: the (provided) check script. Once the distribution tarball has been
+				made, run `$ make check` to perform the sanity check.

@@ -102,16 +102,8 @@ def process(csv):
             sys.stderr.write('Unable to process a line in %s\n' % (csv))
             exitCode = 1
             return
-            #exit(1)
-    # else:
-    #     sys.stderr.write('%s: Invalid filename: \"%s\"\n' % (program_name, filename))
-    #     exitCode = 1
-    #     return
-    #     #exit(1)
 
-    # map block number to list of duplicate messages
 
-    
     blocks = {}
     blocks_not_seen = set([i for i in range(8, super_block.block_count)])
     inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
@@ -253,5 +245,5 @@ if __name__ == '__main__':
 
 
     
-
+    
     exit(exitCode)

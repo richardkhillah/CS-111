@@ -58,6 +58,9 @@ class IndirectRef():
         self.ref_block_num = int(split_vals[5])
 
 def main():
+    parser = argparse.ArgumentParser()
+    program_name = parser.prog # get program name
+    
     super_block = None
     group = None
     free_blocks = set()

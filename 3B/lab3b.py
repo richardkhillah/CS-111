@@ -215,16 +215,16 @@ if __name__ == '__main__':
                 sys.stdout.write("INVALID %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
                 exitCode = 2
             if block_number < 5 and block_number > 0:
-                sys.stdout.write("RESERVED %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
+                sys.stdout.write("RESERVED %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
             if block_number in free_blocks:
                 sys.stdout.write("ALLOCATED BLOCK %d ON FREELIST" % (block_number))
                 exitCode = 2
 
             if block_number != 0:
                 if block_number in blocks:
-                    blocks[block_number].append("DUPLICATE %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
+                    blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
                 else:
-                    blocks[block_number]= ["DUPLICATE %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset)]
+                    blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset)]
                 if block_number in blocks_not_seen:
                     blocks_not_seen.remove(block_number)
     
@@ -238,7 +238,8 @@ if __name__ == '__main__':
     for l in blocks:
         if len(blocks[l]) > 1:
             for m in blocks[l]:
-                sys.stdout.write(m)
+                #sys.stdout.write(m)
+                print(m)
     
     # check for missing inodes
     missing_inodes = inodes_not_seen - free_inodes

@@ -23,6 +23,7 @@ import sys
 import os.path
 
 exitCode = 0
+program_name = None
 
 # There's no need to keep things we don't need, so for each
 # line in the split csv file, store only the data we are auditing
@@ -62,13 +63,13 @@ class IndirectRef():
 def process(csv):
     global exitCode
 
-    if not os.path.exists(filename):
-        sys.stderr.write('%s: Invalid filename: \"%s\"\n' % (program_name, filename))
+    if not os.path.exists(csv):
+        sys.stderr.write('%s: Unable to open report %s\n' % (program_name, csv))
         exitCode = 1
         return
 
     # We have ensured the file exists, so open it and begin working
-    with open(filename, 'r') as file:
+    with open(csv, 'r') as file:
         try:
             for line in file:
                 line = line.rstrip()
@@ -90,9 +91,7 @@ def process(csv):
                     indirects.append(IndirectRef(split_vals))
             pass
         except Exception as e:
-            sys.stderr.write('Uh oh, looks like there was an error reading contents of %s\n' % 
-                             (filename))
-            sys.stderr.write('Usage: %s filename.csv' % (program_name))
+            sys.stderr.write('Unable to process a line in %s\n' % (csv))
             exitCode = 1
             return
             #exit(1)

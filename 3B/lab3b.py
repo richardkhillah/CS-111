@@ -59,6 +59,50 @@ class IndirectRef():
         self.block_num = int(split_vals[4])
         self.ref_block_num = int(split_vals[5])
 
+def process(csv):
+    global exitCode
+
+    if not os.path.exists(filename):
+        sys.stderr.write('%s: Invalid filename: \"%s\"\n' % (program_name, filename))
+        exitCode = 1
+        return
+
+    # We have ensured the file exists, so open it and begin working
+    with open(filename, 'r') as file:
+        try:
+            for line in file:
+                line = line.rstrip()
+                split_vals = line.split(',')
+                l0 = split_vals[0]
+                if l0 == 'SUPERBLOCK':
+                    super_block = SuperBlock(split_vals)
+                elif l0 == 'GROUP':
+                    group = Group(split_vals)
+                elif l0 == 'BFREE':
+                    free_blocks.add(int(split_vals[1]))
+                elif l0 == 'IFREE':
+                    free_inodes.add(int(split_vals[1]))
+                elif l0 == 'DIRENT':
+                    directory_entries.append(DirEntry(split_vals))
+                elif l0 == 'INODE':
+                    inodes.append(Inode(split_vals))
+                elif l0 == 'INDIRECT':
+                    indirects.append(IndirectRef(split_vals))
+            pass
+        except Exception as e:
+            sys.stderr.write('Uh oh, looks like there was an error reading contents of %s\n' % 
+                             (filename))
+            sys.stderr.write('Usage: %s filename.csv' % (program_name))
+            exitCode = 1
+            return
+            #exit(1)
+    # else:
+    #     sys.stderr.write('%s: Invalid filename: \"%s\"\n' % (program_name, filename))
+    #     exitCode = 1
+    #     return
+    #     #exit(1)
+
+
 if __name__ == '__main__':
     program_name = sys.argv[0]
     if len(sys.argv) != 2:
@@ -76,36 +120,7 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
 
-    if os.path.exists(filename):
-        with open(filename, 'r') as file:
-            try:
-                for line in file:
-                    line = line.rstrip()
-                    split_vals = line.split(',')
-                    l0 = split_vals[0]
-                    if l0 == 'SUPERBLOCK':
-                        super_block = SuperBlock(split_vals)
-                    elif l0 == 'GROUP':
-                        group = Group(split_vals)
-                    elif l0 == 'BFREE':
-                        free_blocks.add(int(split_vals[1]))
-                    elif l0 == 'IFREE':
-                        free_inodes.add(int(split_vals[1]))
-                    elif l0 == 'DIRENT':
-                        directory_entries.append(DirEntry(split_vals))
-                    elif l0 == 'INODE':
-                        inodes.append(Inode(split_vals))
-                    elif l0 == 'INDIRECT':
-                        indirects.append(IndirectRef(split_vals))
-                pass
-            except Exception as e:
-                sys.stderr.write('Uh oh, looks like there was an error reading contents of %s\n' % 
-                                 (filename))
-                sys.stderr.write('Usage: %s filename.csv' % (program_name))
-                exit(1)
-    else:
-        sys.stderr.write('%s: Invalid filename: \"%s\"\n' % (program_name, filename))
-        exit(1)
+    process(filename)
 
 
     # map block number to list of duplicate messages

@@ -80,29 +80,22 @@ if __name__ == '__main__':
         with open(filename, 'r') as file:
             try:
                 for line in file:
-                    #line = line.rstrip()
+                    line = line.rstrip()
                     split_vals = line.split(',')
-                    #l0 = split_vals[0]
-                    #if l0 == 'SUPERBLOCK':
-                    if split_vals.startswith("SUPERBLOCK"):
+                    l0 = split_vals[0]
+                    if l0 == 'SUPERBLOCK':
                         super_block = SuperBlock(split_vals)
-                    #elif l0 == 'GROUP':
-                    elif split_vals.startswith("GROUP"):
+                    elif l0 == 'GROUP':
                         group = Group(split_vals)
-                    #elif l0 == 'BFREE':
-                    elif split_vals.startswith("BFREE"):
+                    elif l0 == 'BFREE':
                         free_blocks.add(int(split_vals[1]))
-                    #elif l0 == 'IFREE':
-                    elif split_vals.startswith("IFREE"):
+                    elif l0 == 'IFREE':
                         free_inodes.add(int(split_vals[1]))
-                    #elif l0 == 'DIRENT':
-                    elif split_vals.startswith("DIRENT"):
+                    elif l0 == 'DIRENT':
                         directory_entries.append(DirEntry(split_vals))
-                    #elif l0 == 'INODE':
-                    elif split_vals.startswith("INODE"):
+                    elif l0 == 'INODE':
                         inodes.append(Inode(split_vals))
-                    #elif l0 == 'INDIRECT':
-                    elif split_vals.startswith("INDIRECT"):
+                    elif l0 == 'INDIRECT':
                         indirects.append(IndirectRef(split_vals))
                 pass
             except Exception as e:

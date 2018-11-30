@@ -43,17 +43,17 @@ class Inode():
 class DirEntry():
     def __init__(self, split_vals):
         self.parent_num = int(split_vals[1])
-        self.offset = int(split_vals[2])
+        #self.offset = int(split_vals[2])
         self.file_inode_num = int(split_vals[3])
-        self.entry_len = int(split_vals[4])
-        self.name_len = int(split_vals[5])
+        #self.entry_len = int(split_vals[4])
+        #self.name_len = int(split_vals[5])
         self.name = split_vals[6]
 
 class IndirectRef():
     def __init__(self, split_vals):
         self.parent_num = int(split_vals[1])
-        self.indir_lvl = int(split_vals[2])
-        self.offset = int(split_vals[3])
+        #self.indir_lvl = int(split_vals[2])
+        #self.offset = int(split_vals[3])
         self.block_num = int(split_vals[4])
         self.ref_block_num = int(split_vals[5])
 

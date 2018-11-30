@@ -27,7 +27,7 @@ class Group():
 
 class Inode():
     def __init__(self, split_vals):
-        self.inode_num = int(split_vals[1])
+        self.inumber = int(split_vals[1])
         self.type = split_vals[2]
         #self.mode = int(split_vals[3])
         #self.owner = int(split_vals[4])
@@ -103,7 +103,7 @@ def main():
     inodes_seen = set()
 
     for inode in inodes:
-        inodes_seen.add(inode.inode_num)
+        inodes_seen.add(inode.inumber)
 
     for entry in directory_entries:
         # check for invalid inode num
@@ -142,7 +142,7 @@ def main():
     # check blocks
     for inode in inodes:
         # ensure right link count
-        inumber = inode.inode_num
+        inumber = inode.inumber
         if inumber in inode_link_counts:
             if inode_link_counts[inumber] != inode.link_count:
                 print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inumber, inode_link_counts[inumber], inode.link_count))

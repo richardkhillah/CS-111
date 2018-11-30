@@ -29,9 +29,9 @@ class Inode():
     def __init__(self, split_vals):
         self.inode_num = int(split_vals[1])
         self.type = split_vals[2]
-        self.mode = int(split_vals[3])
-        self.owner = int(split_vals[4])
-        self.group = int(split_vals[5])
+        #self.mode = int(split_vals[3])
+        #self.owner = int(split_vals[4])
+        #self.group = int(split_vals[5])
         self.link_count = int(split_vals[6])
         self.last_change = split_vals[7]
         self.mod_time = split_vals[8]

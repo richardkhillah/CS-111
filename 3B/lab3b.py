@@ -33,10 +33,10 @@ class Inode():
         #self.owner = int(split_vals[4])
         #self.group = int(split_vals[5])
         self.link_count = int(split_vals[6])
-        self.last_change = split_vals[7]
-        self.mod_time = split_vals[8]
-        self.acc_time = split_vals[9]
-        self.file_size = int(split_vals[10])
+        #self.last_change = split_vals[7]
+        #self.mod_time = split_vals[8]
+        #self.acc_time = split_vals[9]
+        #self.file_size = int(split_vals[10])
         self.block_count = int(split_vals[11])
         self.block_pointers = [int(x) for x in split_vals[12:]]
 

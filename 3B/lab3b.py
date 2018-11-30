@@ -198,33 +198,33 @@ if __name__ == '__main__':
             inodes_not_seen.remove(inumber)
         
         for i in range(15):
-            block_type = 'BLOCK'
+            block_type = "BLOCK"
             offset = i
             if i == 12:
                 offset = 12
-                block_type = 'INDIRECT BLOCK'
+                block_type = "INDIRECT BLOCK"
             elif i == 13:
                 offset = 256 + 12
-                block_type = 'DOUBLE INDIRECT BLOCK'
+                block_type = "DOUBLE INDIRECT BLOCK"
             elif i == 14:
                 offset = 256 * 256 + 256 + 12
-                block_type = 'TRIPLE INDIRECT BLOCK'
+                block_type = "TRIPLE INDIRECT BLOCK"
             
             block_number = inode.block_pointers[i]
             if block_number > super_block.block_count or block_number < 0:
-                sys.stdout.write('INVALID %s %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
+                sys.stdout.write("INVALID %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
                 exitCode = 2
             if block_number < 5 and block_number > 0:
-                sys.stdout.write('RESERVED %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
+                sys.stdout.write("RESERVED %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
             if block_number in free_blocks:
-                sys.stdout.write('ALLOCATED BLOCK %d ON FREELIST' % (block_number))
+                sys.stdout.write("ALLOCATED BLOCK %d ON FREELIST" % (block_number))
                 exitCode = 2
 
             if block_number != 0:
                 if block_number in blocks:
-                    blocks[block_number].append('DUPLICATE %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
+                    blocks[block_number].append("DUPLICATE %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
                 else:
-                    blocks[block_number]= ['DUPLICATE %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset)]
+                    blocks[block_number]= ["DUPLICATE %d %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset)]
                 if block_number in blocks_not_seen:
                     blocks_not_seen.remove(block_number)
     

@@ -1,4 +1,4 @@
-#!/usr/local/cs/bin/python3
+#!/usr/local/bin/python3
 
 """
 NAME: Richard Khillah
@@ -141,12 +141,12 @@ if __name__ == '__main__':
         file_inumber = entry.file_inode_num
         parent_inumber = entry.parent_num
         if file_inumber < 1 or file_inumber > super_block.inode_count:
-            print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(parent_inumber, entry.name, file_inumber))
+            sys.stdout.write("DIRECTORY INODE %d NAME %s INVALID INODE %d" % (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
         # check if inode in free inodes
         if file_inumber in free_inodes and file_inumber not in inodes_seen:
-            print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(parent_inumber, entry.name, file_inumber))
+            sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" % (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
         # increment inode count
@@ -157,13 +157,13 @@ if __name__ == '__main__':
 
         if entry.name == "'.'":
             if file_inumber != parent_inumber:
-                print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(parent_inumber, file_inumber))
+                sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" % (parent_inumber, file_inumber))
                 exitCode = 2
 
         if entry.name == "'..'":
             if parent_inumber == 2:
                 if file_inumber != 2:
-                    print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file_inumber))
+                    sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
                     exitCode = 2
             else:
                 for parent in directory_entries:
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                             break
                     else:
                         if parent.file_inode_num == parent_inumber:
-                           print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, parent_inumber, parent.parent_num))
+                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_num))
                            exitCode = 2
                            break
 
@@ -182,15 +182,15 @@ if __name__ == '__main__':
         inumber = inode.inumber
         if inumber in inode_link_counts:
             if inode_link_counts[inumber] != inode.link_count:
-                print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inumber, inode_link_counts[inumber], inode.link_count))
+                sys.stdout.write("INODE %d HAS %d LINKS BUT LINKCOUNT IS %d" % (inumber, inode_link_counts[inumber], inode.link_count))
                 exitCode = 2
         elif inode.link_count != 0:
-            print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inumber, inode.link_count))
+            sys.stdout.write("INODE %d HAS 0 LINKS BUT LINKCOUNT IS %d" % (inumber, inode.link_count))
             exitCode = 2
 
         # check if inode was listed as free
         if inumber in free_inodes:
-            print("ALLOCATED INODE {0} ON FREELIST".format(inumber))
+            sys.stdout.write("ALLOCATED INODE %d ON FREELIST" % (inumber))
             exitCode = 2
 
         # attempt to mark the inode as seen
@@ -212,19 +212,19 @@ if __name__ == '__main__':
             
             block_number = inode.block_pointers[i]
             if block_number > super_block.block_count or block_number < 0:
-                print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+                sys.stdout.write('INVALID %s %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
                 exitCode = 2
             if block_number < 5 and block_number > 0:
-                print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+                sys.stdout.write('RESERVED %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
             if block_number in free_blocks:
-                print('ALLOCATED BLOCK {0} ON FREELIST'.format(block_number))
+                sys.stdout.write('ALLOCATED BLOCK %d ON FREELIST' % (block_number))
                 exitCode = 2
 
             if block_number != 0:
                 if block_number in blocks:
-                    blocks[block_number].append('DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+                    blocks[block_number].append('DUPLICATE %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset))
                 else:
-                    blocks[block_number]= ['DUPLICATE {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset)]
+                    blocks[block_number]= ['DUPLICATE %d %d IN INODE %d AT OFFSET %d' % (block_type, block_number, inumber, offset)]
                 if block_number in blocks_not_seen:
                     blocks_not_seen.remove(block_number)
     
@@ -238,18 +238,36 @@ if __name__ == '__main__':
     for l in blocks:
         if len(blocks[l]) > 1:
             for m in blocks[l]:
-                print(m)
+                sys.stdout.write(m)
     
     # check for missing inodes
     missing_inodes = inodes_not_seen - free_inodes
 
     for n in missing_inodes:
-        print("UNALLOCATED INODE {0} NOT ON FREELIST".format(n))
+        sys.stdout.write("UNALLOCATED INODE %d NOT ON FREELIST" % (n))
         exitCode = 2
     
     missing_blocks = blocks_not_seen - free_blocks
     for n in missing_blocks:
-        print("UNREFERENCED BLOCK {0}".format(n))
+        sys.stdout.write("UNREFERENCED BLOCK %d" % (n))
         exitCode = 2
 
     exit(exitCode)
+
+
+
+
+#print("DIRECTORY INODE {0} NAME {1} INVALID INODE {2}".format(parent_inumber, entry.name, file_inumber))
+#print("DIRECTORY INODE {0} NAME {1} UNALLOCATED INODE {2}".format(parent_inumber, entry.name, file_inumber))
+#print("DIRECTORY INODE {0} NAME '.' LINK TO INODE {1} SHOULD BE {0}".format(parent_inumber, file_inumber))
+#print("DIRECTORY INODE 2 NAME '..' LINK TO INODE {0} SHOULD BE 2".format(file_inumber))
+#print("DIRECTORY INODE {1} NAME '..' LINK TO INODE {0} SHOULD BE {1}".format(file_inumber, parent_inumber, parent.parent_num))
+#print("INODE {0} HAS {1} LINKS BUT LINKCOUNT IS {2}".format(inumber, inode_link_counts[inumber], inode.link_count))
+#print("INODE {0} HAS 0 LINKS BUT LINKCOUNT IS {1}".format(inumber, inode.link_count))
+#print("ALLOCATED INODE {0} ON FREELIST".format(inumber))
+#print('INVALID {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+#print('RESERVED {0} {1} IN INODE {2} AT OFFSET {3}'.format(block_type, block_number, inumber, offset))
+#print('ALLOCATED BLOCK {0} ON FREELIST'.format(block_number))
+#print(m)
+#print("UNALLOCATED INODE {0} NOT ON FREELIST".format(n))
+#print("UNREFERENCED BLOCK {0}".format(n))

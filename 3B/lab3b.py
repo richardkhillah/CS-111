@@ -68,6 +68,14 @@ def process(csv):
         exitCode = 1
         return
 
+    super_block = None
+    group = None
+    free_blocks = set()
+    free_inodes = set()
+    inodes = []
+    directory_entries = []
+    indirects = []   
+
     # We have ensured the file exists, so open it and begin working
     with open(csv, 'r') as file:
         try:
@@ -101,28 +109,9 @@ def process(csv):
     #     return
     #     #exit(1)
 
-
-if __name__ == '__main__':
-    program_name = sys.argv[0]
-    if len(sys.argv) != 2:
-        sys.stderr.write('Error getting input file\n')
-        sys.stderr.write('Usage: %s filename\n' % (program_name))
-        exit(1)
-
-    super_block = None
-    group = None
-    free_blocks = set()
-    free_inodes = set()
-    inodes = []
-    directory_entries = []
-    indirects = []
-
-    filename = sys.argv[1]
-
-    process(filename)
-
-
     # map block number to list of duplicate messages
+
+    
     blocks = {}
     blocks_not_seen = set([i for i in range(8, super_block.block_count)])
     inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
@@ -248,5 +237,21 @@ if __name__ == '__main__':
     for n in missing_blocks:
         sys.stdout.write("UNREFERENCED BLOCK %d" % (n))
         exitCode = 2
+
+
+if __name__ == '__main__':
+    program_name = sys.argv[0]
+
+    if len(sys.argv) != 2:
+        sys.stderr.write('Error getting input file\n')
+        sys.stderr.write('Usage: %s filename\n' % (program_name))
+        exit(1)
+
+    filename = sys.argv[1]
+
+    process(filename)
+
+
+    
 
     exit(exitCode)

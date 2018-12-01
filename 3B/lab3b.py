@@ -150,6 +150,8 @@ def process(csv):
         else:
             inode_link_counts[file_inumber] += 1
 
+        # Every directory should begin with "." and "..". If these links are 
+        # not correct, note.
         if entry.name == "'.'" and file_inumber is not parent_inumber:
             sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" %
                              (parent_inumber, file_inumber))
@@ -162,6 +164,7 @@ def process(csv):
                 exitCode = 2
             else:
                 for parent in directory_entries:
+                    # this is the consistency case
                     if parent.parent_inumber == file_inumber:
                         if parent.file_inumber == parent_inumber:
                             break

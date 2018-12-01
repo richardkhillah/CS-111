@@ -157,15 +157,11 @@ def process(csv):
                     if parent.parent_inumber == file_inumber:
                         if parent.file_inumber == parent_inumber:
                             break
-                        else:
-                            sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
-                            exitCode = 2
-                            break
-                    # else:
-                    #     if parent.file_inumber == parent_inumber:
-                    #        sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
-                    #        exitCode = 2
-                    #        break
+                    else:
+                        if parent.file_inumber == parent_inumber:
+                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
+                           exitCode = 2
+                           break
 
     # check blocks
     for inode in inodes:

@@ -141,12 +141,12 @@ def process(csv):
             inode_link_counts[file_inumber] = 1
 
         dot = "'.'"
-        doubledot = "'..'"
+        dot_dot = "'..'"
         if entry.name == "'.'" and file_inumber is not parent_inumber:
                 sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" % (parent_inumber, file_inumber))
                 exitCode = 2
 
-        if entry.name == "'..'":
+        if entry.name is dot_dot:
             if parent_inumber == 2 and file_inumber is not 2:
                     sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
                     exitCode = 2

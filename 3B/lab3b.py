@@ -128,23 +128,27 @@ def process(csv):
         file_inumber = entry.file_inumber       # Cache these values to 
         parent_inumber = entry.parent_inumber   # reduce mem references
 
-        # check for invalid inode num
-        if file_inumber < 1 or file_inumber > super_block.inode_count:
+        # Directory entries should reference valid INodes.
+        # A valid Inode cannot have a number less than 1 or greater than
+        # the last Inode in the file system, so if it does, make note.
+        if (file_inumber < 1) or (file_inumber > super_block.inode_count):
             sys.stdout.write("DIRECTORY INODE %d NAME %s INVALID INODE %d" %
                              (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
-        # check if inode in free inodes
+        # Similarly, directory entries should reference allocated Inodes.
+        # So if we find a directory entry on the list of free inodes,
+        # make note of it
         if file_inumber in free_inodes and file_inumber not in audited_inodes:
             sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" %
                              (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
-        # increment inode count
-        if file_inumber in inode_link_counts:
-            inode_link_counts[file_inumber] += 1
-        else:
+        # Keep track of how many links to this entry there are.
+        if file_inumber not in inode_link_counts:
             inode_link_counts[file_inumber] = 1
+        else:
+            inode_link_counts[file_inumber] += 1
 
         if entry.name == "'.'" and file_inumber is not parent_inumber:
             sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" %
@@ -250,29 +254,34 @@ def process(csv):
                 # having been audited by removing it from the not_audited list.
                 if block_number in blocks_not_audited:
                     blocks_not_audited.remove(block_number)
+
+
+    # Now that we have finished processing the report, we can print our findings 
+    # the duplicate references found.
+    for l in duplicate_blocks:
+        if len(duplicate_blocks[l]) > 1:
+            for m in duplicate_blocks[l]:
+                print(m)
     
-    # Look specifically at indirect blocks and discern 
+    # Now process the indirect references read in from the file system report.
+    # If we have 
     for reference in indirects:
         if reference.block_num in blocks_not_audited:
             blocks_not_audited.remove(reference.block_num)
         if reference.ref_block_num in blocks_not_audited:
             blocks_not_audited.remove(reference.ref_block_num)
 
-    # print our findings from when we found duplicates
-    for l in duplicate_blocks:
-        if len(duplicate_blocks[l]) > 1:
-            for m in duplicate_blocks[l]:
-                print(m)
-    
-    # check for missing inodes
-    missing_inodes = inodes_not_audited - free_inodes
+    # if the inodes we haven't audited are not free i nodes, then
+    # there is a discrepency in the file system.
+    unaccounted_for_inodes = inodes_not_audited - free_inodes
 
-    for n in missing_inodes:
+    for n in unaccounted_for_inodes:
         sys.stdout.write("UNALLOCATED INODE %d NOT ON FREELIST" % (n))
         exitCode = 2
     
-    missing_blocks = blocks_not_audited - free_blocks
-    for n in missing_blocks:
+    # ditto unaccounted_for_inodes comment.
+    unaccounted_for_blocks = blocks_not_audited - free_blocks
+    for n in unaccounted_for_blocks:
         sys.stdout.write("UNREFERENCED BLOCK %d" % (n))
         exitCode = 2
 

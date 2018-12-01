@@ -53,15 +53,15 @@ class Inode():
         self.block_count = int(split_vals[11])
         self.block_pointers = [int(x) for x in split_vals[12:]]
 
-class DirEntry():
+class DirectoryEntry():
     def __init__(self, split_vals):
-        self.parent_num = int(split_vals[1])
-        self.file_inode_num = int(split_vals[3])
+        self.parent_inumber = int(split_vals[1])
+        self.file_inumber = int(split_vals[3])
         self.name = split_vals[6]
 
-class IndirectRef():
+class IndirectReference():
     def __init__(self, split_vals):
-        self.parent_num = int(split_vals[1])
+        self.parent_inumber = int(split_vals[1])
         self.block_num = int(split_vals[4])
         self.ref_block_num = int(split_vals[5])
 
@@ -100,11 +100,11 @@ def process(csv):
                 elif l0 == 'IFREE':
                     free_inodes.add(int(fields[1]))
                 elif l0 == 'DIRENT':
-                    directory_entries.append(DirEntry(fields))
+                    directory_entries.append(DirectoryEntry(fields))
                 elif l0 == 'INODE':
                     inodes.append(Inode(fields))
                 elif l0 == 'INDIRECT':
-                    indirects.append(IndirectRef(fields))
+                    indirects.append(IndirectReference(fields))
             pass
         except Exception as e:
             sys.stderr.write('Unable to process a line in %s\n' % (csv))
@@ -114,7 +114,8 @@ def process(csv):
 
     blocks = {}
     blocks_not_seen = set([i for i in range(8, super_block.block_count)])
-    inodes_not_seen = set([i for i in range(super_block.first_free_inode, super_block.inode_count+1)])
+    inodes_not_seen = set([i for i in range(super_block.first_free_inode,
+                                             super_block.inode_count+1)])
     inode_link_counts = {}
     inodes_seen = set()
 
@@ -123,15 +124,17 @@ def process(csv):
 
     for entry in directory_entries:
         # check for invalid inode num
-        file_inumber = entry.file_inode_num
-        parent_inumber = entry.parent_num
+        file_inumber = entry.file_inumber
+        parent_inumber = entry.parent_inumber
         if file_inumber < 1 or file_inumber > super_block.inode_count:
-            sys.stdout.write("DIRECTORY INODE %d NAME %s INVALID INODE %d" % (parent_inumber, entry.name, file_inumber))
+            sys.stdout.write("DIRECTORY INODE %d NAME %s INVALID INODE %d" %
+                             (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
         # check if inode in free inodes
         if file_inumber in free_inodes and file_inumber not in inodes_seen:
-            sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" % (parent_inumber, entry.name, file_inumber))
+            sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" %
+                             (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
         # increment inode count
@@ -140,26 +143,29 @@ def process(csv):
         else:
             inode_link_counts[file_inumber] = 1
 
-        dot = "'.'"
-        dot_dot = "'..'"
         if entry.name == "'.'" and file_inumber is not parent_inumber:
-                sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" % (parent_inumber, file_inumber))
-                exitCode = 2
+            sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" %
+                             (parent_inumber, file_inumber))
+            exitCode = 2
 
-        if entry.name is dot_dot:
-            if parent_inumber == 2 and file_inumber is not 2:
-                    sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
-                    exitCode = 2
+        if entry.name == "'..'":
+            if parent_inumber == 2 and file_inumber != 2:
+                sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
+                exitCode = 2
             else:
                 for parent in directory_entries:
-                    if parent.parent_num == file_inumber:
-                        if parent.file_inode_num == parent_inumber:
+                    if parent.parent_inumber == file_inumber:
+                        if parent.file_inumber == parent_inumber:
                             break
-                    else:
-                        if parent.file_inode_num == parent_inumber:
-                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_num))
-                           exitCode = 2
-                           break
+                        else:
+                            sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
+                            exitCode = 2
+                            break
+                    # else:
+                    #     if parent.file_inumber == parent_inumber:
+                    #        sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
+                    #        exitCode = 2
+                    #        break
 
     # check blocks
     for inode in inodes:
@@ -182,7 +188,11 @@ def process(csv):
         if inumber in inodes_not_seen:
             inodes_not_seen.remove(inumber)
         
-        for i in range(15):
+        # An Inode can have associated with it 15 blocks:
+        # 12 direct blocks and up to 3 indirect blocks (either direct, 
+        # double indirect block, or triple indirect), so we figure out what
+        # type of block we are dealing with.
+        for i in range(15): 
             block_type = "BLOCK"
             offset = i
             if i == 12:
@@ -195,29 +205,33 @@ def process(csv):
                 offset = 256 * 256 + 256 + 12
                 block_type = "TRIPLE INDIRECT BLOCK"
             
-            block_number = inode.block_pointers[i]
+            block_number = inode.block_pointers[i]  # cache this to save memory references
             if block_number > super_block.block_count or block_number < 0:
-                sys.stdout.write("INVALID %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
+                sys.stdout.write("INVALID %s %d IN INODE %d AT OFFSET %d" %
+                                 (block_type, block_number, inumber, offset))
                 exitCode = 2
             if block_number < 5 and block_number > 0:
-                sys.stdout.write("RESERVED %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
+                sys.stdout.write("RESERVED %s %d IN INODE %d AT OFFSET %d" %
+                                 (block_type, block_number, inumber, offset))
             if block_number in free_blocks:
                 sys.stdout.write("ALLOCATED BLOCK %d ON FREELIST" % (block_number))
                 exitCode = 2
 
             if block_number != 0:
                 if block_number in blocks:
-                    blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset))
+                    blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                                                (block_type, block_number, inumber, offset))
                 else:
-                    blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" % (block_type, block_number, inumber, offset)]
+                    blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                                            (block_type, block_number, inumber, offset)]
                 if block_number in blocks_not_seen:
                     blocks_not_seen.remove(block_number)
     
-    for ref in indirects:
-        if ref.block_num in blocks_not_seen:
-            blocks_not_seen.remove(ref.block_num)
-        if ref.ref_block_num in blocks_not_seen:
-            blocks_not_seen.remove(ref.ref_block_num)
+    for reference in indirects:
+        if reference.block_num in blocks_not_seen:
+            blocks_not_seen.remove(reference.block_num)
+        if reference.ref_block_num in blocks_not_seen:
+            blocks_not_seen.remove(reference.ref_block_num)
 
     # see if any block has multiple associations
     for l in blocks:

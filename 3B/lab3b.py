@@ -119,10 +119,10 @@ def process(csv):
     inodes_not_audited = set([i for i in range(super_block.first_free_inode,
                                              super_block.inode_count+1)])
     inode_link_counts = {}
-    inodes_seen = set()
+    audited_inodes = set()
 
     for inode in inodes:
-        inodes_seen.add(inode.inumber)
+        audited_inodes.add(inode.inumber)
 
     for entry in directory_entries:
         # check for invalid inode num
@@ -134,7 +134,8 @@ def process(csv):
             exitCode = 2
         
         # check if inode in free inodes
-        if file_inumber in free_inodes and file_inumber not in inodes_seen:
+        #if file_inumber in free_inodes and file_inumber not in audited_inodes:
+        if file_inumber in free_inodes #and file_inumber not in audited_inodes:
             sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" %
                              (parent_inumber, entry.name, file_inumber))
             exitCode = 2

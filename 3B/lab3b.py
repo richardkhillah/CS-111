@@ -125,17 +125,17 @@ def process(csv):
         audited_inodes.add(inode.inumber)
 
     for entry in directory_entries:
+        file_inumber = entry.file_inumber       # Cache these values to 
+        parent_inumber = entry.parent_inumber   # reduce mem references
+
         # check for invalid inode num
-        file_inumber = entry.file_inumber
-        parent_inumber = entry.parent_inumber
         if file_inumber < 1 or file_inumber > super_block.inode_count:
             sys.stdout.write("DIRECTORY INODE %d NAME %s INVALID INODE %d" %
                              (parent_inumber, entry.name, file_inumber))
             exitCode = 2
         
         # check if inode in free inodes
-        #if file_inumber in free_inodes and file_inumber not in audited_inodes:
-        if file_inumber in free_inodes #and file_inumber not in audited_inodes:
+        if file_inumber in free_inodes and file_inumber not in audited_inodes:
             sys.stdout.write("DIRECTORY INODE %d NAME %s UNALLOCATED INODE %s" %
                              (parent_inumber, entry.name, file_inumber))
             exitCode = 2
@@ -170,8 +170,9 @@ def process(csv):
 
     # check blocks
     for inode in inodes:
+        inumber = inode.inumber     # As before, Cache... you know why.
+
         # ensure right link count
-        inumber = inode.inumber
         if inumber in inode_link_counts:
             if inode_link_counts[inumber] != inode.link_count:
                 sys.stdout.write("INODE %d HAS %d LINKS BUT LINKCOUNT IS %d" %
@@ -236,18 +237,25 @@ def process(csv):
                 sys.stdout.write("ALLOCATED BLOCK %d ON FREELIST" % (block_number))
                 exitCode = 2
 
-            # Now, We check authenticity of each block. 
+            # Look for duplicates and note.
             if block_number != 0:
                 if block_number in blocks:
-                    blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                    #blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                     #                           (block_type, block_number, inumber, offset))
+                    sys.stdout.write("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
                                                 (block_type, block_number, inumber, offset))
                 else:
-                    blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
-                                            (block_type, block_number, inumber, offset)]
+                    #blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                     #                       (block_type, block_number, inumber, offset)]
+                    sys.stdout.write("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                                            (block_type, block_number, inumber, offset))
 
+                # If we have an allocated block (again, legal or not), note it as
+                # having been audited by removing it from the not_audited list.
                 if block_number in blocks_not_audited:
                     blocks_not_audited.remove(block_number)
     
+    # Look specifically at indirect blocks and discern 
     for reference in indirects:
         if reference.block_num in blocks_not_audited:
             blocks_not_audited.remove(reference.block_num)
@@ -255,11 +263,11 @@ def process(csv):
             blocks_not_audited.remove(reference.ref_block_num)
 
     # see if any block has multiple associations
-    for l in blocks:
-        if len(blocks[l]) > 1:
-            for m in blocks[l]:
-                #sys.stdout.write(m)
-                print(m)
+    # for l in blocks:
+    #     if len(blocks[l]) > 1:
+    #         for m in blocks[l]:
+    #             #sys.stdout.write(m)
+    #             print(m)
     
     # check for missing inodes
     missing_inodes = inodes_not_audited - free_inodes

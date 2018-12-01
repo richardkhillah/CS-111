@@ -7,9 +7,14 @@ ID: 604853262
 
 lab3b analyzes a file system summary (a .csv file generated from lab3a)
 and reports on all found inconsistencies. It generates
-    Block Consistency Audits
-    I-node Allocation Audits
-    Directory Consistency Audits
+    Block Consistency Audits - determine whether every block pointer in
+        every Inode, block (direct, indirect, double-indirect, and
+        triple-indirect) is valid
+    I-node Allocation Audits - determine whether or not an Inode is 
+        allocated.
+    Directory Consistency Audits - determine whether every allocated
+        I-node is referred to by the number of directory entries that
+        is equal to the reference count recorded in the I-node.
 and reports findings to stdout.
 
 Exit Codes:
@@ -63,11 +68,14 @@ class IndirectRef():
 def process(csv):
     global exitCode
 
+    # Ensure that the file passed in by the user is valid
     if not os.path.exists(csv):
         sys.stderr.write('%s: Unable to open report %s\n' % (program_name, csv))
         exitCode = 1
         return
 
+    # Take Inventory. Scan the file, appropiately storing each line in an 
+    # appropiate structure prior to moving onto the next line.
     super_block = None
     group = None
     free_blocks = set()
@@ -76,27 +84,27 @@ def process(csv):
     directory_entries = []
     indirects = []   
 
-    # We have ensured the file exists, so open it and begin working
     with open(csv, 'r') as file:
         try:
             for line in file:
-                line = line.rstrip()
-                split_vals = line.split(',')
-                l0 = split_vals[0]
+                line = line.rstrip() # remove any whitespace characters that *may have*
+                                     # made it's way into a line
+                fields = line.split(',')
+                l0 = fields[0]
                 if l0 == 'SUPERBLOCK':
-                    super_block = SuperBlock(split_vals)
+                    super_block = SuperBlock(fields)
                 elif l0 == 'GROUP':
-                    group = Group(split_vals)
+                    group = Group(fields)
                 elif l0 == 'BFREE':
-                    free_blocks.add(int(split_vals[1]))
+                    free_blocks.add(int(fields[1]))
                 elif l0 == 'IFREE':
-                    free_inodes.add(int(split_vals[1]))
+                    free_inodes.add(int(fields[1]))
                 elif l0 == 'DIRENT':
-                    directory_entries.append(DirEntry(split_vals))
+                    directory_entries.append(DirEntry(fields))
                 elif l0 == 'INODE':
-                    inodes.append(Inode(split_vals))
+                    inodes.append(Inode(fields))
                 elif l0 == 'INDIRECT':
-                    indirects.append(IndirectRef(split_vals))
+                    indirects.append(IndirectRef(fields))
             pass
         except Exception as e:
             sys.stderr.write('Unable to process a line in %s\n' % (csv))

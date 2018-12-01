@@ -112,7 +112,7 @@ def process(csv):
             return
 
 
-    blocks = {}
+    duplicate_blocks = {}
     # When we first start, we will not have seen any blocks. We remove
     # blocks we have audited.
     blocks_not_audited = set([i for i in range(8, super_block.block_count)])
@@ -240,15 +240,11 @@ def process(csv):
             # Look for duplicates and note.
             if block_number != 0:
                 if block_number in blocks:
-                    #blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
-                     #                           (block_type, block_number, inumber, offset))
-                    sys.stdout.write("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                    duplicate_blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
                                                 (block_type, block_number, inumber, offset))
                 else:
-                    #blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
-                     #                       (block_type, block_number, inumber, offset)]
-                    sys.stdout.write("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
-                                            (block_type, block_number, inumber, offset))
+                    duplicate_blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
+                                            (block_type, block_number, inumber, offset)]
 
                 # If we have an allocated block (again, legal or not), note it as
                 # having been audited by removing it from the not_audited list.
@@ -262,12 +258,11 @@ def process(csv):
         if reference.ref_block_num in blocks_not_audited:
             blocks_not_audited.remove(reference.ref_block_num)
 
-    # see if any block has multiple associations
-    # for l in blocks:
-    #     if len(blocks[l]) > 1:
-    #         for m in blocks[l]:
-    #             #sys.stdout.write(m)
-    #             print(m)
+    # print our findings from when we found duplicates
+    for l in blocks:
+        if len(duplicate_blocks[l]) > 1:
+            for m in duplicate_blocks[l]:
+                print(m)
     
     # check for missing inodes
     missing_inodes = inodes_not_audited - free_inodes

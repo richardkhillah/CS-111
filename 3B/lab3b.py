@@ -239,7 +239,7 @@ def process(csv):
 
             # Look for duplicates and note.
             if block_number != 0:
-                if block_number in blocks:
+                if block_number in duplicate_blocks:
                     duplicate_blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
                                                 (block_type, block_number, inumber, offset))
                 else:
@@ -259,7 +259,7 @@ def process(csv):
             blocks_not_audited.remove(reference.ref_block_num)
 
     # print our findings from when we found duplicates
-    for l in blocks:
+    for l in duplicate_blocks:
         if len(duplicate_blocks[l]) > 1:
             for m in duplicate_blocks[l]:
                 print(m)

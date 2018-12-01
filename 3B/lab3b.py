@@ -150,7 +150,8 @@ def process(csv):
 
         if entry.name == "'..'":
             if parent_inumber == 2 and file_inumber != 2:
-                sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
+                sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" %
+                                 (file_inumber))
                 exitCode = 2
             else:
                 for parent in directory_entries:
@@ -159,7 +160,8 @@ def process(csv):
                             break
                     else:
                         if parent.file_inumber == parent_inumber:
-                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" % (file_inumber, parent_inumber, parent.parent_inumber))
+                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" %
+                                            (file_inumber, parent_inumber, parent.parent_inumber))
                            exitCode = 2
                            break
 
@@ -169,10 +171,12 @@ def process(csv):
         inumber = inode.inumber
         if inumber in inode_link_counts:
             if inode_link_counts[inumber] != inode.link_count:
-                sys.stdout.write("INODE %d HAS %d LINKS BUT LINKCOUNT IS %d" % (inumber, inode_link_counts[inumber], inode.link_count))
+                sys.stdout.write("INODE %d HAS %d LINKS BUT LINKCOUNT IS %d" %
+                                 (inumber, inode_link_counts[inumber], inode.link_count))
                 exitCode = 2
         elif inode.link_count != 0:
-            sys.stdout.write("INODE %d HAS 0 LINKS BUT LINKCOUNT IS %d" % (inumber, inode.link_count))
+            sys.stdout.write("INODE %d HAS 0 LINKS BUT LINKCOUNT IS %d" %
+                             (inumber, inode.link_count))
             exitCode = 2
 
         # check if inode was listed as free

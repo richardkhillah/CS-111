@@ -113,8 +113,10 @@ def process(csv):
 
 
     blocks = {}
-    blocks_not_seen = set([i for i in range(8, super_block.block_count)])
-    inodes_not_seen = set([i for i in range(super_block.first_free_inode,
+    # When we first start, we will not have seen any blocks. We remove
+    # blocks we have audited.
+    blocks_not_audited = set([i for i in range(8, super_block.block_count)])
+    inodes_not_audited = set([i for i in range(super_block.first_free_inode,
                                              super_block.inode_count+1)])
     inode_link_counts = {}
     inodes_seen = set()
@@ -160,10 +162,10 @@ def process(csv):
                             break
                     else:
                         if parent.file_inumber == parent_inumber:
-                           sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" %
+                            sys.stdout.write("DIRECTORY INODE %d NAME '..' LINK TO INODE %d SHOULD BE %d" %
                                             (file_inumber, parent_inumber, parent.parent_inumber))
-                           exitCode = 2
-                           break
+                            exitCode = 2
+                            break
 
     # check blocks
     for inode in inodes:
@@ -185,8 +187,8 @@ def process(csv):
             exitCode = 2
 
         # attempt to mark the inode as seen
-        if inumber in inodes_not_seen:
-            inodes_not_seen.remove(inumber)
+        if inumber in inodes_not_audited:
+            inodes_not_audited.remove(inumber)
         
         # An Inode can have associated with it 15 blocks:
         # 12 direct blocks and up to 3 indirect blocks (either direct, 
@@ -206,17 +208,34 @@ def process(csv):
                 block_type = "TRIPLE INDIRECT BLOCK"
             
             block_number = inode.block_pointers[i]  # cache this to save memory references
+            
+            # Data blocks are either allocated or allocaed. If allocated, 
+            # the block pointer should be valid or zero. If the block number is
+            # higher than the number of blocks known to be allocated, the block
+            # is not legal and is therefore invalid. If the block number is less than 0
+            # then common sense tells us something is wrong and the block is obviously 
+            # invalid.
             if block_number > super_block.block_count or block_number < 0:
                 sys.stdout.write("INVALID %s %d IN INODE %d AT OFFSET %d" %
                                  (block_type, block_number, inumber, offset))
                 exitCode = 2
+
+            # A reserved block is one that should not be allocaed because it 
+            # is reserved for filesystem metadata use and so we should not find
+            # reserved blocks in our audit... but of course we do... such is life.
             if block_number < 5 and block_number > 0:
                 sys.stdout.write("RESERVED %s %d IN INODE %d AT OFFSET %d" %
                                  (block_type, block_number, inumber, offset))
+
+            # This is logically trivial: if a block is allocated and it is on the
+            # free list, then the file system manager might be corrupted... or
+            # maybe someone fiddled aroudn and mucked things up... either
+            # way, report the discrepency.
             if block_number in free_blocks:
                 sys.stdout.write("ALLOCATED BLOCK %d ON FREELIST" % (block_number))
                 exitCode = 2
 
+            # Now, We check authenticity of each block. 
             if block_number != 0:
                 if block_number in blocks:
                     blocks[block_number].append("DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
@@ -224,14 +243,15 @@ def process(csv):
                 else:
                     blocks[block_number]= ["DUPLICATE %s %d IN INODE %d AT OFFSET %d" %
                                             (block_type, block_number, inumber, offset)]
-                if block_number in blocks_not_seen:
-                    blocks_not_seen.remove(block_number)
+
+                if block_number in blocks_not_audited:
+                    blocks_not_audited.remove(block_number)
     
     for reference in indirects:
-        if reference.block_num in blocks_not_seen:
-            blocks_not_seen.remove(reference.block_num)
-        if reference.ref_block_num in blocks_not_seen:
-            blocks_not_seen.remove(reference.ref_block_num)
+        if reference.block_num in blocks_not_audited:
+            blocks_not_audited.remove(reference.block_num)
+        if reference.ref_block_num in blocks_not_audited:
+            blocks_not_audited.remove(reference.ref_block_num)
 
     # see if any block has multiple associations
     for l in blocks:
@@ -241,13 +261,13 @@ def process(csv):
                 print(m)
     
     # check for missing inodes
-    missing_inodes = inodes_not_seen - free_inodes
+    missing_inodes = inodes_not_audited - free_inodes
 
     for n in missing_inodes:
         sys.stdout.write("UNALLOCATED INODE %d NOT ON FREELIST" % (n))
         exitCode = 2
     
-    missing_blocks = blocks_not_seen - free_blocks
+    missing_blocks = blocks_not_audited - free_blocks
     for n in missing_blocks:
         sys.stdout.write("UNREFERENCED BLOCK %d" % (n))
         exitCode = 2

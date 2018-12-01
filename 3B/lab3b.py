@@ -144,9 +144,7 @@ def process(csv):
                 sys.stdout.write("DIRECTORY INODE %d NAME '.' LINK TO INODE %d SHOULD BE %d" % (parent_inumber, file_inumber))
                 exitCode = 2
 
-        if entry.name == "'..'":
-            if parent_inumber == 2:
-                if file_inumber != 2:
+        if entry.name == "'..'" and parent_inumber == 2 and file_inumber is not 2:
                     sys.stdout.write("DIRECTORY INODE 2 NAME '..' LINK TO INODE %d SHOULD BE 2" % (file_inumber))
                     exitCode = 2
             else:

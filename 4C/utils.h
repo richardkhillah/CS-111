@@ -19,10 +19,10 @@ void set_program_name(const char* argv0);
 int debug_flag;
 
 // common exit status codes
-#define EXIT_OK 0
-#define EXIT_BADARG 1
-#define EXIT_OTHER 2
-#define EXIT_OTHER1 3
+#define EXIT_SUCCESS 0
+#define EXIT_ERROR1 1
+#define EXIT_ERROR2 2
+#define EXIT_ERROR3 3
 
 /**
  * 

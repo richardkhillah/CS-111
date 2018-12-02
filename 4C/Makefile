@@ -2,6 +2,8 @@
 # EMAIL: RKhillah@ucla.edu
 # ID: 604853262
 
+FAKEID=369713302
+
 UID=604853262
 LAB_NUMBER=lab4
 LAB_PART=c
@@ -29,9 +31,9 @@ build: $(EXECUTABLE_NAME)
 
 $(EXECUTABLE_NAME):
 #ifeq ($(BEAGLEBONE_VERSION), 1)
-	$(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	# $(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 #else
-#	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 #endif
 
 
@@ -42,4 +44,4 @@ clean:
 	rm -rf *tar.gz
 
 check:
-	./$(CHECK_SCRIPT)
+	./$(CHECK_SCRIPT) $(FAKEID)

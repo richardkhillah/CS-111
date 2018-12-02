@@ -4,7 +4,6 @@
 
 #ifndef DUMMY
 #include <mraa/aio.h>
-#include <mraa/gpio.h>
 #endif
 
 #ifdef DUMMY
@@ -17,21 +16,6 @@ int mraa_aio_init(int input) {
 int mraa_aio_read(int temp) {
 	temp++;
 	return 500;
-}
-
-typedef int mraa_gpio_context;
-int MRAA_GPIO_IN = 5;
-int mraa_gpio_init(int val) {
-	val++;
-	return -60;
-}
-void mraa_gpio_dir(int val, int temp) {
-	val++;
-	temp++;
-}
-int mraa_gpio_read(int val) {
-	val++;
-	return val;
 }
 #endif
 
@@ -52,9 +36,9 @@ int mraa_gpio_read(int val) {
 #include <ctype.h>
 #include <aio.h>
 
-// #define EXIT_OK 0
-// #define EXIT_BADARG 1
-// #define EXIT_OTHER 2
+#define EXIT_OK 0
+#define EXIT_BADARG 1
+#define EXIT_OTHER 2
 
 #define B 4275
 #define R0 100000
@@ -63,6 +47,10 @@ int mraa_gpio_read(int val) {
 #define PERIOD_FLAG 'p'
 #define LOG_FLAG 'l'
 #define SCALE_FLAG 's'
+
+#define ID_FLAG 'i'
+#define HOST_FLAG 'h'
+
 #define BUFFER_SIZE 1024
 
 int period = 1;
@@ -102,23 +90,25 @@ void shutDown() {
     printf("SHUTDOWN\n");
 
     if (logging) {
-        if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n", t->tm_hour, t->tm_min, t->tm_sec) < 0) {
+        if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n", t->tm_hour, 
+                    t->tm_min, t->tm_sec) < 0) 
+        {
             fprintf(stderr, "There was a problem writing to output\n");
             exit(1);
         } 
     }
-    exit(0);
+    exit(EXIT_OK);
 }
 
 void usage(void) {
 	fprintf(stderr, "usage: ./%s --id=9_digit_id --host=name --log=<filename> port [--period=<seconds>] [--scale=[f, c]]\n", program_name);
-    fprintf(stderr, "id: required 9 digit ID\n");
-    fprintf(stderr, "host: required name or address\n");
-    fprintf(stderr, "log: required filename to log session\n");
-    fprintf(stderr, "port: required port number\n");
-    fprintf(stderr, "period: optional, time (in seconds) between temperature sensor readings\n");
-    fprintf(stderr, "        default period is 1 second\n");
-    fprintf(stderr, "scale: optional, temperature scale in degrees fahrenheit (default) or celsius.\n");
+    fprintf(stderr, "    id: required 9 digit ID\n");
+    fprintf(stderr, "    host: required name or address\n");
+    fprintf(stderr, "    log: required filename to log session\n");
+    fprintf(stderr, "    port: required port number\n");
+    fprintf(stderr, "    period: optional, time (in seconds) between temperature sensor readings\n");
+    fprintf(stderr, "            default period is 1 second\n");
+    fprintf(stderr, "    scale: optional, temperature scale in degrees fahrenheit (default) or celsius.\n");
 }
 
 void getoptions(int argc, char* const* argv) {
@@ -127,27 +117,56 @@ void getoptions(int argc, char* const* argv) {
     if(argc < 5)
         fatal_error("Missing Arguments", (void*)usage, EXIT_BADARG);
 
-    // Pre-scan arguments for non-switch port number
+    // Find non-switch argument and assign to port number
     for(int p = 1; p < argc; p++) {
-
+        // A switch argument begins with a '-'
+        if(argv[p][0] != '-') {
+            port = atoi(argv[p]);
+            if(port < 0) {
+                fatal_error("Port number must be greater than 0",
+                            (void*) usage, EXIT_BADARG);
+            }
+        }
     }
 
 	int optind = 1;
     int opt;
     struct option long_options[] = {
-        {"period", required_argument, NULL, PERIOD_FLAG},
+        {"id", required_argument, NULL, ID_FLAG},
+        {"host", required_argument, NULL, HOST_FLAG},
         {"log", required_argument, NULL, LOG_FLAG},
+        {"period", required_argument, NULL, PERIOD_FLAG},
         {"scale", required_argument, NULL, SCALE_FLAG},
         {NULL, 0, NULL, 0}
     };
 
     while ((opt = getopt_long(argc, argv, "p:l:s:", long_options, &optind)) != -1) {
         switch (opt) {
+            case ID_FLAG: {
+                // Ensure id is 9 digits in length
+                if (strlen(optarg) != 9){
+                    fatal_error("Incorrect ID", (void)usage, EXIT_BADARG);
+                }
+                id = atoi(optarg);
+                if(id < 0) {
+                    fatal_error("Id must be greater than zero",
+                                (void*)usage, EXIT_BADARG);
+                }
+                break;
+            }
+            case HOST_FLAG: {
+                host = optarg;
+                if(host == NULL) {
+                    fatal_error("Internal Error", NULL, -1);
+                }
+                break;
+            }
             case PERIOD_FLAG:
                 if (optarg) {
                     period = atoi(optarg);
                     if (period < 1) {
-                    	fatal_error("Period must be greater-than or equal to 0", (void*)usage, 1);
+                    	fatal_error("Period must be greater-than or equal to 0", 
+                                    (void*)usage, 1);
                     }
                 }
                 break;
@@ -164,7 +183,8 @@ void getoptions(int argc, char* const* argv) {
                 if (optarg) {
                     optarg[0] = tolower(optarg[0]);
                     if (strcmp(optarg, "c") != 0 && strcmp(optarg, "f")) {
-                    	fatal_error("unknown scale... scale must be \"F\" or \"C\"", (void*)usage, 1);
+                    	fatal_error("unknown scale... scale must be \"F\" or \"C\"",
+                                    (void*)usage, 1);
                     }
 
                     scale = tolower(optarg[0]);
@@ -175,22 +195,32 @@ void getoptions(int argc, char* const* argv) {
             	fatal_error("unrecognized argument", (void*)usage, 1);
         }
     }
-
 }
 
 int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
 	getoptions(argc, (char* const*)argv);
+    // ENSURE THAT WE HAVE ALL REQUIRED ARGUMENTS (ID, HOST, LOG, PORT NUMBER)
+    // BEFORE CONTINUING
+    if ( id == -1 || host == NULL || logfile == NULL || port == -1 ) {
+        fatal_error("required_arguments not met", (void*)usage, EXIT_BADARG);
+    }
 
-    mraa_gpio_context button;
+    // Open a TCP connection to the server at the specified address and port
+
+    // Immediately send (and log) an ID termindated with a newline:
+    //      ID=ID-number
+
+    // Send (and log) newline terminated temperature reports over the cxn
+
+    // process (and log) newline-terminated commands received over the
+    // connection.
+    // If the temperature reports are mis-formatted, the server will return
+    // a LOG command with a description of the error
+
+
     mraa_aio_context tempSensor;
-    button = mraa_gpio_init(60);
     tempSensor = mraa_aio_init(1);
-
-    mraa_gpio_dir(button, MRAA_GPIO_IN);
-    #ifndef DUMMY
-    mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &shutDown, NULL);
-    #endif
 
     char buffer[BUFFER_SIZE];
     char temp[BUFFER_SIZE*2];
@@ -199,7 +229,7 @@ int main(int argc, char* argv[]) {
 
     // set keyboard to non-block
     if (fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
-    	fatal_error("Error changing stdin to non-blocking", NULL, 1);
+    	fatal_error("Error changing stdin to non-blocking", NULL, EXIT_OTHER);
     }
 
     while (true) {
@@ -211,7 +241,7 @@ int main(int argc, char* argv[]) {
             printf("%.1f\n", tempValue);
             if (logging) {
                 if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue) < 0) {
-                	fatal_error("Error writing to logfile", NULL, 1);
+                	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
                 } 
             }
             sleep(period);
@@ -222,7 +252,7 @@ int main(int argc, char* argv[]) {
         if (bytes_read < 0) {
             int err = errno;
             if (err != EAGAIN) {
-            	fatal_error("There was an issue reading from stdin", NULL, 1);
+            	fatal_error("There was an issue reading from stdin", NULL, EXIT_OTHER);
             }
         }
 
@@ -240,7 +270,7 @@ int main(int argc, char* argv[]) {
                     } else if (strcmp(temp, "OFF") == 0) {
                         if (logging) {
                             if (fprintf(logFile, "%s\n", temp) < 0) {
-                            	fatal_error("Error writing to logfile", NULL, 1);
+                            	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
                             } 
                         }
                         shutDown();
@@ -257,7 +287,7 @@ int main(int argc, char* argv[]) {
 
                     if (logging) {
                         if (fprintf(logFile, "%s\n", temp) < 0) {
-                        	fatal_error("Error writing to logfile", NULL, 1);
+                        	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
                         } 
                     }
 
@@ -270,8 +300,4 @@ int main(int argc, char* argv[]) {
             bufferindex = 0;
         }
     }
-
-    #ifndef DUMMY
-    mraa_gpio_close(button);
-    #endif
 }

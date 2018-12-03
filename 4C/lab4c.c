@@ -222,10 +222,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Open a TCP connection to the server at the specified address and port
-    /* Create a socket */
     struct sockaddr_in server_address;
     struct hostent *server;
 
+    /* Create a socket to communcate with remote server */
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(server_socket < 0){
         fatal_error("Error setting up socket", NULL, EXIT_OTHER);
@@ -359,4 +359,5 @@ int main(int argc, char* argv[]) {
             bufferindex = 0;
         }
     }
+    close(server_socket);
 }

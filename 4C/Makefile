@@ -15,7 +15,7 @@ CHECK_SCRIPT=my_check.sh
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm -lcrypto -lssl
 OPENSSL = -I /usr/local/opt/openssl/include
-local_flags= $(CFLAGS) -DDUMMY 
+local_flags= $(CFLAGS) $(OPENSSL) -DDUMMY 
 beagle_flags= $(CFLAGS) -lmraa 
 
 DEFAULT=Makefile README utils.c utils.h
@@ -26,7 +26,7 @@ build: $(EXECUTABLE_NAME)_tcp
 
 $(EXECUTABLE_NAME)_tcp:
 	# $(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-	$(CC) $(local_flags) $(OPENSSL) -o $@ $(EXECUTABLE_SOURCE) utils.c
+	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
 
 $(EXECUTABLE_NAME)_tls:
 	# $(CC) $(beagle_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c

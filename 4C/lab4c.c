@@ -71,7 +71,6 @@ int period = 1;
 char scale = F;
 bool report = true;
 FILE* logFile = NULL;
-bool logging = false;
 
 // New Parameters
 int id = -1;
@@ -122,6 +121,10 @@ SSL_CTX* load_tls() {
     return ctx;
 }
 
+/* Create and initialize context and establish a connection to the remote
+ * server. If we make it past establish_tls_cxn, no errors occured occured
+ * and we are free to continue working.
+ */
 void establish_tls_cxn(SSL_CTX* ctx) {
     // must be called before any other action takes place.
     // SSL_library_init() not reentrant
@@ -170,24 +173,30 @@ void establish_tls_cxn(SSL_CTX* ctx) {
         int ssl_err = SSL_get_error(ssl, ret_val);
         switch (ssl_err) {
             case SSL_ERROR_NONE:
-                fprintf(stderr, "SSL_ERROR_NONE\n");
+                //fprintf(stderr, "SSL_ERROR_NONE\n");
+								//exit(EXIT_OTHER);
                 break;
             case SSL_ERROR_ZERO_RETURN:
                 fprintf(stderr, "SSL_ERROR_ZERO_RETURN\n");
+								exit(EXIT_OTHER);
                 break;
             case SSL_ERROR_WANT_READ:
                 fprintf(stderr, "SSL_ERROR_WANT_READ\n");
+								exit(EXIT_OTHER);
             case SSL_ERROR_WANT_WRITE:
                 fprintf(stderr, "SSL_ERROR_WANT_WRITE\n");
-
+								exit(EXIT_OTHER);
                 break;
             case SSL_ERROR_WANT_CONNECT:
                 fprintf(stderr, "SSL_ERROR_WANT_CONNECT\n");
+								exit(EXIT_OTHER);
             case SSL_ERROR_WANT_ACCEPT:
                 fprintf(stderr, "SSL_ERROR_WANT_ACCEPT\n");
+								exit(EXIT_OTHER);
                 break;
             case SSL_ERROR_WANT_X509_LOOKUP:
                 fprintf(stderr, "SSL_ERROR_WANT_X509_LOOKUP\n");
+								exit(EXIT_OTHER);
                 break;
             case SSL_ERROR_SYSCALL:
                 fprintf(stderr, "SSL_ERROR_SYSCALL:\n");
@@ -197,7 +206,6 @@ void establish_tls_cxn(SSL_CTX* ctx) {
                 fprintf(stderr, "(errno %d): %s\n", errno, strerror(errno));
                 exit(EXIT_OTHER);
                 break;
-
         }
     } else if( ret_val < 0 ){
         fprintf(stderr, "Unable to connect to tls server\n");
@@ -205,25 +213,6 @@ void establish_tls_cxn(SSL_CTX* ctx) {
         exit(EXIT_OTHER);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
 
 
@@ -250,7 +239,7 @@ void shutDown() {
 
 
 void usage(void) {
-	fprintf(stderr, "usage: ./%s --id=9_digit_id --host=name --log=<filename> port [--period=<seconds>] [--scale=[f, c]]\n", program_name);
+	fprintf(stderr, "usage: ./%s --id=9_digit_id --host=name --log=filename port [--period=seconds] [--scale=<f, c>]\n", program_name);
     fprintf(stderr, "    id: required 9 digit ID\n");
     fprintf(stderr, "    host: required name or address\n");
     fprintf(stderr, "    log: required filename to log session\n");
@@ -273,7 +262,7 @@ void getoptions(int argc, char* const* argv) {
             port = atoi(argv[p]);
             if(port < 0) {
                 fatal_error("Port number must be greater than 0",
-                            (void*) usage, EXIT_BADARG);
+                            (void*)usage, EXIT_BADARG);
             }
         }
     }
@@ -325,7 +314,6 @@ void getoptions(int argc, char* const* argv) {
                     if (logFile == NULL) {
                     	fatal_error("Could not open file", NULL, 1);
                     }
-                    logging = true;
                 }
                 break;
             case SCALE_FLAG:
@@ -335,7 +323,6 @@ void getoptions(int argc, char* const* argv) {
                     	fatal_error("unknown scale... scale must be \"F\" or \"C\"",
                                     (void*)usage, 1);
                     }
-
                     scale = tolower(optarg[0]);
                 }
                 break;
@@ -349,17 +336,17 @@ void getoptions(int argc, char* const* argv) {
 int main(int argc, char* argv[]) {
 	set_program_name(argv[0]);
 	getoptions(argc, (char* const*)argv);
-    // ENSURE THAT WE HAVE ALL REQUIRED ARGUMENTS (ID, HOST, LOG, PORT NUMBER)
+
+	// ENSURE THAT WE HAVE ALL REQUIRED ARGUMENTS (ID, HOST, LOG, PORT NUMBER)
     // BEFORE CONTINUING
     if ( id == -1 || host == NULL || logFile == NULL || port == -1 ) {
         fatal_error("required_arguments not met", (void*)usage, EXIT_BADARG);
     }
 
-    // Open a TCP connection to the server at the specified address and port
+	// Create a socket to communcate with remote server
     struct sockaddr_in server_address;
     struct hostent *server;
 
-    /* Create a socket to communcate with remote server */
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if(server_socket < 0){
         fatal_error("Error setting up socket", NULL, EXIT_OTHER);
@@ -385,7 +372,6 @@ int main(int argc, char* argv[]) {
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     memcpy(&server_address.sin_addr.s_addr, server->h_addr, server->h_length);
-
     server_address.sin_port = htons(port);
 
     /* Attempt a connection */
@@ -394,40 +380,14 @@ int main(int argc, char* argv[]) {
         fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
     }
 
-    // Immediately send (and log) an ID termindated with a newline:
-    // ID=ID-number
     /* Create the context and ssl struct for the ssl connection.
      * If load_tls() returns, neither ssl_ctx nor ssl will not be NULL. */
-    // Send
 #ifdef TLS
-		// // original code
-    // SSL_CTX* ssl_ctx;
-    // load_tls(ssl_ctx);
-    // SSL_library_init();
-    // ssl_ctx = load_tls();
-    // ssl = SSL_new(ssl_ctx);
-    // SSL_set_fd(ssl, server_socket);
-		// // end original code
-
-//START======================================================================
-		// Develop establish_tls_cxn
-
-		/* Create and initialize context and establish a connection to the remote
-		 * server. If we make it past establish_tls_cxn, no errors occured occured
-		 * and we are free to continue working.
-		 */
     SSL_CTX* ssl_ctx = NULL;
     establish_tls_cxn(ssl_ctx);
 
-//END======================================================================
-
-
-
-
-
-
-
-
+	// Immediately send (and log) an ID termindated with a newline:
+    // ID=ID-number
     // Write only the number of bytes that is written to char string ssl_buffer
     int bytes_printed = sprintf(ssl_buffer, "ID=%d\n", id);
     SSL_write(ssl, ssl_buffer, bytes_printed);
@@ -454,12 +414,10 @@ int main(int argc, char* argv[]) {
     	fatal_error("Error changing server_socket to non-blocking", NULL, EXIT_OTHER);
     }
 
-
     while (true) {
         // Send (and log) newline terminated temperature reports over the cxn
         if (report) {
             struct tm* t = printTime();
-
             int value = mraa_aio_read(temp_sensor);
             float tempValue = getTemperature(value);
 
@@ -478,7 +436,6 @@ int main(int argc, char* argv[]) {
                 fatal_error("Error writing to server", NULL, EXIT_OTHER);
             }
 #endif
-
             // and log
             if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min,
                         t->tm_sec, tempValue) < 0) {
@@ -504,7 +461,8 @@ int main(int argc, char* argv[]) {
         if (bytes_read < 0) {
                 int err = errno;
                 if (err != EAGAIN) {
-                    fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
+                    fatal_error("There was an issue reading from the server",
+								NULL, EXIT_OTHER);
                 }
             }
 
@@ -521,10 +479,8 @@ int main(int argc, char* argv[]) {
                     } else if (strcmp(temp, "SCALE=C") == 0) {
                         scale = C;
                     } else if (strcmp(temp, "OFF") == 0) {
-                        if (logging) {
-                            if (fprintf(logFile, "%s\n", temp) < 0) {
-                            	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-                            }
+                        if (fprintf(logFile, "%s\n", temp) < 0) {
+                        	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
                         }
                         shutDown();
                     } else if (strcmp(temp, "STOP") == 0) {

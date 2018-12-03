@@ -21,7 +21,7 @@ int mraa_aio_read(int temp) {
 typedef int mraa_result_t;
 mraa_result_t mraa_aio_close(mraa_aio_context dev) {
     dev = 0;
-    mraa_result_t ret = 0;
+    mraa_result_t ret = dev + 100;
     return ret;
 }
 

@@ -12,30 +12,24 @@ EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).c
 CHECK_SCRIPT=P4C_check.sh
 #CHECK_SCRIPT=my_check.sh
 
-
 CC=gcc
-
-CFLAGS= -Wall -Wextra -std=gnu99 -lm 
+CFLAGS= -Wall -Wextra -std=gnu99 -lm -lcrypto -lssl
 local_flags= $(CFLAGS) -DDUMMY 
 beagle_flags= $(CFLAGS) -lmraa 
 
 DEFAULT=Makefile README utils.c utils.h
 
-EXTRAS=
-
-BEAGLEBONE_VERSION=$(uname -a | grep 'lasr.cs.ucla.edu')
-
 default: build
 
-build: $(EXECUTABLE_NAME)
+build: $(EXECUTABLE_NAME)_tcp
 
-$(EXECUTABLE_NAME):
-#ifeq ($(BEAGLEBONE_VERSION), 1)
+$(EXECUTABLE_NAME)_tcp:
 	# $(CC) $(beagle_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-#else
 	$(CC) $(local_flags) -o $@ $(EXECUTABLE_SOURCE) utils.c
-#endif
 
+$(EXECUTABLE_NAME)_tls:
+	# $(CC) $(beagle_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c
+	$(CC) $(local_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)

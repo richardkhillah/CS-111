@@ -59,6 +59,12 @@ int mraa_aio_read(int temp) {
 
 #define BUFFER_SIZE 1024
 
+#ifdef TLS
+const int TLS_FLAG = 1;
+#else
+const int TLS_FLAG = 0;
+#endif
+
 int period = 1;
 char scale = F;
 bool report = true;
@@ -241,51 +247,53 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    /* set the address */
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     memcpy(&server_address.sin_addr.s_addr, server->h_addr, server->h_length);
     server_address.sin_port = htons(port);
 
+    /* Attempt a connection */
+    if (connect(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+        fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
+    }
+
     // Immediately send (and log) an ID termindated with a newline:
     //      ID=ID-number
+    dprintf(server_socket, "ID=%d\n", id);
+    
 
-    // Send (and log) newline terminated temperature reports over the cxn
-
-    // process (and log) newline-terminated commands received over the
-    // connection.
-    // If the temperature reports are mis-formatted, the server will return
-    // a LOG command with a description of the error
-
-
-    mraa_aio_context tempSensor;
-    tempSensor = mraa_aio_init(1);
+    
+    mraa_aio_context temp_sensor;
+    temp_sensor = mraa_aio_init(1);
 
     char buffer[BUFFER_SIZE];
     char temp[BUFFER_SIZE*2];
     int tempindex = 0;
     int bufferindex = 0;
 
-    // set keyboard to non-block
-    if (fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK) == -1) {
-    	fatal_error("Error changing stdin to non-blocking", NULL, EXIT_OTHER);
+    // set socket to non-block
+    if (fcntl(server_socket, F_SETFL, O_NONBLOCK) == -1) {
+    	fatal_error("Error changing server_socket to non-blocking", NULL, EXIT_OTHER);
     }
 
     while (true) {
-    	// if reporting, don't wait to read stdin, print immediately
+        // Send (and log) newline terminated temperature reports over the cxn
         if (report) {
             struct tm* t = printTime();
-            int value = mraa_aio_read(tempSensor);
+            int value = mraa_aio_read(temp_sensor);
             float tempValue = getTemperature(value);
             printf("%.1f\n", tempValue);
-            if (logging) {
-                if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue) < 0) {
-                	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-                } 
-            }
+            if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue) < 0) {
+            	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
+            } 
             sleep(period);
         }
 
-        // when we wake up, check if anything happend on the keyboard
+        // process (and log) newline-terminated commands received over the
+        // connection.
+        // If the temperature reports are mis-formatted, the server will return
+        // a LOG command with a description of the error
         int bytes_read = read(STDIN_FILENO, buffer+bufferindex, sizeof(char)*(BUFFER_SIZE-bufferindex));
         if (bytes_read < 0) {
             int err = errno;

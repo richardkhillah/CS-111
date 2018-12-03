@@ -37,8 +37,10 @@ int mraa_aio_read(int temp) {
 #include <aio.h>
 
 // lab4C unique headers
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#include <netdb.h>
+#include <netinet/in.h>     // so we can use sockets
+#include <openssl/ssl.h>    // so we can use OpenSSL
+#include <openssl/err.h>    // so we can use OpenSSL
 
 #define EXIT_OK 0
 #define EXIT_BADARG 1
@@ -67,6 +69,9 @@ bool logging = false;
 int id = -1;
 char* host = NULL;
 int port = -1;
+
+SSL *ssl = NULL;
+int server_socket = -1;
 
 
 float getTemperature(int reading) {
@@ -211,6 +216,35 @@ int main(int argc, char* argv[]) {
     }
 
     // Open a TCP connection to the server at the specified address and port
+    /* Create a socket */
+    struct sockaddr_in server_address;
+    struct hostent *server;
+
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if(server_socket < 0){
+        fatal_error("Error setting up socket", NULL, EXIT_OTHER);
+    }
+
+    /* This is the user-defined host */
+    server = gethostbyname(host);
+    if (server == NULL) {
+        if( h_error == HOST_NOT_FOUND) {
+            fatal_error("Host not found", NULL, EXIT_OTHER);
+        } else if (h_error == TRY_AGAIN) {
+            fatal_error("Try again", NULL, EXIT_OTHER);
+        } else if(h_error == NO_RECOVERY) {
+            fatal_error("Non-recoverable server failure. Trying again will NOT help",
+                        NULL, EXIT_OTHER);
+        } else {
+            fatal_error("Unknown Error... Trying again MIGHT help (it also might not)",
+                        NULL, EXIT_OTHER);
+        }
+    }
+
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    memcpy(&server_address.sin_addr.s_addr, server->h_addr, server->h_length);
+    server_address.sin_port = htons(port);
 
     // Immediately send (and log) an ID termindated with a newline:
     //      ID=ID-number

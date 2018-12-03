@@ -102,7 +102,6 @@ struct tm* printTime() {
 
 void shutDown() {
     struct tm* t = printTime();
-    //printf("SHUTDOWN\n");
 
     dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
             t->tm_hour, t->tm_min, t->tm_sec);
@@ -113,6 +112,40 @@ void shutDown() {
         exit(EXIT_OTHER);
     } 
     exit(EXIT_OK);
+}
+
+//SSL_CTX* load_tls() {
+void load_tls(SSL_CTX* ctx, SSL* ssl) {
+    // must be called before any other action takes place.
+    // SSL_library_init() not reentrant
+    // https://www.openssl.org/docs/man1.0.2/ssl/SSL_library_init.html
+    SSL_library_init();
+    OpenSSL_add_ssl_algorithms();
+    SSL_load_error_strings();
+    
+    // use version 23 client
+    const SSL_METHOD method = SSLv23_client_method(); //TLSv1_client_method();
+    //SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
+    ctx = SSL_CTX_new(method); // create/register method
+    if(ctx == NULL) {
+        // use openssl error handling to print to stdout. For more info, reference
+        // https://www.openssl.org/docs/man1.1.0/crypto/ERR_print_errors_fp.html
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_OTHER);
+    }
+
+    ssl = SSL_new(ctx);
+    if(ssl == NULL) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_OTHER);
+    }
+
+    if( SSL_set_fd(ssl, server_socket) == 0 ) {
+            ERR_print_errors_fp(stderr);
+            exit(EXIT_OTHER);
+    }
+
+    return ctx;
 }
 
 void usage(void) {
@@ -259,11 +292,27 @@ int main(int argc, char* argv[]) {
         fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
     }
 
+    /* Create the context and ssl struct for the ssl connection. 
+     * If load_tls() returns, neither ssl_ctx nor ssl will not be NULL. */
+    SSL_CTX* ssl_ctx;
+    SSL* ssl;
+    load_tls(ssl_ctx, ssl);
+
+
     // Immediately send (and log) an ID termindated with a newline:
     //      ID=ID-number
     dprintf(server_socket, "ID=%d\n", id);
     fprintf(logFile, "ID=%d\n", id);
     
+
+
+
+
+
+
+
+
+
 
 
 

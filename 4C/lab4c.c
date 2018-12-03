@@ -36,6 +36,10 @@ int mraa_aio_read(int temp) {
 #include <ctype.h>
 #include <aio.h>
 
+// lab4C unique headers
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #define EXIT_OK 0
 #define EXIT_BADARG 1
 #define EXIT_OTHER 2

@@ -58,11 +58,12 @@ int mraa_aio_read(int temp) {
 #define HOST_FLAG 'h'
 
 #define BUFFER_SIZE 1024
+#define SSL_BUFFER_SIZE 2048
 
-#ifdef TLS
-const int TLS_FLAG = 1;
+#ifdef VERSION_TLS
+const int TLS = 1;
 #else
-const int TLS_FLAG = 0;
+const int TLS = 0;
 #endif
 
 int period = 1;
@@ -76,6 +77,7 @@ int id = -1;
 char* host = NULL;
 int port = -1;
 
+char ssl_buffer[SSL_BUFFER_SIZE];
 SSL *ssl = NULL;
 int server_socket = -1;
 
@@ -114,19 +116,14 @@ void shutDown() {
     exit(EXIT_OK);
 }
 
-//SSL_CTX* load_tls() {
-void load_tls(SSL_CTX* ctx, SSL* ssl) {
-    // must be called before any other action takes place.
-    // SSL_library_init() not reentrant
-    // https://www.openssl.org/docs/man1.0.2/ssl/SSL_library_init.html
-    SSL_library_init();
+SSL_CTX* load_tls() {
+//void load_tls(SSL_CTX* ctx, SSL* ssl) {
     OpenSSL_add_ssl_algorithms();
     SSL_load_error_strings();
     
     // use version 23 client
-    const SSL_METHOD method = SSLv23_client_method(); //TLSv1_client_method();
-    //SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
-    ctx = SSL_CTX_new(method); // create/register method
+    const SSL_METHOD* method = SSLv23_client_method(); //TLSv1_client_method();
+    SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
     if(ctx == NULL) {
         // use openssl error handling to print to stdout. For more info, reference
         // https://www.openssl.org/docs/man1.1.0/crypto/ERR_print_errors_fp.html
@@ -134,18 +131,39 @@ void load_tls(SSL_CTX* ctx, SSL* ssl) {
         exit(EXIT_OTHER);
     }
 
-    ssl = SSL_new(ctx);
-    if(ssl == NULL) {
-        ERR_print_errors_fp(stderr);
-        exit(EXIT_OTHER);
-    }
-
-    if( SSL_set_fd(ssl, server_socket) == 0 ) {
-            ERR_print_errors_fp(stderr);
-            exit(EXIT_OTHER);
-    }
-
     return ctx;
+
+
+    // must be called before any other action takes place.
+    // SSL_library_init() not reentrant
+    // https://www.openssl.org/docs/man1.0.2/ssl/SSL_library_init.html
+    // SSL_library_init();
+    // OpenSSL_add_ssl_algorithms();
+    // SSL_load_error_strings();
+    
+    // // use version 23 client
+    // const SSL_METHOD method = SSLv23_client_method(); //TLSv1_client_method();
+    // //SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
+    // ctx = SSL_CTX_new(method); // create/register method
+    // if(ctx == NULL) {
+    //     // use openssl error handling to print to stdout. For more info, reference
+    //     // https://www.openssl.org/docs/man1.1.0/crypto/ERR_print_errors_fp.html
+    //     ERR_print_errors_fp(stderr);
+    //     exit(EXIT_OTHER);
+    // }
+
+    // ssl = SSL_new(ctx);
+    // if(ssl == NULL) {
+    //     ERR_print_errors_fp(stderr);
+    //     exit(EXIT_OTHER);
+    // }
+
+    // if( SSL_set_fd(ssl, server_socket) == 0 ) {
+    //         ERR_print_errors_fp(stderr);
+    //         exit(EXIT_OTHER);
+    // }
+
+    // return ctx;
 }
 
 void usage(void) {
@@ -292,31 +310,39 @@ int main(int argc, char* argv[]) {
         fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
     }
 
+    // Immediately send (and log) an ID termindated with a newline:
+    // ID=ID-number
     /* Create the context and ssl struct for the ssl connection. 
      * If load_tls() returns, neither ssl_ctx nor ssl will not be NULL. */
     SSL_CTX* ssl_ctx;
-    SSL* ssl;
-    load_tls(ssl_ctx, ssl);
+    if(TLS) {
+        // SSL_CTX* ssl_ctx;
+        // SSL* ssl;
+        // load_tls(ssl_ctx, ssl);
 
+        SSL_library_init();
+        // 
+        ssl_ctx = load_tls();
+        ssl = SSL_new(ssl_ctx);
+        SSL_set_fd(ssl, server_socket);
+        if(SSL_connect(ssl) != 1) {
+            ERR_print_errors_fp(stderr);
+            exit(EXIT_OTHER);
+        }
 
-    // Immediately send (and log) an ID termindated with a newline:
-    //      ID=ID-number
-    dprintf(server_socket, "ID=%d\n", id);
-    fprintf(logFile, "ID=%d\n", id);
+        // Write only the number of bytes that is written to char string ssl_buffer
+        int bytes_printed = sprintf(ssl_buffer, "ID=%d\n", id);
+        SSL_write(ssl, ssl_buffer, bytes_printed);
+    } else {
+        // do things according to part 1
+        dprintf(server_socket, "ID=%d\n", id);
+    }
+
+    // and log
+    if(fprintf(logFile, "ID=%d\n", id) < 3) {
+        fatal_error("Failure to write to log", NULL, EXIT_OTHER);
+    }
     
-
-
-
-
-
-
-
-
-
-
-
-
-
     mraa_aio_context temp_sensor;
     temp_sensor = mraa_aio_init(1);
 
@@ -329,6 +355,26 @@ int main(int argc, char* argv[]) {
     if (fcntl(server_socket, F_SETFL, O_NONBLOCK) == -1) {
     	fatal_error("Error changing server_socket to non-blocking", NULL, EXIT_OTHER);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     while (true) {
         // Send (and log) newline terminated temperature reports over the cxn

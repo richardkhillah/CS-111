@@ -164,9 +164,9 @@ void getoptions(int argc, char* const* argv) {
                 }
                 id = atoi(optarg);
                 if(id < 0) {
-                    fatal_error("Id must be greater than zero",
+                    fatal_error("Id must be greater than 0",
                                 (void*)usage, EXIT_BADARG);
-                }
+                } 
                 break;
             }
             case HOST_FLAG: {

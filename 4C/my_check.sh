@@ -15,10 +15,11 @@ TLS_PORT=19000
 LOG=log.txt
 
 # begin testing
-echo Running TCP program
+echo Running tests...
+#echo ./lab4c_tcp --id=369713302 --host=lever.cs.ucla.edu 18000 --log=tcp_log.txt
 #./$TCP_PGM --id=$FAKEID --host=$HOST $TCP_PORT --log=$LOG
+echo ./lab4c_tls --id=369713302 --host=lever.cs.ucla.edu 19000 --log=tls_log.txt
 ./$TLS_PGM --id=$FAKEID --host=$HOST $TLS_PORT --log=$LOG
-
 
 #./lab4c_tcp --id=369713302 --host=lever.cs.ucla.edu 18000 --log=tcp_log.txt
 #./lab4c_tls --id=369713302 --host=lever.cs.ucla.edu 19000 --log=tls_log.txt

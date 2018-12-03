@@ -4,7 +4,8 @@
 
 #!/bin/bash
 UID="604853262"
-PGM="lab4b"
+TCP_PGM="lab4c_tcp"
+TLS_PGM="lab4c_tls"
 TARBALL="$PGM-604853262.tar.gz"
 TEMP=./tmp
 

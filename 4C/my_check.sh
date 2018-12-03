@@ -3,7 +3,7 @@
 # ID: 604853262
 
 #!/bin/bash
-UID="604853262"
+#UID="604853262"
 TCP_PGM="lab4c_tcp"
 TLS_PGM="lab4c_tls"
 TARBALL="$PGM-604853262.tar.gz"
@@ -16,4 +16,4 @@ LOG=log.txt
 
 # begin testing
 echo Running TCP program
-./$PGM --id=$(FAKEID) --host=$(HOST) $(TCP_PORT) --log=$(LOG)
+./$TCP_PGM --id=$FAKEID --host=$HOST $TCP_PORT --log=$LOG

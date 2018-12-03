@@ -102,16 +102,16 @@ struct tm* printTime() {
 
 void shutDown() {
     struct tm* t = printTime();
-    printf("SHUTDOWN\n");
+    //printf("SHUTDOWN\n");
 
-    if (logging) {
-        if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n", t->tm_hour, 
-                    t->tm_min, t->tm_sec) < 0) 
-        {
-            fprintf(stderr, "There was a problem writing to output\n");
-            exit(1);
-        } 
-    }
+    dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
+            t->tm_hour, t->tm_min, t->tm_sec);
+    if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n",
+            t->tm_hour, t->tm_min, t->tm_sec) < 0) 
+    {
+        fprintf(stderr, "There was a problem writing to output\n");
+        exit(EXIT_OTHER);
+    } 
     exit(EXIT_OK);
 }
 

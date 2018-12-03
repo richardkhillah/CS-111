@@ -9,8 +9,8 @@ LAB_NUMBER=lab4
 LAB_PART=c
 EXECUTABLE_NAME=$(LAB_NUMBER)$(LAB_PART)
 EXECUTABLE_SOURCE=$(EXECUTABLE_NAME).c
-CHECK_SCRIPT=P4C_check.sh
-#CHECK_SCRIPT=my_check.sh
+#CHECK_SCRIPT=P4C_check.sh
+CHECK_SCRIPT=my_check.sh
 
 CC=gcc
 CFLAGS= -Wall -Wextra -std=gnu99 -lm -lcrypto -lssl

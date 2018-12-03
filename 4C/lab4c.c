@@ -254,16 +254,20 @@ int main(int argc, char* argv[]) {
     server_address.sin_port = htons(port);
 
     /* Attempt a connection */
-    if (connect(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+    if (connect(server_socket, (struct sockaddr*)&server_address, 
+                sizeof(server_address)) < 0) {
         fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
     }
 
     // Immediately send (and log) an ID termindated with a newline:
     //      ID=ID-number
     dprintf(server_socket, "ID=%d\n", id);
+    fprintf(logFile, "ID=%d\n", id);
     
 
-    
+
+
+
     mraa_aio_context temp_sensor;
     temp_sensor = mraa_aio_init(1);
 
@@ -284,9 +288,17 @@ int main(int argc, char* argv[]) {
             int value = mraa_aio_read(temp_sensor);
             float tempValue = getTemperature(value);
             printf("%.1f\n", tempValue);
-            if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue) < 0) {
+
+            // Send
+            if (dprintf(server_socket, "%02d:%02d:%02d %.1f\n", t->tm_hour, 
+                        t->tm_min, t->tm_sec, tempValue) < 0) {
+                fatal_error("Error writing to server", NULL, EXIT_OTHER);  
+            }
+            // and log
+            if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, 
+                        t->tm_sec, tempValue) < 0) {
             	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-            } 
+            }
             sleep(period);
         }
 
@@ -294,7 +306,8 @@ int main(int argc, char* argv[]) {
         // connection.
         // If the temperature reports are mis-formatted, the server will return
         // a LOG command with a description of the error
-        int bytes_read = read(STDIN_FILENO, buffer+bufferindex, sizeof(char)*(BUFFER_SIZE-bufferindex));
+        int bytes_read = read(server_socket, buffer+bufferindex, 
+                              sizeof(char)*(BUFFER_SIZE-bufferindex));
         if (bytes_read < 0) {
             int err = errno;
             if (err != EAGAIN) {
@@ -302,6 +315,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        // Process
         if (bytes_read > 0) {
             bufferindex += bytes_read;
             int i;
@@ -331,11 +345,10 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
-                    if (logging) {
-                        if (fprintf(logFile, "%s\n", temp) < 0) {
-                        	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-                        } 
-                    }
+                    // and log
+                    if (fprintf(logFile, "%s\n", temp) < 0) {
+                    	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
+                    } 
 
                     tempindex = 0;
                 } else {

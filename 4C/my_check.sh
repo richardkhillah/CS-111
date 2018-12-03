@@ -8,33 +8,12 @@ PGM="lab4b"
 TARBALL="$PGM-604853262.tar.gz"
 TEMP=./tmp
 
+FAKEID=369713302
+HOST=lever.cs.ucla.edu
+TCP_PORT=18000
+TLS_PORT=19000
+LOG=log.txt
 
 # begin testing
-echo
-p=2
-s="c"
-echo "... $PGM supports --scale, --period, --log"
-./$PGM --period=$p --scale=$s --log="LOGFILE" <<-EOF
-SCALE=F
-PERIOD=1
-START
-STOP
-LOG test
-OFF
-EOF
-
-ret=$?
-if [ $ret -ne 0 ]
-then
-	echo "RETURNS RC=$ret"
-	let errors+=1
-fi
-
-if [ ! -f LOGFILE ]
-then
-	echo "did not create a log file"
-	let errors+=1
-else
-	rm LOGFILE
-fi
-
+echo Running TCP program
+./$PGM --id=$(FAKEID) --host=$(HOST) $(TCP_PORT) --log=$(LOG)

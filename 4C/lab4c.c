@@ -17,6 +17,14 @@ int mraa_aio_read(int temp) {
 	temp++;
 	return 500;
 }
+
+typedef int mraa_result_t;
+mraa_result_t mraa_aio_close(mraa_aio_context dev) {
+    dev = 0;
+    mraa_result_t ret = 0;
+    return ret;
+}
+
 #endif
 
 
@@ -61,9 +69,9 @@ int mraa_aio_read(int temp) {
 #define SSL_BUFFER_SIZE 2048
 
 #ifdef VERSION_TLS
-const int TLS = 1;
+const bool TLS = true;
 #else
-const int TLS = 0;
+const bool TLS = false;
 #endif
 
 int period = 1;
@@ -78,7 +86,7 @@ char* host = NULL;
 int port = -1;
 
 char ssl_buffer[SSL_BUFFER_SIZE];
-SSL *ssl = NULL;
+SSL *ssl;
 int server_socket = -1;
 
 
@@ -98,15 +106,22 @@ struct tm* printTime() {
     time_t rawTime;
     time(&rawTime);
     struct tm *t = localtime(&rawTime);
-    printf("%02d:%02d:%02d ", t->tm_hour, t->tm_min, t->tm_sec);
+    //printf("%02d:%02d:%02d ", t->tm_hour, t->tm_min, t->tm_sec);
     return t;
 }
 
 void shutDown() {
     struct tm* t = printTime();
 
-    dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
+    if(TLS) {
+        int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d SHUTDOWN\n",
             t->tm_hour, t->tm_min, t->tm_sec);
+        SSL_write(ssl, ssl_buffer, bytes_printed);
+    } else {
+        dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
+            t->tm_hour, t->tm_min, t->tm_sec);
+    }
+
     if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n",
             t->tm_hour, t->tm_min, t->tm_sec) < 0) 
     {
@@ -121,8 +136,7 @@ SSL_CTX* load_tls() {
     OpenSSL_add_ssl_algorithms();
     SSL_load_error_strings();
     
-    // use version 23 client
-    const SSL_METHOD* method = SSLv23_client_method(); //TLSv1_client_method();
+    const SSL_METHOD* method = TLSv1_client_method();
     SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
     if(ctx == NULL) {
         // use openssl error handling to print to stdout. For more info, reference
@@ -302,6 +316,7 @@ int main(int argc, char* argv[]) {
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_family = AF_INET;
     memcpy(&server_address.sin_addr.s_addr, server->h_addr, server->h_length);
+
     server_address.sin_port = htons(port);
 
     /* Attempt a connection */
@@ -319,14 +334,50 @@ int main(int argc, char* argv[]) {
         // SSL_CTX* ssl_ctx;
         // SSL* ssl;
         // load_tls(ssl_ctx, ssl);
-
         SSL_library_init();
-        // 
         ssl_ctx = load_tls();
         ssl = SSL_new(ssl_ctx);
         SSL_set_fd(ssl, server_socket);
-        if(SSL_connect(ssl) != 1) {
-            ERR_print_errors_fp(stderr);
+
+        int ret_val = SSL_connect(ssl);
+        if( ret_val != 1) {
+            //The TLS/SSL handshake was not successful but was shut down controlled
+            //and by the specifications of the TLS/SSL protocol.
+            int ssl_err = SSL_get_error(ssl, ret_val);
+            switch (ssl_err) {
+                case SSL_ERROR_NONE:
+                    fprintf(stderr, "SSL_ERROR_NONE\n");
+                    break;
+                case SSL_ERROR_ZERO_RETURN:
+                    fprintf(stderr, "SSL_ERROR_ZERO_RETURN\n");
+                    break;
+                case SSL_ERROR_WANT_READ:
+                    fprintf(stderr, "SSL_ERROR_WANT_READ\n");
+                case SSL_ERROR_WANT_WRITE:
+                    fprintf(stderr, "SSL_ERROR_WANT_WRITE\n");
+
+                    break;
+                case SSL_ERROR_WANT_CONNECT:
+                    fprintf(stderr, "SSL_ERROR_WANT_CONNECT\n");
+                case SSL_ERROR_WANT_ACCEPT:
+                    fprintf(stderr, "SSL_ERROR_WANT_ACCEPT\n");
+                    break;
+                case SSL_ERROR_WANT_X509_LOOKUP:
+                    fprintf(stderr, "SSL_ERROR_WANT_X509_LOOKUP\n");
+                    break;
+                case SSL_ERROR_SYSCALL:
+                    fprintf(stderr, "SSL_ERROR_SYSCALL:\n");
+                    fprintf(stderr, "     Some non-recoverable I/O error occurred.\n");
+                    fprintf(stderr, "     The OpenSSL error queue may contain more information on the error.\n");
+                    fprintf(stderr, "     For socket I/O on Unix systems, consult errno for details\n");
+                    fprintf(stderr, "(errno %d): %s\n", errno, strerror(errno));
+                    exit(EXIT_OTHER);
+                    break;
+
+            }
+        } else if( ret_val < 0 ){
+            fprintf(stderr, "Unable to connect to tls server\n");
+            //ERR_print_errors_fp(stderr);
             exit(EXIT_OTHER);
         }
 
@@ -339,7 +390,7 @@ int main(int argc, char* argv[]) {
     }
 
     // and log
-    if(fprintf(logFile, "ID=%d\n", id) < 3) {
+    if(fprintf(logFile, "ID=%d\n", id) < 0) {
         fatal_error("Failure to write to log", NULL, EXIT_OTHER);
     }
     
@@ -357,38 +408,32 @@ int main(int argc, char* argv[]) {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     while (true) {
         // Send (and log) newline terminated temperature reports over the cxn
         if (report) {
             struct tm* t = printTime();
+
             int value = mraa_aio_read(temp_sensor);
             float tempValue = getTemperature(value);
-            printf("%.1f\n", tempValue);
 
+            // Print to stdout
+            printf("%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue);
+            //printf("%.1f\n", tempValue);
+            
             // Send
-            if (dprintf(server_socket, "%02d:%02d:%02d %.1f\n", t->tm_hour, 
+            if(TLS) {
+                int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d %.1f\n",
+                        t->tm_hour, t->tm_min, t->tm_sec, tempValue);
+                SSL_write(ssl, ssl_buffer, bytes_printed);
+                
+            } else {
+                if (dprintf(server_socket, "%02d:%02d:%02d %.1f\n", t->tm_hour, 
                         t->tm_min, t->tm_sec, tempValue) < 0) {
-                fatal_error("Error writing to server", NULL, EXIT_OTHER);  
+                    fatal_error("Error writing to server", NULL, EXIT_OTHER);  
+                }
+
             }
+
             // and log
             if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, 
                         t->tm_sec, tempValue) < 0) {
@@ -401,16 +446,36 @@ int main(int argc, char* argv[]) {
         // connection.
         // If the temperature reports are mis-formatted, the server will return
         // a LOG command with a description of the error
-        int bytes_read = read(server_socket, buffer+bufferindex, 
-                              sizeof(char)*(BUFFER_SIZE-bufferindex));
-        if (bytes_read < 0) {
-            int err = errno;
-            if (err != EAGAIN) {
-            	fatal_error("There was an issue reading from stdin", NULL, EXIT_OTHER);
-            }
-        }
 
-        // Process
+        // READ
+        int bytes_read = 0;
+        if(TLS) {
+            bytes_read = SSL_read(ssl, buffer+bufferindex, 
+                                  sizeof(char)*(BUFFER_SIZE-bufferindex));
+            // if (bytes_read < 0) {
+            //     int err = errno;
+            //     if (err != EAGAIN) {
+            //         fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
+            //     }
+            // }
+        } else {
+            bytes_read = read(server_socket, buffer+bufferindex, 
+                                  sizeof(char)*(BUFFER_SIZE-bufferindex));
+            // if (bytes_read < 0) {
+            //     int err = errno;
+            //     if (err != EAGAIN) {
+            //         fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
+            //     }
+            // }
+        }
+        if (bytes_read < 0) {
+                int err = errno;
+                if (err != EAGAIN) {
+                    fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
+                }
+            }
+
+        // and Process (the same as before i.e., in part 4b)
         if (bytes_read > 0) {
             bufferindex += bytes_read;
             int i;
@@ -454,5 +519,10 @@ int main(int argc, char* argv[]) {
             bufferindex = 0;
         }
     }
+
+    mraa_aio_close(temp_sensor);
     close(server_socket);
+    SSL_free(ssl);
+    SSL_CTX_free(ssl_ctx);
+
 }

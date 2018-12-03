@@ -160,7 +160,7 @@ void getoptions(int argc, char* const* argv) {
             case ID_FLAG: {
                 // Ensure id is 9 digits in length
                 if (strlen(optarg) != 9){
-                    fatal_error("Incorrect ID", (void)usage, EXIT_BADARG);
+                    fatal_error("Incorrect ID", (void*)usage, EXIT_BADARG);
                 }
                 id = atoi(optarg);
                 if(id < 0) {
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
 	getoptions(argc, (char* const*)argv);
     // ENSURE THAT WE HAVE ALL REQUIRED ARGUMENTS (ID, HOST, LOG, PORT NUMBER)
     // BEFORE CONTINUING
-    if ( id == -1 || host == NULL || logfile == NULL || port == -1 ) {
+    if ( id == -1 || host == NULL || logFile == NULL || port == -1 ) {
         fatal_error("required_arguments not met", (void*)usage, EXIT_BADARG);
     }
 
@@ -234,11 +234,11 @@ int main(int argc, char* argv[]) {
     /* This is the user-defined host */
     server = gethostbyname(host);
     if (server == NULL) {
-        if( h_error == HOST_NOT_FOUND) {
+        if( h_errno == HOST_NOT_FOUND) {
             fatal_error("Host not found", NULL, EXIT_OTHER);
-        } else if (h_error == TRY_AGAIN) {
+        } else if (h_errno == TRY_AGAIN) {
             fatal_error("Try again", NULL, EXIT_OTHER);
-        } else if(h_error == NO_RECOVERY) {
+        } else if(h_errno == NO_RECOVERY) {
             fatal_error("Non-recoverable server failure. Trying again will NOT help",
                         NULL, EXIT_OTHER);
         } else {

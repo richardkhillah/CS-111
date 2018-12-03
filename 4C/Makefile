@@ -30,7 +30,7 @@ $(EXECUTABLE_NAME)_tcp:
 
 $(EXECUTABLE_NAME)_tls:
 	# $(CC) $(beagle_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c
-	$(CC) $(local_flags) -DVERSION_TLS -o $@ $(EXECUTABLE_SOURCE) utils.c
+	$(CC) $(local_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c
 
 dist: build
 	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME) $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)

@@ -27,7 +27,6 @@ mraa_result_t mraa_aio_close(mraa_aio_context dev) {
 
 #endif
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -68,12 +67,6 @@ mraa_result_t mraa_aio_close(mraa_aio_context dev) {
 #define BUFFER_SIZE 1024
 #define SSL_BUFFER_SIZE 2048
 
-#ifdef VERSION_TLS
-const bool TLS = true;
-#else
-const bool TLS = false;
-#endif
-
 int period = 1;
 char scale = F;
 bool report = true;
@@ -85,8 +78,6 @@ int id = -1;
 char* host = NULL;
 int port = -1;
 
-char ssl_buffer[SSL_BUFFER_SIZE];
-SSL *ssl;
 int server_socket = -1;
 
 
@@ -106,36 +97,19 @@ struct tm* printTime() {
     time_t rawTime;
     time(&rawTime);
     struct tm *t = localtime(&rawTime);
-    //printf("%02d:%02d:%02d ", t->tm_hour, t->tm_min, t->tm_sec);
     return t;
 }
-
-void shutDown() {
-    struct tm* t = printTime();
-
-    if(TLS) {
-        int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d SHUTDOWN\n",
-            t->tm_hour, t->tm_min, t->tm_sec);
-        SSL_write(ssl, ssl_buffer, bytes_printed);
-    } else {
-        dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
-            t->tm_hour, t->tm_min, t->tm_sec);
-    }
-
-    if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n",
-            t->tm_hour, t->tm_min, t->tm_sec) < 0) 
-    {
-        fprintf(stderr, "There was a problem writing to output\n");
-        exit(EXIT_OTHER);
-    } 
-    exit(EXIT_OK);
-}
+/* We only establish_tls_cxn() when we are connecting to the
+ * tls server.
+ */
+#ifdef TLS
+char ssl_buffer[SSL_BUFFER_SIZE];
+SSL *ssl;
 
 SSL_CTX* load_tls() {
-//void load_tls(SSL_CTX* ctx, SSL* ssl) {
     OpenSSL_add_ssl_algorithms();
     SSL_load_error_strings();
-    
+
     const SSL_METHOD* method = TLSv1_client_method();
     SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
     if(ctx == NULL) {
@@ -146,39 +120,134 @@ SSL_CTX* load_tls() {
     }
 
     return ctx;
+}
 
-
+void establish_tls_cxn(SSL_CTX* ctx) {
     // must be called before any other action takes place.
     // SSL_library_init() not reentrant
     // https://www.openssl.org/docs/man1.0.2/ssl/SSL_library_init.html
-    // SSL_library_init();
-    // OpenSSL_add_ssl_algorithms();
-    // SSL_load_error_strings();
-    
-    // // use version 23 client
-    // const SSL_METHOD method = SSLv23_client_method(); //TLSv1_client_method();
-    // //SSL_CTX* ctx = SSL_CTX_new(method); // create/register method
-    // ctx = SSL_CTX_new(method); // create/register method
-    // if(ctx == NULL) {
-    //     // use openssl error handling to print to stdout. For more info, reference
-    //     // https://www.openssl.org/docs/man1.1.0/crypto/ERR_print_errors_fp.html
-    //     ERR_print_errors_fp(stderr);
-    //     exit(EXIT_OTHER);
-    // }
+    SSL_library_init();
+    OpenSSL_add_ssl_algorithms();
+    SSL_load_error_strings();
 
-    // ssl = SSL_new(ctx);
-    // if(ssl == NULL) {
-    //     ERR_print_errors_fp(stderr);
-    //     exit(EXIT_OTHER);
-    // }
+		/* Method to use to establish a client TLS/SSL connection to a remote
+		 * server using the TLSv1 protocol.
+		 * This indicates that this program only understands TLSv1 and so should
+		 * only receive TLSv1 messages.
+		 * see SSL_CTX_new(3)
+		 */
+		const SSL_METHOD* method = TLSv1_client_method();
+    ctx = SSL_CTX_new(method);
+    if(ctx == NULL) {
+        // use openssl error handling to print to stdout. For more info, reference
+        // https://www.openssl.org/docs/man1.1.0/crypto/ERR_print_errors_fp.html
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_OTHER);
+    }
 
-    // if( SSL_set_fd(ssl, server_socket) == 0 ) {
-    //         ERR_print_errors_fp(stderr);
-    //         exit(EXIT_OTHER);
-    // }
+		// Create new ssl struct for a connection
+    ssl = SSL_new(ctx);
+    if(ssl == NULL) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_OTHER);
+    }
 
-    // return ctx;
+		// connect the SSL object with the server_socket to enable
+		// two-way IPC between local and remote machines
+    if( SSL_set_fd(ssl, server_socket) == 0 ) {
+            ERR_print_errors_fp(stderr);
+            exit(EXIT_OTHER);
+    }
+
+		// All this work so we can establish a tls connection with the
+		// remote server. A fully comprehensive error switch occurs to distinguish
+		// whether an error occured client-side or server-side... which is usefull
+		// when one is connecting blindly to a remote server.
+		int ret_val = SSL_connect(ssl);
+    if( ret_val != 1) {
+        //The TLS/SSL handshake was not successful but was shut down controlled
+        //and by the specifications of the TLS/SSL protocol.
+        int ssl_err = SSL_get_error(ssl, ret_val);
+        switch (ssl_err) {
+            case SSL_ERROR_NONE:
+                fprintf(stderr, "SSL_ERROR_NONE\n");
+                break;
+            case SSL_ERROR_ZERO_RETURN:
+                fprintf(stderr, "SSL_ERROR_ZERO_RETURN\n");
+                break;
+            case SSL_ERROR_WANT_READ:
+                fprintf(stderr, "SSL_ERROR_WANT_READ\n");
+            case SSL_ERROR_WANT_WRITE:
+                fprintf(stderr, "SSL_ERROR_WANT_WRITE\n");
+
+                break;
+            case SSL_ERROR_WANT_CONNECT:
+                fprintf(stderr, "SSL_ERROR_WANT_CONNECT\n");
+            case SSL_ERROR_WANT_ACCEPT:
+                fprintf(stderr, "SSL_ERROR_WANT_ACCEPT\n");
+                break;
+            case SSL_ERROR_WANT_X509_LOOKUP:
+                fprintf(stderr, "SSL_ERROR_WANT_X509_LOOKUP\n");
+                break;
+            case SSL_ERROR_SYSCALL:
+                fprintf(stderr, "SSL_ERROR_SYSCALL:\n");
+                fprintf(stderr, "     Some non-recoverable I/O error occurred.\n");
+                fprintf(stderr, "     The OpenSSL error queue may contain more information on the error.\n");
+                fprintf(stderr, "     For socket I/O on Unix systems, consult errno for details\n");
+                fprintf(stderr, "(errno %d): %s\n", errno, strerror(errno));
+                exit(EXIT_OTHER);
+                break;
+
+        }
+    } else if( ret_val < 0 ){
+        fprintf(stderr, "Unable to connect to tls server\n");
+        //ERR_print_errors_fp(stderr);
+        exit(EXIT_OTHER);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif
+
+
+void shutDown() {
+    struct tm* t = printTime();
+
+#ifdef TLS
+    int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d SHUTDOWN\n",
+            t->tm_hour, t->tm_min, t->tm_sec);
+    SSL_write(ssl, ssl_buffer, bytes_printed);
+#else
+    dprintf(server_socket, "%02d:%02d:%02d SHUTDOWN\n",
+             t->tm_hour, t->tm_min, t->tm_sec);
+#endif
+    if (fprintf(logFile, "%02d:%02d:%02d SHUTDOWN\n", t->tm_hour,
+                t->tm_min, t->tm_sec) < 0)
+    {
+        fprintf(stderr, "There was a problem writing to output\n");
+        exit(EXIT_OTHER);
+    }
+
+    exit(EXIT_OK);
+}
+
 
 void usage(void) {
 	fprintf(stderr, "usage: ./%s --id=9_digit_id --host=name --log=<filename> port [--period=<seconds>] [--scale=[f, c]]\n", program_name);
@@ -231,7 +300,7 @@ void getoptions(int argc, char* const* argv) {
                 if(id < 0) {
                     fatal_error("Id must be greater than 0",
                                 (void*)usage, EXIT_BADARG);
-                } 
+                }
                 break;
             }
             case HOST_FLAG: {
@@ -245,7 +314,7 @@ void getoptions(int argc, char* const* argv) {
                 if (optarg) {
                     period = atoi(optarg);
                     if (period < 1) {
-                    	fatal_error("Period must be greater-than or equal to 0", 
+                    	fatal_error("Period must be greater-than or equal to 0",
                                     (void*)usage, 1);
                     }
                 }
@@ -320,80 +389,58 @@ int main(int argc, char* argv[]) {
     server_address.sin_port = htons(port);
 
     /* Attempt a connection */
-    if (connect(server_socket, (struct sockaddr*)&server_address, 
+    if (connect(server_socket, (struct sockaddr*)&server_address,
                 sizeof(server_address)) < 0) {
         fatal_error("Failure connecting to server", NULL, EXIT_OTHER);
     }
 
     // Immediately send (and log) an ID termindated with a newline:
     // ID=ID-number
-    /* Create the context and ssl struct for the ssl connection. 
+    /* Create the context and ssl struct for the ssl connection.
      * If load_tls() returns, neither ssl_ctx nor ssl will not be NULL. */
-    SSL_CTX* ssl_ctx;
-    if(TLS) {
-        // SSL_CTX* ssl_ctx;
-        // SSL* ssl;
-        // load_tls(ssl_ctx, ssl);
-        SSL_library_init();
-        ssl_ctx = load_tls();
-        ssl = SSL_new(ssl_ctx);
-        SSL_set_fd(ssl, server_socket);
+    // Send
+#ifdef TLS
+		// // original code
+    // SSL_CTX* ssl_ctx;
+    // load_tls(ssl_ctx);
+    // SSL_library_init();
+    // ssl_ctx = load_tls();
+    // ssl = SSL_new(ssl_ctx);
+    // SSL_set_fd(ssl, server_socket);
+		// // end original code
 
-        int ret_val = SSL_connect(ssl);
-        if( ret_val != 1) {
-            //The TLS/SSL handshake was not successful but was shut down controlled
-            //and by the specifications of the TLS/SSL protocol.
-            int ssl_err = SSL_get_error(ssl, ret_val);
-            switch (ssl_err) {
-                case SSL_ERROR_NONE:
-                    fprintf(stderr, "SSL_ERROR_NONE\n");
-                    break;
-                case SSL_ERROR_ZERO_RETURN:
-                    fprintf(stderr, "SSL_ERROR_ZERO_RETURN\n");
-                    break;
-                case SSL_ERROR_WANT_READ:
-                    fprintf(stderr, "SSL_ERROR_WANT_READ\n");
-                case SSL_ERROR_WANT_WRITE:
-                    fprintf(stderr, "SSL_ERROR_WANT_WRITE\n");
+//START======================================================================
+		// Develop establish_tls_cxn
 
-                    break;
-                case SSL_ERROR_WANT_CONNECT:
-                    fprintf(stderr, "SSL_ERROR_WANT_CONNECT\n");
-                case SSL_ERROR_WANT_ACCEPT:
-                    fprintf(stderr, "SSL_ERROR_WANT_ACCEPT\n");
-                    break;
-                case SSL_ERROR_WANT_X509_LOOKUP:
-                    fprintf(stderr, "SSL_ERROR_WANT_X509_LOOKUP\n");
-                    break;
-                case SSL_ERROR_SYSCALL:
-                    fprintf(stderr, "SSL_ERROR_SYSCALL:\n");
-                    fprintf(stderr, "     Some non-recoverable I/O error occurred.\n");
-                    fprintf(stderr, "     The OpenSSL error queue may contain more information on the error.\n");
-                    fprintf(stderr, "     For socket I/O on Unix systems, consult errno for details\n");
-                    fprintf(stderr, "(errno %d): %s\n", errno, strerror(errno));
-                    exit(EXIT_OTHER);
-                    break;
+		/* Create and initialize context and establish a connection to the remote
+		 * server. If we make it past establish_tls_cxn, no errors occured occured
+		 * and we are free to continue working.
+		 */
+    SSL_CTX* ssl_ctx = NULL;
+    establish_tls_cxn(ssl_ctx);
 
-            }
-        } else if( ret_val < 0 ){
-            fprintf(stderr, "Unable to connect to tls server\n");
-            //ERR_print_errors_fp(stderr);
-            exit(EXIT_OTHER);
-        }
+//END======================================================================
 
-        // Write only the number of bytes that is written to char string ssl_buffer
-        int bytes_printed = sprintf(ssl_buffer, "ID=%d\n", id);
-        SSL_write(ssl, ssl_buffer, bytes_printed);
-    } else {
-        // do things according to part 1
-        dprintf(server_socket, "ID=%d\n", id);
-    }
+
+
+
+
+
+
+
+    // Write only the number of bytes that is written to char string ssl_buffer
+    int bytes_printed = sprintf(ssl_buffer, "ID=%d\n", id);
+    SSL_write(ssl, ssl_buffer, bytes_printed);
+
+#else // do things according to part 1
+    dprintf(server_socket, "ID=%d\n", id);
+#endif
 
     // and log
     if(fprintf(logFile, "ID=%d\n", id) < 0) {
         fatal_error("Failure to write to log", NULL, EXIT_OTHER);
     }
-    
+
     mraa_aio_context temp_sensor;
     temp_sensor = mraa_aio_init(1);
 
@@ -418,56 +465,42 @@ int main(int argc, char* argv[]) {
 
             // Print to stdout
             printf("%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, t->tm_sec, tempValue);
-            //printf("%.1f\n", tempValue);
-            
-            // Send
-            if(TLS) {
-                int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d %.1f\n",
-                        t->tm_hour, t->tm_min, t->tm_sec, tempValue);
-                SSL_write(ssl, ssl_buffer, bytes_printed);
-                
-            } else {
-                if (dprintf(server_socket, "%02d:%02d:%02d %.1f\n", t->tm_hour, 
-                        t->tm_min, t->tm_sec, tempValue) < 0) {
-                    fatal_error("Error writing to server", NULL, EXIT_OTHER);  
-                }
 
+            // Send
+#ifdef TLS
+            int bytes_printed = sprintf(ssl_buffer, "%02d:%02d:%02d %.1f\n",
+                        t->tm_hour, t->tm_min, t->tm_sec, tempValue);
+            SSL_write(ssl, ssl_buffer, bytes_printed);
+#else
+            if (dprintf(server_socket, "%02d:%02d:%02d %.1f\n", t->tm_hour,
+                        t->tm_min, t->tm_sec, tempValue) < 0)
+            {
+                fatal_error("Error writing to server", NULL, EXIT_OTHER);
             }
+#endif
 
             // and log
-            if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min, 
+            if (fprintf(logFile, "%02d:%02d:%02d %.1f\n", t->tm_hour, t->tm_min,
                         t->tm_sec, tempValue) < 0) {
             	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
             }
             sleep(period);
         }
 
-        // process (and log) newline-terminated commands received over the
-        // connection.
-        // If the temperature reports are mis-formatted, the server will return
-        // a LOG command with a description of the error
-
-        // READ
+        /* process (and log) newline-terminated commands received over the
+         * connection.
+         * If the temperature reports are mis-formatted, the server will return
+         * a LOG command with a description of the error
+         */
+        // Read input from either the tls server or tcp server
         int bytes_read = 0;
-        if(TLS) {
-            bytes_read = SSL_read(ssl, buffer+bufferindex, 
+#ifdef TLS
+        bytes_read = SSL_read(ssl, buffer+bufferindex,
                                   sizeof(char)*(BUFFER_SIZE-bufferindex));
-            // if (bytes_read < 0) {
-            //     int err = errno;
-            //     if (err != EAGAIN) {
-            //         fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
-            //     }
-            // }
-        } else {
-            bytes_read = read(server_socket, buffer+bufferindex, 
+#else
+        bytes_read = read(server_socket, buffer+bufferindex,
                                   sizeof(char)*(BUFFER_SIZE-bufferindex));
-            // if (bytes_read < 0) {
-            //     int err = errno;
-            //     if (err != EAGAIN) {
-            //         fatal_error("There was an issue reading from the server", NULL, EXIT_OTHER);
-            //     }
-            // }
-        }
+#endif
         if (bytes_read < 0) {
                 int err = errno;
                 if (err != EAGAIN) {
@@ -491,7 +524,7 @@ int main(int argc, char* argv[]) {
                         if (logging) {
                             if (fprintf(logFile, "%s\n", temp) < 0) {
                             	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-                            } 
+                            }
                         }
                         shutDown();
                     } else if (strcmp(temp, "STOP") == 0) {
@@ -508,7 +541,7 @@ int main(int argc, char* argv[]) {
                     // and log
                     if (fprintf(logFile, "%s\n", temp) < 0) {
                     	fatal_error("Error writing to logfile", NULL, EXIT_OTHER);
-                    } 
+                    }
 
                     tempindex = 0;
                 } else {
@@ -522,7 +555,9 @@ int main(int argc, char* argv[]) {
 
     mraa_aio_close(temp_sensor);
     close(server_socket);
+#ifdef TLS
     SSL_free(ssl);
     SSL_CTX_free(ssl_ctx);
+#endif
 
 }

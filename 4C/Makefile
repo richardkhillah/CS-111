@@ -1,6 +1,6 @@
 # NAME: Richard Khillah
 # EMAIL: RKhillah@ucla.edu
-# ID: 369713302
+# ID: 604853262
 
 FAKEID=369713302
 
@@ -33,8 +33,8 @@ $(EXECUTABLE_NAME)_tls:
 	# $(CC) $(local_flags) -DTLS -o $@ $(EXECUTABLE_SOURCE) utils.c
 
 dist: build
-	#tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME)_tcp $(EXECUTABLE_NAME)_tls $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
-	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(FAKEID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME)_tcp $(EXECUTABLE_NAME)_tls $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
+	tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(UID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME)_tcp $(EXECUTABLE_NAME)_tls $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
+	#tar -cvzf $(LAB_NUMBER)$(LAB_PART)-$(FAKEID).tar.gz $(DEFAULT) $(EXECUTABLE_NAME)_tcp $(EXECUTABLE_NAME)_tls $(EXECUTABLE_SOURCE) $(EXTRAS) $(CHECK_SCRIPT)
 
 clean:
 	rm -rf *tar.gz

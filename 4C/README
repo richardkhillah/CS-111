@@ -1,27 +1,62 @@
 NAME: Richard Khillah
 EMAIL: RKhillah@ucla.edu
-ID: 369713302
+ID: 604853262
 
 Limitations:
 
 THIS BUILD IS INTENEDED TO BE RUN ON A BEAGLEBONE.
 
-This project has been tested on lnxsrv07 and lnxsrv09 as well as on my beaglebone.
-Everything works fine. I have had issues getting `uname -r | grep beaglebone - `
-to work.
+About: 
+The executables in the tarball were on the beaglebone. They run smoothly.
+The FAKEID on line 5 in Makefile can be used lookup server logs. 
 
-If you are testing on a beaglebone, uncomment lines 31, 33, 34, 35... That should do the trick
+You should be able to find the following TCP Server entry:
+12/03/18 15:51:26	45.49.152.169	369713302	28/28	COMPLETED
+
+You should find the following TLS Server entry:
+12/03/18 15:52:41	45.49.152.169	369713302	30/30	COMPLETED
+
+Both of these run on the beaglebone
+
+This project will also run on lnxsrv07 and lnxsrv09, provided re-compilation
+using the -DDUMMY flag to disable mraa headers from being included and
+instead use dummy implementations of methods used from the mraa library suite.
 
 Files:
 Makefile: builds the lab deliverables: executables, distribution tarball, and required output.
 
 utils.h/c: the header and source files for commonly used utilies
 
-lab4b.c: the required source file for the lab
+lab4c.c: the required source file for the lab which builds both
+	 lab4c_tcp (default) and lab4c_tls (with -DTLS compile flag).
+	 
+	 To build the executables and check (using P4C_check.sh) run:
+	   $ make
+	   $ check
 
-lab4b: the required executable, built to be tested with the .sh script
+	   Note: to build a specific implementation of lab4c, you can run:
+		     $ make lab4c_tcp
+		     $ make lab4c_tls
+	
+	 To build the deliverable tarball, run:
+	   $ make dist
 
-my_check.sh: a quick smoke test to ensure lab4b takes all required arguments and 
-logs to a logfile.
+	   Note: `$ make` is not required to be run prior to running `make dist`
+		 becuase make the 'default' make rule is a dist-required rule.
+
+	 To remove all files created by makefile (only the tarball) run:
+	   $ make clean
+
+	   Note: `make clean` does not remove executables. To remove executables,
+		 perform the usuall:
+		 $ rm -r lab4c_*
+
+lab4c_tcp: the required executable which connects to the tcp server.
+	   The executable reads commands from and writes temperature reports
+	   to the tcp server and to a (user-supplied) logfile.
+
+lab4c_tls: the required executable which connects to the tls server using
+	   tlsv1 protocol. This executable reads commands from and writes
+	   temperature reports to the tls server and a (user-supplied) logfile.
 
 P4B_check.sh: the check script provided as a sanity check measure.
